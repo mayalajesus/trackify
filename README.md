@@ -1,8 +1,12 @@
-# Time Tracker
+# Trackify
 
-Time Tracker is a minimal time tracking workspace for freelancers and small
+Trackify is a minimal time tracking workspace for freelancers and small
 teams. It helps people start a timer quickly, review their day, organize work
 by project and client, and inspect lightweight reports.
+
+- Repository: [mayalajesus/trackify](https://github.com/mayalajesus/trackify).
+- Production: [Trackify](https://watchtag.vercel.app).
+- Brand and deployment naming: [project identity](docs/project-identity.md).
 
 ## What is included
 

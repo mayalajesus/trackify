@@ -1,8 +1,8 @@
-# Time Tracker design direction
+# Trackify design direction
 
 ## Product character
 
-Time Tracker should feel quiet, clear and slightly premium. The interface
+Trackify should feel quiet, clear and slightly premium. The interface
 supports a quick return to work rather than asking users to configure a large
 system before they can track time.
 
@@ -78,7 +78,7 @@ system before they can track time.
 - On smaller screens, clock, timer actions and Billable travel as one compact
   control group and wrap only between those controls when the available width
   requires it; Task and Project keep their own full-width priority rows.
-- Follow the familiar time-tracker hierarchy: composer, week total, then one
+- Follow the familiar trackify hierarchy: composer, week total, then one
   aligned flat table with task, project/client, start, end, date, duration and
   quick actions. The date belongs in the Date column, not in repeated row
   headers. Days are shown from most recent to oldest, while entries within a
@@ -360,7 +360,7 @@ project` remains a first-class report category. Hidden filters keep their
 - CSV, XLSX and downloadable PDF exports receive the already filtered dataset
   and active view, preventing screen/export divergence. Export columns use the
   existing model only and retain overnight end-date indicators such as `+1`.
-  PDF output is a clean, light, print-oriented document with Time Tracker
+  PDF output is a clean, light, print-oriented document with Trackify
   branding, report context, active-filter metadata, totals and a paginated
   table whose header repeats across printed pages. PDF generation is loaded
   only when requested and downloads directly, without opening a print dialog.

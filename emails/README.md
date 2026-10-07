@@ -2,13 +2,13 @@
 
 Os templates de autenticação são publicados no Supabase de produção:
 
-- `account-confirmation.html`: **Confirme seu e-mail — Time Tracker**.
-- `password-recovery.html`: **Redefina sua senha — Time Tracker**.
+- `account-confirmation.html`: **Confirme seu e-mail — Trackify**.
+- `password-recovery.html`: **Redefina sua senha — Trackify**.
 
 ## Configuração aplicada em 1 de outubro de 2026
 
 - SMTP Mailjet: `in-v3.mailjet.com`, porta `587`.
-- Remetente: **Time Tracker <mayalajesus@outsmarting.com.br>**.
+- Remetente: **Trackify <mayalajesus@outsmarting.com.br>**.
 - Credenciais configuradas exclusivamente no Supabase; não são incluídas neste repositório.
 - Confirmação obrigatória e login sem confirmação desabilitado.
 - Validade dos links: 3.600 segundos; intervalo entre solicitações: 60 segundos.
@@ -23,7 +23,7 @@ As alterações de interface para reenvio e recuperação são publicadas pela V
 
 ## Atualização dos templates
 
-- Assunto: **Redefina sua senha — Time Tracker**
+- Assunto: **Redefina sua senha — Trackify**
 - Idioma do e-mail: português (Brasil).
 - No painel Supabase, abra **Authentication → Email Templates → Reset Password** e configure o assunto e o HTML deste arquivo.
 - Preserve `{{ .ConfirmationURL }}` no botão e no link alternativo. O Supabase gera o link seguro com o redirecionamento solicitado pela aplicação.

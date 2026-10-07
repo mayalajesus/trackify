@@ -5,7 +5,7 @@ Os templates HTML e texto ficam em `server/email-templates.mjs` e são enviados 
 ## Ativação
 
 1. Aplicar `20261001120000_transactional_emails.sql` antes de publicar. Ela dispensa todas as contas existentes do envio de boas-vindas.
-2. Configurar na Vercel, somente no ambiente Production: `MAILJET_API_KEY`, `MAILJET_SECRET_KEY`, `MAILJET_FROM_EMAIL=mayalajesus@outsmarting.com.br`, `MAILJET_FROM_NAME=Time Tracker` e `MAILJET_ENABLED=true`.
+2. Configurar na Vercel, somente no ambiente Production: `MAILJET_API_KEY`, `MAILJET_SECRET_KEY`, `MAILJET_FROM_EMAIL=mayalajesus@outsmarting.com.br`, `MAILJET_FROM_NAME=Trackify` e `MAILJET_ENABLED=true`.
 3. Confirmar `DATABASE_ENV=production` e `APP_URL` com o endereço HTTPS público do app.
 4. Publicar a versão com a integração. Desenvolvimento e Preview não enviam e-mails; `MAILJET_ENABLED` fica falso por padrão.
 
