@@ -19,6 +19,7 @@ import { ModalLayout } from "@/components/modal-layout";
 import { ModalTriggerRegistration } from "@/components/overlay-trigger-registration";
 import { OverlapConfirmation } from "@/components/overlap-confirmation";
 import { ProjectSelect } from "@/components/project-select";
+import { ProjectFormModal } from "@/components/project-form-modal";
 import { useI18n } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
 import {
@@ -48,6 +49,7 @@ export function LogTimeModal({
 }) {
   const {
     projects,
+    can,
     clients,
     preferences,
     addEntry,
@@ -70,9 +72,14 @@ export function LogTimeModal({
   const [billable, setBillable] = useState(true);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [pendingEntry, setPendingEntry] = useState<Omit<TimeEntry, "id"> | null>(null);
+  const [projectFormOpen, setProjectFormOpen] = useState(false);
+  const [projectInitialName, setProjectInitialName] = useState("");
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setProjectFormOpen(false);
+      return;
+    }
     const defaults = getManualEntryDefaults(new Date(), preferences.timezone);
     setTask(entry?.task ?? "");
     setProjectId(entry?.projectId ?? null);
@@ -82,15 +89,10 @@ export function LogTimeModal({
     setDuration(formatDurationInput(entry?.seconds ?? 3600));
     setTimeMode(entry && entry.seconds % 60 !== 0 ? "duration" : "range");
     setDescription(entry?.description ?? "");
-    setBillable(
-      entry?.billable ??
-        (entry?.projectId
-          ? (projects.find((project) => project.id === entry.projectId)?.billable ?? false)
-          : false),
-    );
+    setBillable(entry?.billable ?? false);
     setSaveError(null);
     setPendingEntry(null);
-  }, [entry, isOpen, preferences.timezone, projects]);
+  }, [entry, isOpen, preferences.timezone]);
 
   const originalEndDate = entry ? getEndDateForEntry(entry) : undefined;
   const preserveOriginalRange = Boolean(entry && start === entry.start && end === entry.end);
@@ -285,6 +287,14 @@ export function LogTimeModal({
                       variant="secondary"
                       listClassName="max-h-60 overflow-y-auto"
                       allowArchivedId={entry?.projectId ?? null}
+                      {...(can("manage-projects")
+                        ? {
+                            onCreateProject: (initialName: string) => {
+                              setProjectInitialName(initialName);
+                              setProjectFormOpen(true);
+                            },
+                          }
+                        : {})}
                       onChange={(value) => {
                         const nextProjectId = value === "none" || value === "all" ? null : value;
                         setProjectId(nextProjectId);
@@ -415,6 +425,16 @@ export function LogTimeModal({
   return (
     <>
       {formModal}
+      <ProjectFormModal
+        isOpen={isOpen && projectFormOpen}
+        initialName={projectInitialName}
+        onOpenChange={setProjectFormOpen}
+        onCreated={(project) => {
+          setProjectId(project.id);
+          if (!entry) setBillable(project.billable);
+          setSaveError(null);
+        }}
+      />
       <OverlapConfirmation
         conflict={pendingEntry ? (findEntryConflict(pendingEntry, entry?.id) ?? null) : null}
         isOpen={pendingEntry !== null}
