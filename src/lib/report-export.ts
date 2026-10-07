@@ -280,13 +280,39 @@ async function embedWorkspaceLogo(
   pdf: Awaited<ReturnType<typeof import("pdf-lib").PDFDocument.create>>,
   logoDataUrl: string | null | undefined,
 ) {
-  const logoData = logoDataUrl ? dataUrlBytes(logoDataUrl) : null;
-  if (!logoData) return null;
+  if (!logoDataUrl) return null;
+  // Workspace uploads start as data URLs, then loadAccount returns signed
+  // Storage URLs. Both representations must be resolved before embedding.
+  let logoData = dataUrlBytes(logoDataUrl);
+  if (!logoData) {
+    const url = new URL(logoDataUrl);
+    if (
+      url.protocol !== "https:" ||
+      !url.hostname.endsWith(".supabase.co") ||
+      !url.pathname.startsWith("/storage/v1/object/sign/workspace-logos/")
+    ) {
+      throw new Error("Unsupported workspace logo URL.");
+    }
+    const response = await fetch(url.href, {
+      credentials: "omit",
+      referrerPolicy: "no-referrer",
+      // A replacement logo can use the same Storage object path.
+      cache: "no-store",
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!response.ok) throw new Error("Could not load the workspace logo for the PDF.");
+    logoData = {
+      bytes: new Uint8Array(await response.arrayBuffer()),
+      mime: response.headers.get("content-type")?.split(";")[0]?.trim().toLowerCase() ?? "",
+    };
+  }
   if (logoData.mime === "image/png") return pdf.embedPng(logoData.bytes);
   if (logoData.mime === "image/jpeg" || logoData.mime === "image/jpg") {
     return pdf.embedJpg(logoData.bytes);
   }
-  if (logoData.mime !== "image/webp" || typeof createImageBitmap !== "function") return null;
+  if (logoData.mime !== "image/webp" || typeof createImageBitmap !== "function") {
+    throw new Error("Unsupported workspace logo format for the PDF.");
+  }
 
   const bitmap = await createImageBitmap(
     new Blob([logoData.bytes.buffer as ArrayBuffer], { type: "image/webp" }),
@@ -296,10 +322,11 @@ async function embedWorkspaceLogo(
     canvas.width = bitmap.width;
     canvas.height = bitmap.height;
     const context = canvas.getContext("2d");
-    if (!context) return null;
+    if (!context) throw new Error("Could not convert the workspace logo for the PDF.");
     context.drawImage(bitmap, 0, 0);
     const converted = dataUrlBytes(canvas.toDataURL("image/png"));
-    return converted ? pdf.embedPng(converted.bytes) : null;
+    if (!converted) throw new Error("Could not convert the workspace logo for the PDF.");
+    return pdf.embedPng(converted.bytes);
   } finally {
     bitmap.close();
   }
@@ -558,16 +585,7 @@ async function exportPdf(payload: ReportExportPayload): Promise<ReportExportResu
     pdf.setAuthor(workspaceName);
     pdf.setSubject(payload.subtitle ?? "Time report");
 
-    let logo:
-      Awaited<ReturnType<typeof pdf.embedPng>> | Awaited<ReturnType<typeof pdf.embedJpg>> | null =
-      null;
-    const logoData = payload.branding?.logoDataUrl
-      ? dataUrlBytes(payload.branding.logoDataUrl)
-      : null;
-    if (logoData?.mime === "image/png") logo = await pdf.embedPng(logoData.bytes);
-    if (logoData?.mime === "image/jpeg" || logoData?.mime === "image/jpg") {
-      logo = await pdf.embedJpg(logoData.bytes);
-    }
+    const logo = await embedWorkspaceLogo(pdf, payload.branding?.logoDataUrl);
 
     const drawHeader = (page: ReturnType<typeof pdf.addPage>, pageNumber: number) => {
       const { width, height } = page.getSize();
