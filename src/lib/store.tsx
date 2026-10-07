@@ -811,6 +811,31 @@ function reuseIfEqual<T>(previous: T, next: T): T {
   return JSON.stringify(previous) === JSON.stringify(next) ? previous : next;
 }
 
+function reuseWorkspaceLogoUrl(previous: string | null, next: string | null) {
+  if (!previous || !next || previous === next) return next;
+  try {
+    const oldUrl = new URL(previous);
+    const newUrl = new URL(next);
+    if (
+      oldUrl.protocol !== "https:" ||
+      !oldUrl.hostname.endsWith(".supabase.co") ||
+      !oldUrl.pathname.startsWith("/storage/v1/object/sign/workspace-logos/") ||
+      oldUrl.origin !== newUrl.origin ||
+      oldUrl.pathname !== newUrl.pathname
+    )
+      return next;
+    const payload = oldUrl.searchParams.get("token")?.split(".")[1];
+    if (!payload) return next;
+    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const { exp } = JSON.parse(atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, "=")));
+    // This only reads cache expiry; Storage still verifies the signature.
+    // Refresh before expiry, but don't change the image src on every poll.
+    return typeof exp === "number" && exp * 1000 > Date.now() + 5 * 60_000 ? previous : next;
+  } catch {
+    return next;
+  }
+}
+
 function shareAccountReferences(
   previous: PersistedAccount,
   next: PersistedAccount,
@@ -825,7 +850,13 @@ function shareAccountReferences(
     if (!previousWorkspace) return workspace;
     const shared = {
       ...workspace,
-      workspace: reuseIfEqual(previousWorkspace.workspace, workspace.workspace),
+      workspace: reuseIfEqual(previousWorkspace.workspace, {
+        ...workspace.workspace,
+        logoDataUrl: reuseWorkspaceLogoUrl(
+          previousWorkspace.workspace.logoDataUrl,
+          workspace.workspace.logoDataUrl,
+        ),
+      }),
       memberships: reuseIfEqual(previousWorkspace.memberships, workspace.memberships),
       entries: reuseIfEqual(previousWorkspace.entries, workspace.entries),
       projects: reuseIfEqual(previousWorkspace.projects, workspace.projects),

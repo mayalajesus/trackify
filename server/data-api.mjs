@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { queueEmail, deliverInvitation, welcomeOnAccess } from "./transactional-emails.mjs";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import pg from "pg";
 import { avatarDataValue as profileAvatarDataValue } from "./auth-profile.mjs";
 import { authenticateDataRequest } from "./authentication.mjs";
@@ -300,6 +300,13 @@ function parseImageDataUrl(value) {
     throw new DataApiError(400, "The image must be smaller than 1 MB.");
   }
   return { bytes, contentType: match[1] };
+}
+
+function workspaceLogoPath(workspaceId, image, currentPath = null) {
+  const digest = createHash("sha256").update(image.contentType).update(image.bytes).digest("hex");
+  if (currentPath?.endsWith(`-${digest}`)) return currentPath;
+  // Never overwrite a cached object, or reuse a path scheduled for deletion.
+  return `${workspaceId}/${randomUUID()}-${digest}`;
 }
 
 function favoriteTasksValue(value) {
@@ -785,7 +792,7 @@ export async function createWorkspace(client, user, config, body) {
       `data:${logo.contentType};base64,${logo.bytes.toString("base64")}`,
     ]);
   } else if (logo) {
-    const logoPath = `${workspaceId}/logo`;
+    const logoPath = workspaceLogoPath(workspaceId, logo);
     const uploaded = await getSupabaseAdmin(config)
       .storage.from("workspace-logos")
       .upload(logoPath, logo.bytes, { contentType: logo.contentType, upsert: true });
@@ -913,6 +920,7 @@ export async function syncEntries(client, userId, workspaceId, entries) {
 }
 
 async function syncAccount(client, user, config, account) {
+  const obsoleteLogoPaths = [];
   if (!account || !Array.isArray(account.identities) || !Array.isArray(account.workspaces))
     throw new DataApiError(400, "Invalid account payload.");
   await ensureProfile(client, user, config);
@@ -1041,16 +1049,17 @@ async function syncAccount(client, user, config, account) {
         throw new DataApiError(400, "Workspace logos must be smaller than 500 KB.");
       }
       if (image) {
-        logoPath = `${workspaceId}/logo`;
-        const { error } = await getSupabaseAdmin(config)
-          .storage.from("workspace-logos")
-          .upload(logoPath, image.bytes, { contentType: image.contentType, upsert: true });
-        if (error) throw new DataApiError(500, "Could not save the workspace logo.");
+        const nextPath = workspaceLogoPath(workspaceId, image, logoPath);
+        if (nextPath !== logoPath) {
+          const { error } = await getSupabaseAdmin(config)
+            .storage.from("workspace-logos")
+            .upload(nextPath, image.bytes, { contentType: image.contentType, upsert: false });
+          if (error) throw new DataApiError(500, "Could not save the workspace logo.");
+          if (logoPath) obsoleteLogoPaths.push(logoPath);
+          logoPath = nextPath;
+        }
       } else if (data.workspace.logoDataUrl === null && logoPath) {
-        const { error } = await getSupabaseAdmin(config)
-          .storage.from("workspace-logos")
-          .remove([logoPath]);
-        if (error) throw new DataApiError(500, "Could not remove the workspace logo.");
+        obsoleteLogoPaths.push(logoPath);
         logoPath = null;
       }
     }
@@ -1340,6 +1349,7 @@ async function syncAccount(client, user, config, account) {
       [user.id, preferred.rowCount ? requestedWorkspaceId : null],
     );
   }
+  return obsoleteLogoPaths;
 }
 
 function timerFromRow(row) {
@@ -1920,13 +1930,26 @@ async function operation(request, user, config, body) {
       }
     }
     if (body.operation === "syncAccount") {
+      let obsoleteLogoPaths;
       await client.query("begin");
       try {
-        await syncAccount(client, user, config, body.account);
+        obsoleteLogoPaths = await syncAccount(client, user, config, body.account);
         await client.query("commit");
       } catch (error) {
         await client.query("rollback");
         throw error;
+      }
+      // Delete only after the new reference is committed. Cleanup failure must
+      // not report a successful save as failed or remove the current image.
+      if (obsoleteLogoPaths.length) {
+        try {
+          const { error } = await getSupabaseAdmin(config)
+            .storage.from("workspace-logos")
+            .remove(obsoleteLogoPaths);
+          if (error) console.warn("Could not clean up replaced workspace logos.");
+        } catch {
+          console.warn("Could not clean up replaced workspace logos.");
+        }
       }
       return null;
     }
