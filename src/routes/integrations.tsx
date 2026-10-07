@@ -15,12 +15,12 @@ import { useStore } from "@/lib/store";
 export const Route = createFileRoute("/integrations")({
   head: () => ({
     meta: [
-      { title: "Integrations — Time Tracker" },
+      { title: "Integrations — Trackify" },
       {
         name: "description",
-        content: "Connect Time Tracker to Trello and sync cards into tracked tasks.",
+        content: "Connect Trackify to Trello and sync cards into tracked tasks.",
       },
-      { property: "og:title", content: "Integrations — Time Tracker" },
+      { property: "og:title", content: "Integrations — Trackify" },
       { property: "og:description", content: "Trello sync for your time tracking." },
     ],
   }),

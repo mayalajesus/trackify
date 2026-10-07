@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { LegalPage, LegalSection } from "@/components/legal-page";
 
 export const Route = createFileRoute("/privacy")({
-  head: () => ({ meta: [{ title: "Aviso de Privacidade — Time Tracker" }] }),
+  head: () => ({ meta: [{ title: "Aviso de Privacidade — Trackify" }] }),
   component: PrivacyPage,
 });
 

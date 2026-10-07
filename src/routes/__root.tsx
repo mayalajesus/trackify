@@ -89,13 +89,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Time Tracker — Simple time tracking" },
+      { title: "Trackify — Simple time tracking" },
       {
         name: "description",
         content: "Start a timer, organize your work and understand where your hours go.",
       },
-      { name: "author", content: "Time Tracker" },
-      { property: "og:title", content: "Time Tracker — Simple time tracking" },
+      { name: "author", content: "Trackify" },
+      { property: "og:title", content: "Trackify — Simple time tracking" },
       {
         property: "og:description",
         content: "A calm, focused workspace for tracking time across projects and clients.",
@@ -142,62 +142,62 @@ function RootOutlet() {
     const metadata: Record<string, { title: string; description: string; ogDescription: string }> =
       {
         "/": {
-          title: t("Time Tracker — Time tracking for small teams"),
+          title: t("Trackify — Time tracking for small teams"),
           description: t(
-            "Time Tracker is a minimal time tracker for freelancers and small teams: live timer, time entries, reports and client billing.",
+            "Trackify is a minimal time tracker for freelancers and small teams: live timer, time entries, reports and client billing.",
           ),
           ogDescription: t(
             "Track hours, manage projects and bill clients with a calm, focused workspace.",
           ),
         },
         "/tracker": {
-          title: `${t("Tracker")} — Time Tracker`,
+          title: `${t("Tracker")} — Trackify`,
           description: t(
             "Start the live timer, log time and manage your entries in one focused workspace.",
           ),
           ogDescription: t("Live timer and daily time entries in one focused view."),
         },
         "/today": {
-          title: `${t("Tracker")} — Time Tracker`,
+          title: `${t("Tracker")} — Trackify`,
           description: t(
             "Start the live timer, log time and manage your entries in one focused workspace.",
           ),
           ogDescription: t("Live timer and daily time entries in one focused view."),
         },
         "/projects": {
-          title: `${t("Projects")} — Time Tracker`,
+          title: `${t("Projects")} — Trackify`,
           description: t(
             "Track hours per project, monitor status and open detailed project breakdowns.",
           ),
           ogDescription: t("All client and internal projects with tracked time at a glance."),
         },
         "/clients": {
-          title: `${t("Clients")} — Time Tracker`,
+          title: `${t("Clients")} — Trackify`,
           description: t("Manage clients, contacts and the projects connected to each client."),
           ogDescription: t("Client list with contacts and tracked time."),
         },
         "/team": {
-          title: `${t("Team")} — Time Tracker`,
+          title: `${t("Team")} — Trackify`,
           description: t("Invite teammates, manage roles and track team hours."),
           ogDescription: t("Invite teammates and see tracked hours by member."),
         },
         "/reports": {
-          title: `${t("Reports")} — Time Tracker`,
+          title: `${t("Reports")} — Trackify`,
           description: t("Detailed, summary, weekly and team time reports."),
           ogDescription: t("Filter and understand tracked time."),
         },
         "/integrations": {
-          title: `${t("Integrations")} — Time Tracker`,
-          description: t("Connect Time Tracker to Trello and sync cards into tracked tasks."),
+          title: `${t("Integrations")} — Trackify`,
+          description: t("Connect Trackify to Trello and sync cards into tracked tasks."),
           ogDescription: t("Trello sync for your time tracking."),
         },
         "/settings": {
-          title: `${t("Settings")} — Time Tracker`,
+          title: `${t("Settings")} — Trackify`,
           description: t("Workspace settings and personal preferences."),
-          ogDescription: t("Configure your Time Tracker workspace."),
+          ogDescription: t("Configure your Trackify workspace."),
         },
         "/search": {
-          title: `${t("Search")} — Time Tracker`,
+          title: `${t("Search")} — Trackify`,
           description: t("Search projects, clients, teammates and time entries."),
           ogDescription: t("Find anything in your workspace."),
         },

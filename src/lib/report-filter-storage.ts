@@ -2,7 +2,7 @@ import { isCurrencyCode, type CurrencyCode } from "./billing";
 import { isValidDateOnly, type ReportPeriodPreset } from "./format";
 
 const reportFilterStorageVersion = 1;
-const reportFilterStoragePrefix = "time-tracker:report-filters";
+const reportFilterStoragePrefix = "trackify:report-filters";
 
 const reportPeriodPresets: ReportPeriodPreset[] = [
   "today",

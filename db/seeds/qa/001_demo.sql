@@ -78,7 +78,7 @@ begin
   on conflict (user_id, terms_version, privacy_version) do nothing;
 
   insert into public.workspaces (id, name, owner_id, status)
-  values (v_workspace_id, 'QA Time Tracker', owner_id, 'active')
+  values (v_workspace_id, 'QA Trackify', owner_id, 'active')
   on conflict (id) do update
     set name = excluded.name,
         owner_id = excluded.owner_id,

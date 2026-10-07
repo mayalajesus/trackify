@@ -44,9 +44,9 @@ import {
 export const Route = createFileRoute("/workspaces")({
   head: () => ({
     meta: [
-      { title: "Workspaces — Time Tracker" },
-      { name: "description", content: "Create and manage your Time Tracker workspaces." },
-      { property: "og:title", content: "Workspaces — Time Tracker" },
+      { title: "Workspaces — Trackify" },
+      { name: "description", content: "Create and manage your Trackify workspaces." },
+      { property: "og:title", content: "Workspaces — Trackify" },
       {
         property: "og:description",
         content: "Switch between focused workspaces and shared teams.",

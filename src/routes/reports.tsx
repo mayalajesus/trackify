@@ -337,12 +337,12 @@ export const Route = createFileRoute("/reports")({
   }),
   head: () => ({
     meta: [
-      { title: "Reports — Time Tracker" },
+      { title: "Reports — Trackify" },
       {
         name: "description",
         content: "Overview and detailed time reports.",
       },
-      { property: "og:title", content: "Reports — Time Tracker" },
+      { property: "og:title", content: "Reports — Trackify" },
       { property: "og:description", content: "Filter and understand tracked time." },
     ],
   }),
@@ -816,7 +816,7 @@ function ReportsPage() {
           }
         : {}),
       displayTitle: t("Detailed report"),
-      subtitle: `Time Tracker · ${formatDateRange(range.startDate, range.endDate, locale)}`,
+      subtitle: `Trackify · ${formatDateRange(range.startDate, range.endDate, locale)}`,
       meta: [
         { label: t("Period"), value: formatDateRange(range.startDate, range.endDate, locale) },
         { label: t("Scope"), value: reportScope },
@@ -891,7 +891,7 @@ function ReportsPage() {
       const weekdayRows = overviewWeekdayRows(reportAnalytics, locale);
       return {
         ...exportContext,
-        title: `time-tracker-${exportView}`,
+        title: `trackify-${exportView}`,
         columns: [t("Metric"), t("Value")],
         rows: [
           {
@@ -1106,7 +1106,7 @@ function ReportsPage() {
       ];
       return {
         ...exportContext,
-        title: `time-tracker-${exportView}`,
+        title: `trackify-${exportView}`,
         pdf: {
           kind: "detailed",
           startDate: range.startDate,
@@ -1203,7 +1203,7 @@ function ReportsPage() {
         : groups.map((group) => ({ primaryLabel: group.label, secondaryLabel: "", group }));
       return {
         ...exportContext,
-        title: `time-tracker-${exportView}`,
+        title: `trackify-${exportView}`,
         columns: [
           t("Group"),
           ...(hasSubgroup ? [t("Subgroup")] : []),

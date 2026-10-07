@@ -50,9 +50,9 @@ type InviteRole = Exclude<Role, "Owner">;
 export const Route = createFileRoute("/team")({
   head: () => ({
     meta: [
-      { title: "Team — Time Tracker" },
+      { title: "Team — Trackify" },
       { name: "description", content: "Invite teammates, manage roles and track team hours." },
-      { property: "og:title", content: "Team — Time Tracker" },
+      { property: "og:title", content: "Team — Trackify" },
       { property: "og:description", content: "Invite teammates and see tracked hours by member." },
     ],
   }),

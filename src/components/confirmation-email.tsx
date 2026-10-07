@@ -8,7 +8,7 @@ import { resendConfirmation } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 
 // This only limits accidental repeated clicks. The auth provider enforces abuse limits.
-const cooldownKey = "time-tracker:confirmation-retry-at";
+const cooldownKey = "trackify:confirmation-retry-at";
 export function ConfirmationEmail({
   initialEmail = "",
   justRequested = false,

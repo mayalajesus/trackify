@@ -161,7 +161,7 @@ async function main() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) throw new Error("DATABASE_URL is required.");
 
-  const client = new Client({ connectionString, application_name: "time-tracker-migrations" });
+  const client = new Client({ connectionString, application_name: "trackify-migrations" });
   await client.connect();
   try {
     if (command === "migrate") await migrate(client, provider, false);

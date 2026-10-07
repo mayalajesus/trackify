@@ -15,9 +15,9 @@ import { useStore } from "@/lib/store";
 export const Route = createFileRoute("/projects/$projectId")({
   head: () => ({
     meta: [
-      { title: "Project details — Time Tracker" },
+      { title: "Project details — Trackify" },
       { name: "description", content: "Hours, members and entries tracked for this project." },
-      { property: "og:title", content: "Project details — Time Tracker" },
+      { property: "og:title", content: "Project details — Trackify" },
       { property: "og:description", content: "Breakdown of tracked time for a single project." },
     ],
   }),

@@ -18,9 +18,9 @@ export const Route = createFileRoute("/search")({
   }),
   head: () => ({
     meta: [
-      { title: "Search — Time Tracker" },
+      { title: "Search — Trackify" },
       { name: "description", content: "Search projects, clients, teammates and time entries." },
-      { property: "og:title", content: "Search — Time Tracker" },
+      { property: "og:title", content: "Search — Trackify" },
       { property: "og:description", content: "Find anything in your workspace." },
     ],
   }),

@@ -549,7 +549,7 @@ export async function createDetailedReportPdf(payload: ReportExportPayload): Pro
   drawFooter(page, pageNumber);
 
   pdf.setTitle(title);
-  pdf.setAuthor(workspaceName || "Time Tracker");
+  pdf.setAuthor(workspaceName || "Trackify");
   pdf.setSubject(translate("Detailed report", locale));
   return Uint8Array.from(await pdf.save());
 }
@@ -576,7 +576,7 @@ async function exportPdf(payload: ReportExportPayload): Promise<ReportExportResu
     const border = rgb(0.82, 0.85, 0.89);
     const soft = rgb(0.96, 0.97, 0.98);
     const title = payload.displayTitle ?? "Time report";
-    const workspaceName = payload.branding?.workspaceName?.trim() || "Time Tracker";
+    const workspaceName = payload.branding?.workspaceName?.trim() || "Trackify";
     const generatedAt = new Intl.DateTimeFormat(payload.locale ?? defaultLocale, {
       dateStyle: "medium",
       timeStyle: "short",
@@ -621,7 +621,7 @@ async function exportPdf(payload: ReportExportPayload): Promise<ReportExportResu
         font: bold,
         color: ink,
       });
-      page.drawText(payload.subtitle ?? "Time Tracker · filtered report", {
+      page.drawText(payload.subtitle ?? "Trackify · filtered report", {
         x: margin,
         y: height - margin - 73,
         size: 9,

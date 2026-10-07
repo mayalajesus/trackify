@@ -6,13 +6,13 @@ export const Route = createFileRoute("/")({
   },
   head: () => ({
     meta: [
-      { title: "Time Tracker — Time tracking for small teams" },
+      { title: "Trackify — Time tracking for small teams" },
       {
         name: "description",
         content:
-          "Time Tracker is a minimal time tracker for freelancers and small teams: live timer, time entries, reports and client billing.",
+          "Trackify is a minimal time tracker for freelancers and small teams: live timer, time entries, reports and client billing.",
       },
-      { property: "og:title", content: "Time Tracker — Time tracking for small teams" },
+      { property: "og:title", content: "Trackify — Time tracking for small teams" },
       {
         property: "og:description",
         content: "Track hours, manage projects and bill clients with a calm, focused workspace.",

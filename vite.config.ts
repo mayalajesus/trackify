@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
       tanstackRouter({ target: "react", autoCodeSplitting: true }),
       react(),
       {
-        name: "time-tracker-data-api",
+        name: "trackify-data-api",
         configureServer(server) {
           server.middlewares.use("/api/data", createDataMiddleware(env));
         },

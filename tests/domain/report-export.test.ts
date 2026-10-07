@@ -9,12 +9,12 @@ import {
 
 function payload(entries: NonNullable<ReportExportPayload["pdf"]>["entries"]): ReportExportPayload {
   return {
-    title: "time-tracker-detailed",
+    title: "trackify-detailed",
     displayTitle: "Detailed report",
     columns: ["Project", "Client", "Task", "User"],
     rows: [],
     locale: "en-US",
-    branding: { workspaceName: "QA Time Tracker", logoDataUrl: null },
+    branding: { workspaceName: "QA Trackify", logoDataUrl: null },
     pdf: {
       kind: "detailed",
       startDate: "2026-07-01",

@@ -31,12 +31,12 @@ import { clientCurrencyOptions, defaultCurrencyForLocale, type CurrencyCode } fr
 export const Route = createFileRoute("/clients")({
   head: () => ({
     meta: [
-      { title: "Clients — Time Tracker" },
+      { title: "Clients — Trackify" },
       {
         name: "description",
         content: "Manage clients, contacts and the projects connected to each client.",
       },
-      { property: "og:title", content: "Clients — Time Tracker" },
+      { property: "og:title", content: "Clients — Trackify" },
       { property: "og:description", content: "Client list with contacts and tracked time." },
     ],
   }),

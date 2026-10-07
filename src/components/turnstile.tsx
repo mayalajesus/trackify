@@ -24,9 +24,7 @@ let scriptPromise: Promise<void> | null = null;
 function loadTurnstile() {
   if (window.turnstile) return Promise.resolve();
   scriptPromise ??= new Promise<void>((resolve, reject) => {
-    const existing = document.querySelector<HTMLScriptElement>(
-      "script[data-time-tracker-turnstile]",
-    );
+    const existing = document.querySelector<HTMLScriptElement>("script[data-trackify-turnstile]");
     if (existing) {
       existing.addEventListener("load", () => resolve(), { once: true });
       existing.addEventListener("error", () => reject(new Error("Turnstile unavailable")), {
@@ -38,7 +36,7 @@ function loadTurnstile() {
     script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
     script.async = true;
     script.defer = true;
-    script.dataset["timeTrackerTurnstile"] = "true";
+    script.dataset["trackifyTurnstile"] = "true";
     script.addEventListener("load", () => resolve(), { once: true });
     script.addEventListener("error", () => reject(new Error("Turnstile unavailable")), {
       once: true,

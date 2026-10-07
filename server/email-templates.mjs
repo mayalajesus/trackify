@@ -15,16 +15,16 @@ function escape(value) {
 export function transactionalEmail(kind, payload) {
   const invitation = kind === "invitation";
   const subject = invitation
-    ? `Convite para ${payload.workspace} — Time Tracker`
-    : "Boas-vindas ao Time Tracker";
-  const title = invitation ? "Você recebeu um convite" : "Boas-vindas ao Time Tracker";
+    ? `Convite para ${payload.workspace} — Trackify`
+    : "Boas-vindas ao Trackify";
+  const title = invitation ? "Você recebeu um convite" : "Boas-vindas ao Trackify";
   const text = invitation
     ? `${payload.inviter} convidou você para o workspace ${payload.workspace}, como ${payload.role === "Admin" ? "Administrador" : "Membro"}.`
     : `Olá, ${payload.name}! Sua conta está pronta. Crie um workspace ou aceite um convite para começar a registrar seu tempo.`;
   const detail = invitation
     ? `O convite é válido até ${new Intl.DateTimeFormat("pt-BR", { dateStyle: "long", timeStyle: "short", timeZone: "UTC" }).format(new Date(payload.expiresAt))} (UTC). Entre ou crie uma conta com o endereço que recebeu este e-mail para aceitar.`
     : "Organize seus projetos, acompanhe suas tarefas e consulte seus relatórios em um só lugar.";
-  const action = invitation ? "Aceitar convite" : "Acessar Time Tracker";
+  const action = invitation ? "Aceitar convite" : "Acessar Trackify";
   const footer = invitation
     ? "Se você não reconhece este convite, pode ignorar este e-mail."
     : "Este e-mail foi enviado após o primeiro acesso à sua conta.";
@@ -37,7 +37,7 @@ export function transactionalEmail(kind, payload) {
   const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
   <body style="margin:0;background:#f5f6f7;font-family:Arial,Helvetica,sans-serif;color:#202124">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center" style="padding:40px 16px">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px"><tr><td style="padding:0 0 24px;text-align:center;font-size:20px;font-weight:bold">Time Tracker</td></tr>
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px"><tr><td style="padding:0 0 24px;text-align:center;font-size:20px;font-weight:bold">Trackify</td></tr>
   <tr><td style="background:#fff;border:1px solid #e4e7e9;border-radius:24px;padding:32px 24px">
   <h1 style="margin:0 0 20px;font-size:28px;line-height:36px">${escape(title)}</h1>
   <p style="font-size:16px;line-height:26px">${escape(text)}</p><p style="font-size:14px;line-height:22px;color:#5c636b">${escape(detail)}</p>

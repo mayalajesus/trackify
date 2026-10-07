@@ -1,5 +1,8 @@
 import "@fontsource-variable/inter";
 import "./styles.css";
+import { migrateBrandStorage } from "./lib/brand-storage-migration";
+
+migrateBrandStorage();
 
 type BootLocale = "en-US" | "pt-BR";
 
@@ -12,14 +15,14 @@ type BootCopy = {
 
 const bootCopy: Record<BootLocale, BootCopy> = {
   "en-US": {
-    loading: "Loading Time Tracker…",
-    errorTitle: "We couldn't open Time Tracker",
+    loading: "Loading Trackify…",
+    errorTitle: "We couldn't open Trackify",
     errorDescription: "Try reloading the page. If the problem continues, check your connection.",
     retry: "Reload page",
   },
   "pt-BR": {
-    loading: "Carregando o Time Tracker…",
-    errorTitle: "Não conseguimos abrir o Time Tracker",
+    loading: "Carregando o Trackify…",
+    errorTitle: "Não conseguimos abrir o Trackify",
     errorDescription: "Tente recarregar a página. Se o problema continuar, confira sua conexão.",
     retry: "Recarregar página",
   },
@@ -43,7 +46,7 @@ function showBootError(rootElement: HTMLElement, copy: BootCopy) {
 
   const mark = document.createElement("img");
   mark.className = "size-12 object-contain";
-  mark.src = "/brand/orbit-symbol.png";
+  mark.src = "/brand/trackify-symbol.png";
   mark.alt = "";
   mark.setAttribute("aria-hidden", "true");
 
@@ -67,7 +70,7 @@ function showBootError(rootElement: HTMLElement, copy: BootCopy) {
 const rootElement = document.getElementById("root");
 
 if (!rootElement) {
-  throw new Error("Time Tracker could not find the application root.");
+  throw new Error("Trackify could not find the application root.");
 }
 
 const configuredAppUrl = import.meta.env["VITE_APP_URL"];

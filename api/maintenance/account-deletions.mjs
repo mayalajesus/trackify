@@ -29,7 +29,7 @@ export default async function handler(request, response) {
     const result = await processDueAccountDeletions(getPool(config), admin, 25);
     send(response, 200, requestId, { status: "ok", ...result });
   } catch (error) {
-    console.error("[time-tracker account deletion maintenance]", {
+    console.error("[trackify account deletion maintenance]", {
       requestId,
       name: error instanceof Error ? error.name : typeof error,
       message: error instanceof Error ? error.message : "Maintenance failed",

@@ -71,7 +71,7 @@ test("persists report filters across report views, reloads and route navigation"
   await signInAs(page, "owner");
   await page.evaluate(() => {
     for (const key of Object.keys(window.localStorage)) {
-      if (key.startsWith("time-tracker:report-filters:")) window.localStorage.removeItem(key);
+      if (key.startsWith("trackify:report-filters:")) window.localStorage.removeItem(key);
     }
   });
 

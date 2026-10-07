@@ -619,10 +619,10 @@ const ptBR: Record<string, string> = {
   "Page not found": "Página não encontrada",
   "The page you're looking for doesn't exist or has been moved.":
     "A página que você procura não existe ou foi movida.",
-  "Loading Time Tracker…": "Carregando o Time Tracker…",
+  "Loading Trackify…": "Carregando o Trackify…",
   "Loading data": "Carregando dados",
   "Preparing your workspace…": "Preparando seu workspace…",
-  "Time Tracker could not load: {error}": "Não conseguimos carregar o Time Tracker: {error}",
+  "Trackify could not load: {error}": "Não conseguimos carregar o Trackify: {error}",
   "Only Admins and the Owner can change workspace settings.":
     "Somente Administradores e o Proprietário podem alterar as configurações do workspace.",
   "Choose a valid default billability setting.":
@@ -755,8 +755,8 @@ const ptBR: Record<string, string> = {
   "Follow your device theme.": "Seguir o tema do seu dispositivo.",
   "Always use the light theme.": "Usar sempre o tema claro.",
   "Always use the dark theme.": "Usar sempre o tema escuro.",
-  "Choose how Time Tracker should look for your account.":
-    "Escolha a aparência do Time Tracker para sua conta.",
+  "Choose how Trackify should look for your account.":
+    "Escolha a aparência do Trackify para sua conta.",
   "Open account menu for {name}": "Abrir o menu da conta de {name}",
   "Change profile photo": "Alterar foto de perfil",
   "Remove profile photo": "Remover foto de perfil",
@@ -973,23 +973,23 @@ const ptBR: Record<string, string> = {
     "Não conseguimos preparar a exportação CSV. Tente novamente.",
   "The Excel export could not be prepared.":
     "Não conseguimos preparar a exportação Excel. Tente novamente.",
-  "Time Tracker · filtered report": "Time Tracker · relatório filtrado",
+  "Trackify · filtered report": "Trackify · relatório filtrado",
   Generated: "Gerado em",
-  "Time Tracker · report export": "Time Tracker · exportação do relatório",
+  "Trackify · report export": "Trackify · exportação do relatório",
   "No records match the selected report.": "Nenhum registro corresponde ao relatório selecionado.",
   "The PDF print preview could not be prepared.":
     "Não conseguimos preparar a visualização de impressão do PDF. Tente novamente.",
   "The PDF print preview could not be opened.":
     "Não conseguimos abrir a visualização de impressão do PDF. Tente novamente.",
   "Export {scope}": "Exportar {scope}",
-  "Project details — Time Tracker": "Detalhes do projeto — Time Tracker",
+  "Project details — Trackify": "Detalhes do projeto — Trackify",
   "Could not create client": "Não conseguimos adicionar este cliente",
   "Choose valid personal preferences.": "Escolha preferências pessoais válidas.",
-  "Time Tracker — Simple time tracking": "Time Tracker — Rastreador de tempo simples",
-  "Time Tracker — Time tracking for small teams":
-    "Time Tracker — Rastreador de tempo para pequenas equipes",
-  "Time Tracker is a minimal time tracker for freelancers and small teams: live timer, time entries, reports and client billing.":
-    "Time Tracker é um rastreador de tempo simples para freelancers e pequenas equipes: cronômetro, registros, relatórios e faturamento de clientes.",
+  "Trackify — Simple time tracking": "Trackify — Rastreador de tempo simples",
+  "Trackify — Time tracking for small teams":
+    "Trackify — Rastreador de tempo para pequenas equipes",
+  "Trackify is a minimal time tracker for freelancers and small teams: live timer, time entries, reports and client billing.":
+    "Trackify é um rastreador de tempo simples para freelancers e pequenas equipes: cronômetro, registros, relatórios e faturamento de clientes.",
   "Track hours, manage projects and bill clients with a calm, focused workspace.":
     "Acompanhe horas, gerencie projetos e fature clientes em um workspace calmo e focado.",
   "Start the live timer, log time and manage your entries in one focused workspace.":
@@ -1011,12 +1011,12 @@ const ptBR: Record<string, string> = {
   "Detailed, summary, weekly and team time reports.":
     "Relatórios detalhados, resumidos, semanais e da equipe.",
   "Filter and understand tracked time.": "Filtre e entenda as horas registradas.",
-  "Connect Time Tracker to Trello and sync cards into tracked tasks.":
-    "Conecte o Time Tracker ao Trello e sincronize cartões como tarefas registradas.",
+  "Connect Trackify to Trello and sync cards into tracked tasks.":
+    "Conecte o Trackify ao Trello e sincronize cartões como tarefas registradas.",
   "Trello sync for your time tracking.": "Sincronização do Trello para seu rastreador de tempo.",
   "Workspace settings and personal preferences.":
     "Configurações do workspace e preferências pessoais.",
-  "Configure your Time Tracker workspace.": "Configure seu workspace do Time Tracker.",
+  "Configure your Trackify workspace.": "Configure seu workspace do Trackify.",
   "Search projects, clients, teammates and time entries.":
     "Busque projetos, clientes, colegas e registros de horas.",
   "Find anything in your workspace.": "Encontre qualquer coisa no seu workspace.",
@@ -1096,7 +1096,7 @@ const ptBR: Record<string, string> = {
   "Main navigation": "Navegação principal",
   "Open navigation": "Abrir navegação",
   "Close navigation": "Fechar navegação",
-  "Time Tracker": "Time Tracker",
+  Trackify: "Trackify",
   "Actions for {name}": "Ações de {name}",
   "Unknown member": "Membro desconhecido",
   "Unknown project": "Projeto desconhecido",
@@ -1319,7 +1319,7 @@ const enUS: Record<string, string> = {
   "This page didn't load": "We couldn't load this page",
   "Something went wrong on our end. You can try refreshing or head back home.":
     "We couldn't load this page. Try again or go back to the home page.",
-  "Time Tracker could not load: {error}": "We couldn't load Time Tracker: {error}",
+  "Trackify could not load: {error}": "We couldn't load Trackify: {error}",
   "Your account cannot track time.": "This account can't track time yet.",
   "Your account cannot update the active timer.": "This account can't update the active timer.",
   "There is no active timer to update.": "There's no active timer to update yet.",

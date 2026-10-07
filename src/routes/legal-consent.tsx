@@ -47,7 +47,7 @@ function LegalConsentPage() {
             Revise os termos para continuar
           </Typography>
           <Typography type="body-sm" color="muted" align="center" className="mx-auto mt-2 max-w-sm">
-            Confirme que você leu os documentos vigentes para continuar no Time Tracker.
+            Confirme que você leu os documentos vigentes para continuar no Trackify.
           </Typography>
         </div>
 

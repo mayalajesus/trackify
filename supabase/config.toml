@@ -1,4 +1,4 @@
-project_id = "time-tracker"
+project_id = "trackify"
 
 [auth]
 enable_signup = true

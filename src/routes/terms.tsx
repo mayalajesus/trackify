@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { LegalPage, LegalSection } from "@/components/legal-page";
 
 export const Route = createFileRoute("/terms")({
-  head: () => ({ meta: [{ title: "Termos de Uso — Time Tracker" }] }),
+  head: () => ({ meta: [{ title: "Termos de Uso — Trackify" }] }),
   component: TermsPage,
 });
 
@@ -11,9 +11,9 @@ function TermsPage() {
     <LegalPage title="Termos de Uso" updated="3 de setembro de 2026">
       <LegalSection title="1. Responsável pelo serviço">
         <p>
-          O Time Tracker é oferecido por 53 063 977 MAYALA KERCIANE SANTOS D, CNPJ
-          53.063.977/0001-14, com endereço na Rua Pasqualle Gato, Salvador–BA, CEP 41650-470.
-          Contato: mayalajesus@outsmarting.com.br.
+          O Trackify é oferecido por 53 063 977 MAYALA KERCIANE SANTOS D, CNPJ 53.063.977/0001-14,
+          com endereço na Rua Pasqualle Gato, Salvador–BA, CEP 41650-470. Contato:
+          mayalajesus@outsmarting.com.br.
         </p>
       </LegalSection>
       <LegalSection title="2. Escopo do serviço">

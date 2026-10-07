@@ -1,5 +1,5 @@
 {
-  "name": "time-tracker",
+  "name": "trackify",
   "description": "A focused time tracking workspace for freelancers and small teams.",
   "private": true,
   "packageManager": "npm@11.6.2",

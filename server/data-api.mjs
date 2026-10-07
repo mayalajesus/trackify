@@ -66,7 +66,7 @@ export function providerEnv(env) {
       apiKey: envValue(env, "MAILJET_API_KEY"),
       secretKey: envValue(env, "MAILJET_SECRET_KEY"),
       fromEmail: envValue(env, "MAILJET_FROM_EMAIL"),
-      fromName: envValue(env, "MAILJET_FROM_NAME") || "Time Tracker",
+      fromName: envValue(env, "MAILJET_FROM_NAME") || "Trackify",
     },
     databaseUrl:
       envValue(env, "DATABASE_URL") ||
@@ -116,7 +116,7 @@ export function getPool(config) {
       connectionTimeoutMillis: 10_000,
       idleTimeoutMillis: 30_000,
       keepAlive: true,
-      application_name: "time-tracker-api",
+      application_name: "trackify-api",
     });
     pools.set(config.databaseUrl, pool);
   }
@@ -2162,7 +2162,7 @@ export async function handleDataRequest(request, response, env = {}) {
       status < 500
         ? internalMessage
         : "The data service is temporarily unavailable. Please try again.";
-    console.error("[time-tracker data api]", {
+    console.error("[trackify data api]", {
       requestId,
       name: error instanceof Error ? error.name : typeof error,
       message: sanitizeTelemetry(internalMessage),

@@ -38,10 +38,10 @@ import { ModalTriggerRegistration } from "@/components/overlay-trigger-registrat
 export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
-      { title: "Settings — Time Tracker" },
+      { title: "Settings — Trackify" },
       { name: "description", content: "Account and personal preferences." },
-      { property: "og:title", content: "Settings — Time Tracker" },
-      { property: "og:description", content: "Configure your Time Tracker workspace." },
+      { property: "og:title", content: "Settings — Trackify" },
+      { property: "og:description", content: "Configure your Trackify workspace." },
     ],
   }),
   component: SettingsPage,
@@ -326,7 +326,7 @@ function SettingsPage() {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `time-tracker-account-${new Date().toISOString().slice(0, 10)}.json`;
+    anchor.download = `trackify-account-${new Date().toISOString().slice(0, 10)}.json`;
     anchor.click();
     URL.revokeObjectURL(url);
     toast.success("Seus dados foram exportados");

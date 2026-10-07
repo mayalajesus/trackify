@@ -312,11 +312,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
 
           <div aria-hidden="true" className="h-[61px] shrink-0 sm:h-[65px]" />
 
-          <main
-            id="main-content"
-            tabIndex={-1}
-            className="min-w-0 w-full flex-1 px-4 py-6 md:px-8"
-          >
+          <main id="main-content" tabIndex={-1} className="min-w-0 w-full flex-1 px-4 py-6 md:px-8">
             {children}
           </main>
         </div>
@@ -333,7 +329,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
                   <div className="sr-only">
                     <Drawer.Heading>{t("Navigation")}</Drawer.Heading>
                     <Typography type="body-xs" color="muted" className="mt-0.5">
-                      {t("Time Tracker")}
+                      {t("Trackify")}
                     </Typography>
                   </div>
                   <Drawer.CloseTrigger aria-label={t("Close navigation")} />
