@@ -85,13 +85,11 @@ import {
   currencyOptions,
   formatMoney,
   formatMoneyTotals,
-  isCurrencyCode,
   sumBillableValues,
   type BillingPreference,
 } from "@/lib/billing";
 import {
   calculateReportAnalytics,
-  getReportBillableCurrencies,
   getPreviousEquivalentPeriod,
   type ReportAnalytics,
   type ShiftId,
@@ -133,7 +131,7 @@ type DetailedColumn =
   | "currency"
   | "value";
 
-const defaultVisibleFilters: ReportFilterKey[] = ["member", "client", "project", "billability"];
+const defaultVisibleFilters: ReportFilterKey[] = ["member", "client", "project"];
 
 const detailedColumnOptions: Array<{ id: DetailedColumn; label: string }> = [
   { id: "member", label: "Member" },
@@ -312,14 +310,8 @@ export const Route = createFileRoute("/reports")({
     clients: asCsv(search["clients"]),
     projects: asCsv(search["projects"]),
     description: asText(search["description"]),
-    billability:
-      search["billability"] === "billable" || search["billability"] === "internal"
-        ? search["billability"]
-        : "all",
-    currency:
-      search["currency"] === "all" || isCurrencyCode(search["currency"])
-        ? search["currency"]
-        : "all",
+    billability: "all",
+    currency: "all",
     visible:
       typeof search["visible"] === "string" ? search["visible"] : defaultVisibleFilters.join(","),
     group: isLegacyTeamReportView(search["view"])
@@ -433,7 +425,7 @@ function ReportsPage() {
     ],
   );
   const visibleFilters = parseIds(search.visible).filter((key): key is ReportFilterKey =>
-    ["member", "client", "project", "description", "billability"].includes(key),
+    ["member", "client", "project", "description"].includes(key),
   );
   const storedFilters = useMemo(() => storedFiltersFromSearch(search), [search]);
   const filterStorageKey = useMemo(
@@ -447,17 +439,20 @@ function ReportsPage() {
 
   const constrainFiltersToCurrentScope = useCallback(
     (filters: StoredReportFilters) =>
-      constrainReportFiltersToScope(filters, {
-        currentUserId,
-        canViewTeam: showTeam,
-        memberIds: members
-          .filter((member) => member.status === "active")
-          .map((member) => member.id),
-        clientIds: clients.map((client) => client.id),
-        projectIds: projects.map((project) => project.id),
-        visibleFilters: ["member", "client", "project", "description", "billability"],
-        detailedColumns: detailedColumnOptions.map((column) => column.id),
-      }),
+      constrainReportFiltersToScope(
+        { ...filters, billability: "all", currency: "all" },
+        {
+          currentUserId,
+          canViewTeam: showTeam,
+          memberIds: members
+            .filter((member) => member.status === "active")
+            .map((member) => member.id),
+          clientIds: clients.map((client) => client.id),
+          projectIds: projects.map((project) => project.id),
+          visibleFilters: ["member", "client", "project", "description"],
+          detailedColumns: detailedColumnOptions.map((column) => column.id),
+        },
+      ),
     [clients, currentUserId, members, projects, showTeam],
   );
 
@@ -702,15 +697,6 @@ function ReportsPage() {
           (filterValues.billability === "billable" ? entry.billable : !entry.billable),
       );
   }, [filterValues, normalizedDescription, projectMap, reportEntries]);
-  const availableCurrencies = useMemo(
-    () =>
-      getReportBillableCurrencies(reportEntriesBeforeCurrency, {
-        range,
-        fallbackForEntry,
-        timeZone: preferences.timezone,
-      }),
-    [fallbackForEntry, preferences.timezone, range, reportEntriesBeforeCurrency],
-  );
   const currencyFilteredEntries = useMemo(
     () =>
       filterValues.currency === "all"
@@ -1307,7 +1293,6 @@ function ReportsPage() {
           members={members}
           clients={clients}
           projects={projects}
-          currencies={availableCurrencies}
           showTeam={showTeam}
           weeklyNavigation
           onPeriodChange={updatePeriod}

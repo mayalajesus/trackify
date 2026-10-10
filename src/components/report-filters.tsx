@@ -23,7 +23,6 @@ import {
   Magnifier,
   Person,
   Persons,
-  Wallet,
 } from "@gravity-ui/icons";
 import {
   Fragment,
@@ -49,7 +48,7 @@ import {
 import type { Client, Member, Project } from "@/lib/domain";
 import type { CurrencyCode } from "@/lib/billing";
 
-export type ReportFilterKey = "member" | "client" | "project" | "description" | "billability";
+export type ReportFilterKey = "member" | "client" | "project" | "description";
 
 export type ReportFilterValues = {
   memberIds: string[];
@@ -265,40 +264,27 @@ function ReportFilterDropdown({
   const selectionMode = multiple ? "multiple" : "single";
 
   return (
-    <ButtonGroup
-      variant="tertiary"
-      size="sm"
-      className={className ? `min-w-0 ${className}` : "min-w-0"}
-      aria-label={t("{label} filter", { label })}
-    >
-      <Button
-        type="button"
-        aria-label={t("{label} filter", { label })}
-        className="h-9 min-w-0 flex-1 justify-start gap-2"
-      >
-        <ReportFilterIcon>{icon}</ReportFilterIcon>
-        <ReportFilterValue>{selectedLabel(options, values, allLabel ?? label)}</ReportFilterValue>
-      </Button>
+    <div className={className ? `min-w-0 ${className}` : "min-w-0"}>
       <GroupedDropdown>
         <Button
-          isIconOnly
+          type="button"
           size="sm"
           variant="tertiary"
-          aria-label={t("Open {label}", { label })}
-          className="h-9 w-9 min-w-9 shrink-0 px-0"
+          aria-label={t("{label} filter", { label })}
+          className="h-9 w-full min-w-0 justify-start gap-2"
         >
-          {separator === "vertical" ? (
+          <ReportFilterIcon>{icon}</ReportFilterIcon>
+          <ReportFilterValue>{selectedLabel(options, values, allLabel ?? label)}</ReportFilterValue>
+          <span aria-hidden="true" className="ms-auto flex h-5 shrink-0 items-center gap-2">
             <Separator
               orientation="vertical"
               variant="tertiary"
-              className="mx-1 h-5 shrink-0 self-center"
+              className={separator === "vertical" ? "mx-1 h-5 shrink-0" : "h-5 shrink-0"}
             />
-          ) : (
-            <ButtonGroup.Separator />
-          )}
-          <ReportFilterIcon>
-            <ChevronDown aria-hidden="true" className={reportFilterIconClassName} />
-          </ReportFilterIcon>
+            <ReportFilterIcon>
+              <ChevronDown aria-hidden="true" className={reportFilterIconClassName} />
+            </ReportFilterIcon>
+          </span>
         </Button>
         <Dropdown.Popover
           className="w-64 max-w-[calc(100vw-2rem)] min-w-0"
@@ -374,7 +360,7 @@ function ReportFilterDropdown({
           )}
         </Dropdown.Popover>
       </GroupedDropdown>
-    </ButtonGroup>
+    </div>
   );
 }
 
@@ -389,35 +375,6 @@ function ReportMultiSelect(props: {
   className?: string;
 }) {
   return <ReportFilterDropdown {...props} searchable multiple />;
-}
-
-function ReportSingleSelect({
-  label,
-  icon,
-  value,
-  options,
-  onChange,
-  className,
-}: {
-  label: string;
-  icon: ReactNode;
-  value: string;
-  options: ReportFilterOption[];
-  onChange: (value: string) => void;
-  className?: string;
-}) {
-  return (
-    <ReportFilterDropdown
-      label={label}
-      icon={icon}
-      options={options}
-      values={[value]}
-      onChange={(values) => onChange(values[0] ?? value)}
-      searchable={false}
-      multiple={false}
-      {...(className ? { className } : {})}
-    />
-  );
 }
 
 function ReportPeriodPicker({
@@ -478,13 +435,17 @@ function ReportPeriodPicker({
         <Label className="sr-only">{t("Report period")}</Label>
         <div className="flex min-w-0 items-center">
           <DateField.Group
-            className={`h-9 min-w-0 gap-0 overflow-hidden p-1 ${
+            className={`h-9 min-w-0 cursor-pointer gap-0 overflow-hidden p-1 ${
               weeklyNavigation
                 ? "w-fit flex-none rounded-s-[calc(var(--radius)*3)] rounded-e-none"
                 : "w-fit rounded-[calc(var(--radius)*3)]"
             }`}
             variant="secondary"
             aria-label={t("Selected report period")}
+            onClick={(event) => {
+              if (event.target instanceof Element && event.target.closest("button")) return;
+              setIsOpen(true);
+            }}
           >
             <DateField.Prefix className="pointer-events-auto ms-1 me-0 shrink-0 p-0">
               <DateRangePicker.Trigger
@@ -562,56 +523,47 @@ function ReportPeriodPicker({
               ))}
             </div>
             <div className="p-0 sm:hidden">
-              <ButtonGroup variant="tertiary" size="sm" className="w-full">
+              <GroupedDropdown>
                 <Button
                   type="button"
-                  aria-label={t("Date range preset")}
-                  className="h-9 min-w-0 flex-1 justify-start"
+                  size="sm"
+                  variant="tertiary"
+                  aria-label={t("Choose date range preset")}
+                  className="h-9 w-full min-w-0 justify-between gap-2"
                 >
                   {t(reportPeriodPresets.find((option) => option.id === preset)?.label ?? "Custom")}
+                  <ReportFilterIcon>
+                    <ChevronDown aria-hidden="true" className={reportFilterIconClassName} />
+                  </ReportFilterIcon>
                 </Button>
-                <GroupedDropdown>
-                  <Button
-                    isIconOnly
-                    size="sm"
-                    variant="tertiary"
-                    aria-label={t("Choose date range preset")}
-                    className="h-9 w-9 min-w-9 shrink-0 px-0"
+                <Dropdown.Popover>
+                  <Dropdown.Menu
+                    aria-label={t("Date range presets")}
+                    selectionMode="single"
+                    selectedKeys={new Set([preset])}
+                    onAction={(key) => {
+                      const nextPreset = String(key) as ReportPeriodPreset;
+                      if (nextPreset === "custom") return;
+                      const nextRange = getReportPeriodRange(nextPreset, today, weekStartsOn);
+                      setCalendarValue(toRangeValue(nextRange));
+                      onChange(nextPreset, nextRange);
+                      setIsOpen(false);
+                    }}
                   >
-                    <ButtonGroup.Separator />
-                    <ReportFilterIcon>
-                      <ChevronDown aria-hidden="true" className={reportFilterIconClassName} />
-                    </ReportFilterIcon>
-                  </Button>
-                  <Dropdown.Popover>
-                    <Dropdown.Menu
-                      aria-label={t("Date range presets")}
-                      selectionMode="single"
-                      selectedKeys={new Set([preset])}
-                      onAction={(key) => {
-                        const nextPreset = String(key) as ReportPeriodPreset;
-                        if (nextPreset === "custom") return;
-                        const nextRange = getReportPeriodRange(nextPreset, today, weekStartsOn);
-                        setCalendarValue(toRangeValue(nextRange));
-                        onChange(nextPreset, nextRange);
-                        setIsOpen(false);
-                      }}
-                    >
-                      {reportPeriodPresets.map((option) => (
-                        <Dropdown.Item
-                          key={option.id}
-                          id={option.id}
-                          textValue={option.label}
-                          isDisabled={option.id === "custom"}
-                        >
-                          <Label>{t(option.label)}</Label>
-                          <Dropdown.ItemIndicator />
-                        </Dropdown.Item>
-                      ))}
-                    </Dropdown.Menu>
-                  </Dropdown.Popover>
-                </GroupedDropdown>
-              </ButtonGroup>
+                    {reportPeriodPresets.map((option) => (
+                      <Dropdown.Item
+                        key={option.id}
+                        id={option.id}
+                        textValue={option.label}
+                        isDisabled={option.id === "custom"}
+                      >
+                        <Label>{t(option.label)}</Label>
+                        <Dropdown.ItemIndicator />
+                      </Dropdown.Item>
+                    ))}
+                  </Dropdown.Menu>
+                </Dropdown.Popover>
+              </GroupedDropdown>
             </div>
             <div className="min-w-0 flex-1 p-2 pe-4 sm:w-64 sm:flex-none">
               <RangeCalendar
@@ -656,7 +608,6 @@ export function ReportFiltersBar({
   members,
   clients,
   projects,
-  currencies,
   showTeam,
   weeklyNavigation = false,
   onPeriodChange,
@@ -673,7 +624,6 @@ export function ReportFiltersBar({
   members: Member[];
   clients: Client[];
   projects: Project[];
-  currencies: readonly CurrencyCode[];
   showTeam: boolean;
   weeklyNavigation?: boolean;
   onPeriodChange: (preset: ReportPeriodPreset, range: DateRange) => void;
@@ -720,13 +670,10 @@ export function ReportFiltersBar({
     values.clientIds.length > 0,
     values.projectIds.length > 0,
     values.description.trim().length > 0,
-    values.billability !== "all",
-    values.currency !== "all",
   ].filter(Boolean).length;
   const hasActiveFilters = activeFilterCount > 0;
   const dataFilterControls: ReactElement[] = [];
   const multiSelectClassName = "min-w-0 flex-[1_1_0%]";
-  const billabilityClassName = "min-w-0 flex-[1.2_1_0%]";
 
   if (visible.includes("member") && showTeam) {
     dataFilterControls.push(
@@ -768,51 +715,6 @@ export function ReportFiltersBar({
       />,
     );
   }
-  if (visible.includes("billability")) {
-    dataFilterControls.push(
-      <ReportSingleSelect
-        key="billability"
-        label={t("Billability")}
-        icon={
-          <BillableIndicator
-            billable={values.billability === "all" ? null : values.billability === "billable"}
-            mode="icon"
-            className={reportFilterIconClassName}
-          />
-        }
-        value={values.billability}
-        options={[
-          { id: "all", label: t("All billability"), billable: null },
-          { id: "billable", label: t("Billable"), billable: true },
-          { id: "internal", label: t("Non-billable"), billable: false },
-        ]}
-        onChange={(billability) =>
-          onChange({ billability: billability as ReportFilterValues["billability"] })
-        }
-        className={billabilityClassName}
-      />,
-    );
-  }
-  if (currencies.length > 1 || values.currency !== "all") {
-    const currencyOptions =
-      values.currency !== "all" && !currencies.includes(values.currency)
-        ? [values.currency, ...currencies]
-        : currencies;
-    dataFilterControls.push(
-      <ReportSingleSelect
-        key="currency"
-        label={t("Currency")}
-        icon={<Wallet aria-hidden="true" className={reportFilterIconClassName} />}
-        value={values.currency}
-        options={[
-          { id: "all", label: t("All currencies") },
-          ...currencyOptions.map((currency) => ({ id: currency, label: currency })),
-        ]}
-        onChange={(currency) => onChange({ currency: currency as ReportFilterValues["currency"] })}
-        className={billabilityClassName}
-      />,
-    );
-  }
 
   return (
     <Toolbar
@@ -848,7 +750,13 @@ export function ReportFiltersBar({
             onChange={(description) => onChange({ description })}
           >
             <Label className="sr-only">{t("Description filter")}</Label>
-            <InputGroup className="min-w-0" variant="primary">
+            <InputGroup
+              className="min-w-0 cursor-text"
+              variant="primary"
+              onClick={(event) => {
+                event.currentTarget.querySelector("input")?.focus();
+              }}
+            >
               <InputGroup.Prefix>
                 <ReportFilterIcon>
                   <Magnifier aria-hidden="true" className={reportFilterIconClassName} />
