@@ -4,6 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import pg from "pg";
 import { avatarDataValue as profileAvatarDataValue } from "./auth-profile.mjs";
 import { authenticateDataRequest } from "./authentication.mjs";
+import { isAllowedExtensionOrigin, enforceExtensionOperation } from "./extension-origin.mjs";
 import {
   acceptLegalTerms,
   cancelAccountDeletion,
@@ -58,6 +59,7 @@ export function providerEnv(env) {
   const neonAuthUrl = envValue(env, "VITE_NEON_AUTH_URL").replace(/\/$/, "");
   return {
     databaseProvider,
+    extensionIds: envValue(env, "TRACKIFY_EXTENSION_IDS"),
     mailjet: {
       enabled:
         envValue(env, "MAILJET_ENABLED") === "true" &&
@@ -1848,6 +1850,9 @@ async function operation(request, user, config, body) {
         body.logoDataUrl.startsWith("data:image/"));
     await enforceUserRateLimits(client, user.id, operationName, new Date(), { includesUpload });
     await enforceAccountLifecycle(client, user.id, operationName);
+    if (body.operation === "getExtensionSession") {
+      return { version: 1, user: { id: user.id, name: user.name ?? "", email: user.email } };
+    }
     if (body.operation === "getAccountDeletionStatus") {
       return await getAccountDeletionStatus(client, user.id);
     }
@@ -2107,6 +2112,7 @@ function sendJson(response, status, payload, requestId, retryAfter) {
 function validateRequestOrigin(request, config) {
   const origin = String(request.headers?.origin ?? "").trim();
   if (!origin) return;
+  if (isAllowedExtensionOrigin(origin, config.extensionIds)) return;
   let expectedOrigin = "";
   try {
     expectedOrigin = new URL(config.appUrl).origin;
@@ -2129,6 +2135,13 @@ export async function handleDataRequest(request, response, env = {}) {
     enforceIpBurstLimit(request);
     const config = providerEnv(env);
     validateRequestOrigin(request, config);
+    const origin = String(request.headers?.origin ?? "").trim();
+    if (isAllowedExtensionOrigin(origin, config.extensionIds)) {
+      response.setHeader("access-control-allow-origin", origin);
+      response.setHeader("vary", "Origin");
+      response.setHeader("access-control-allow-methods", "POST, OPTIONS");
+      response.setHeader("access-control-allow-headers", "authorization, content-type");
+    }
     if (method === "OPTIONS") {
       response.statusCode = 204;
       response.setHeader("cache-control", "no-store, private");
@@ -2147,6 +2160,7 @@ export async function handleDataRequest(request, response, env = {}) {
     const user = await authenticateDataRequest(request, config, getPool);
     const body = await readBody(request);
     operationName = String(body.operation ?? "unknown");
+    enforceExtensionOperation(origin, operationName);
     const data = await operation(request, user, config, body);
     sendJson(response, 200, { data, requestId }, requestId);
   } catch (error) {

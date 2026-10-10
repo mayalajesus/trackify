@@ -39,6 +39,7 @@ const publicAuthPaths = new Set([
   "/signup",
   "/forgot-password",
   "/auth/callback",
+  "/extension/connect",
   "/invite/accept",
   "/terms",
   "/privacy",

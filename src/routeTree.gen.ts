@@ -27,6 +27,7 @@ import { Route as TodayRouteImport } from './routes/today'
 import { Route as TrackerRouteImport } from './routes/tracker'
 import { Route as WorkspacesRouteImport } from './routes/workspaces'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as ExtensionConnectRouteImport } from './routes/extension.connect'
 import { Route as InviteAcceptRouteImport } from './routes/invite.accept'
 import { Route as ProjectsIndexRouteImport } from './routes/projects.index'
 import { Route as ProjectsProjectIdRouteImport } from './routes/projects.$projectId'
@@ -121,6 +122,11 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ExtensionConnectRoute = ExtensionConnectRouteImport.update({
+  id: '/extension/connect',
+  path: '/extension/connect',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InviteAcceptRoute = InviteAcceptRouteImport.update({
   id: '/invite/accept',
   path: '/invite/accept',
@@ -156,6 +162,7 @@ export interface FileRoutesByFullPath {
   '/tracker': typeof TrackerRoute
   '/workspaces': typeof WorkspacesRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/extension/connect': typeof ExtensionConnectRoute
   '/invite/accept': typeof InviteAcceptRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/projects/': typeof ProjectsIndexRoute
@@ -179,6 +186,7 @@ export interface FileRoutesByTo {
   '/tracker': typeof TrackerRoute
   '/workspaces': typeof WorkspacesRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/extension/connect': typeof ExtensionConnectRoute
   '/invite/accept': typeof InviteAcceptRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/projects': typeof ProjectsIndexRoute
@@ -203,6 +211,7 @@ export interface FileRoutesById {
   '/tracker': typeof TrackerRoute
   '/workspaces': typeof WorkspacesRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/extension/connect': typeof ExtensionConnectRoute
   '/invite/accept': typeof InviteAcceptRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/projects/': typeof ProjectsIndexRoute
@@ -228,6 +237,7 @@ export interface FileRouteTypes {
     | '/tracker'
     | '/workspaces'
     | '/auth/callback'
+    | '/extension/connect'
     | '/invite/accept'
     | '/projects/$projectId'
     | '/projects/'
@@ -251,6 +261,7 @@ export interface FileRouteTypes {
     | '/tracker'
     | '/workspaces'
     | '/auth/callback'
+    | '/extension/connect'
     | '/invite/accept'
     | '/projects/$projectId'
     | '/projects'
@@ -274,6 +285,7 @@ export interface FileRouteTypes {
     | '/tracker'
     | '/workspaces'
     | '/auth/callback'
+    | '/extension/connect'
     | '/invite/accept'
     | '/projects/$projectId'
     | '/projects/'
@@ -298,6 +310,7 @@ export interface RootRouteChildren {
   TrackerRoute: typeof TrackerRoute
   WorkspacesRoute: typeof WorkspacesRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
+  ExtensionConnectRoute: typeof ExtensionConnectRoute
   InviteAcceptRoute: typeof InviteAcceptRoute
   ProjectsProjectIdRoute: typeof ProjectsProjectIdRoute
   ProjectsIndexRoute: typeof ProjectsIndexRoute
@@ -431,6 +444,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/extension/connect': {
+      id: '/extension/connect'
+      path: '/extension/connect'
+      fullPath: '/extension/connect'
+      preLoaderRoute: typeof ExtensionConnectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/invite/accept': {
       id: '/invite/accept'
       path: '/invite/accept'
@@ -474,6 +494,7 @@ const rootRouteChildren: RootRouteChildren = {
   TrackerRoute: TrackerRoute,
   WorkspacesRoute: WorkspacesRoute,
   AuthCallbackRoute: AuthCallbackRoute,
+  ExtensionConnectRoute: ExtensionConnectRoute,
   InviteAcceptRoute: InviteAcceptRoute,
   ProjectsProjectIdRoute: ProjectsProjectIdRoute,
   ProjectsIndexRoute: ProjectsIndexRoute,
