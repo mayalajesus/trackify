@@ -451,6 +451,8 @@ function ReportPeriodPicker({
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const rangeStartDate = range.startDate;
   const rangeEndDate = range.endDate;
+  const selectedPreset = reportPeriodPresets.find((option) => option.id === preset);
+  const presetLabel = preset !== "custom" && selectedPreset ? t(selectedPreset.label) : null;
 
   useEffect(() => {
     setCalendarValue(toRangeValue({ startDate: rangeStartDate, endDate: rangeEndDate }));
@@ -487,29 +489,34 @@ function ReportPeriodPicker({
             <DateField.Prefix className="pointer-events-auto ms-1 me-0 shrink-0 p-0">
               <DateRangePicker.Trigger
                 ref={triggerRef}
-                className="flex size-7 min-w-7 shrink-0 items-center justify-center px-0"
-                aria-label={t("Open {label} calendar", { label: t("Date range") })}
+                className={`flex h-7 min-w-7 shrink-0 items-center justify-center gap-2 ${presetLabel ? "px-2" : "w-7 px-0"}`}
+                aria-label={t("Open {label} calendar", { label: presetLabel ?? t("Date range") })}
               >
                 <Calendar aria-hidden="true" className={reportFilterIconClassName} />
+                {presetLabel ? (
+                  <span className="whitespace-nowrap text-sm">{presetLabel}</span>
+                ) : null}
               </DateRangePicker.Trigger>
             </DateField.Prefix>
-            <DateField.Input
-              slot="start"
-              className="w-fit min-w-0 flex-none gap-0 overflow-hidden p-0 whitespace-nowrap"
-            >
-              {(segment) => (
-                <DateField.Segment segment={segment} className="px-0 whitespace-nowrap" />
-              )}
-            </DateField.Input>
-            <DateRangePicker.RangeSeparator className="px-1">–</DateRangePicker.RangeSeparator>
-            <DateField.Input
-              slot="end"
-              className="w-fit min-w-0 flex-none gap-0 overflow-hidden p-0 pe-2 whitespace-nowrap"
-            >
-              {(segment) => (
-                <DateField.Segment segment={segment} className="px-0 whitespace-nowrap" />
-              )}
-            </DateField.Input>
+            <div className={presetLabel ? "hidden" : "contents"}>
+              <DateField.Input
+                slot="start"
+                className="w-fit min-w-0 flex-none gap-0 overflow-hidden p-0 whitespace-nowrap"
+              >
+                {(segment) => (
+                  <DateField.Segment segment={segment} className="px-0 whitespace-nowrap" />
+                )}
+              </DateField.Input>
+              <DateRangePicker.RangeSeparator className="px-1">–</DateRangePicker.RangeSeparator>
+              <DateField.Input
+                slot="end"
+                className="w-fit min-w-0 flex-none gap-0 overflow-hidden p-0 pe-2 whitespace-nowrap"
+              >
+                {(segment) => (
+                  <DateField.Segment segment={segment} className="px-0 whitespace-nowrap" />
+                )}
+              </DateField.Input>
+            </div>
           </DateField.Group>
           {weeklyNavigation && navigationLabel && previousLabel && nextLabel && onPeriodShift ? (
             <ReportPeriodNavigation
