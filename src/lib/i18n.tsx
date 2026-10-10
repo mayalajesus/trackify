@@ -514,6 +514,12 @@ const ptBR: Record<string, string> = {
   "Busiest day": "Dia com maior atividade",
   "Top project": "Principal projeto",
   "Top client": "Principal cliente",
+  "Team member": "Membro da equipe",
+  "Start – End": "Início – Fim",
+  "Total tracked ({period})": "Total rastreado ({period})",
+  "Time distribution for {name}": "Distribuição do tempo de {name}",
+  "Each row shows an entry and the member's total for the selected period.":
+    "Cada linha mostra um lançamento e o total do membro no período selecionado.",
   "Project with the most tracked time in the selected period.":
     "Projeto com mais tempo registrado no período selecionado.",
   "Client with the most tracked time in the selected period.":

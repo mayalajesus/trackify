@@ -21,6 +21,31 @@ body {
   min-height: 100vh;
 }
 
+.detailed-report-table {
+  border-radius: 24px;
+}
+.detailed-report-table .table__column {
+  height: 36px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+}
+.detailed-report-table .table__cell {
+  height: 81px;
+  padding: 12px;
+  font-size: 12px;
+  line-height: 16px;
+  border-bottom: 1px solid var(--separator);
+}
+.detailed-report-table .table__row:last-child .table__cell {
+  border-bottom: 0;
+}
+.detailed-report-avatar .avatar {
+  width: 36px;
+  height: 36px;
+}
+
 .theme-tabs {
   width: 100%;
   --theme-track: #eaebec;

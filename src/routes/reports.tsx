@@ -1,7 +1,3 @@
-import { Checkbox } from "@heroui/react/checkbox";
-import { Label } from "@heroui/react/label";
-import { Popover } from "@heroui/react/popover";
-import { BillableIndicator } from "@/components/billable-indicator";
 import { Button } from "@heroui/react/button";
 import { Chip } from "@heroui/react/chip";
 import { ProgressBar } from "@heroui/react/progress-bar";
@@ -33,6 +29,7 @@ import {
 } from "recharts";
 import { ProjectLabel } from "@/components/project-color";
 import { DataTable } from "@/components/data-table";
+import { DetailedReport } from "@/components/detailed-report";
 import { ExportModal } from "@/components/export-modal";
 import {
   ReportFiltersBar,
@@ -46,7 +43,6 @@ import {
   ReportChart,
   ReportChartWidget,
   ReportKpi,
-  ReportTableWidget,
   ReportWidget,
   reportChartAxisProps,
   reportChartColors,
@@ -59,6 +55,8 @@ import { createApiDataSource } from "@/lib/api-data-source";
 import {
   formatDate,
   formatDateRange,
+  formatReportPeriod,
+  reportPeriodPresets,
   formatClock,
   formatDuration,
   getDayOffset,
@@ -109,8 +107,6 @@ import {
 import {
   buildReportGroups,
   clientNameFor,
-  nameForMember,
-  projectFor,
   projectNameFor,
   reportGroupOptions as groupOptions,
   type GroupDimension,
@@ -227,15 +223,6 @@ function isPeriodPreset(value: unknown): value is ReportPeriodPreset {
 
 function isGroupDimension(value: unknown): value is GroupDimension {
   return groupOptions.some((option) => option.id === value);
-}
-
-function isDetailedColumn(value: string): value is DetailedColumn {
-  return detailedColumnOptions.some((column) => column.id === value);
-}
-
-function parseDetailedColumns(value: string): DetailedColumn[] {
-  const columns = value.split(",").filter(isDetailedColumn);
-  return columns.length > 0 ? [...new Set(columns)] : defaultDetailedColumns;
 }
 
 function asText(value: unknown): string {
@@ -1344,9 +1331,14 @@ function ReportsPage() {
               members={members}
               projects={projects}
               clients={clients}
-              columns={parseDetailedColumns(search.columns)}
-              onChangeColumns={(columns) => updateSearch({ columns: encodeIds(columns) })}
-              fallbackForEntry={fallbackForEntry}
+              periodLabel={
+                search.preset === "custom"
+                  ? formatReportPeriod(range, locale)
+                  : t(
+                      reportPeriodPresets.find((option) => option.id === search.preset)?.label ??
+                        "Custom",
+                    )
+              }
             />
           )}
         </>
@@ -2259,203 +2251,5 @@ function OverviewDashboard({
         </ReportWidget>
       </div>
     </div>
-  );
-}
-
-function DetailedReport({
-  entries,
-  onClear,
-  members,
-  projects,
-  clients,
-  columns,
-  onChangeColumns,
-  fallbackForEntry,
-}: {
-  entries: TimeEntry[];
-  onClear: () => void;
-  members: Member[];
-  projects: Project[];
-  clients: Client[];
-  columns: DetailedColumn[];
-  onChangeColumns: (columns: DetailedColumn[]) => void;
-  fallbackForEntry: (entry: TimeEntry) => BillingPreference;
-}) {
-  const { locale, t } = useI18n();
-  const visibleColumns = detailedColumnOptions.filter((column) => columns.includes(column.id));
-  return (
-    <ReportTableWidget
-      title={t("Detailed entries")}
-      action={<ReportColumnPicker columns={columns} onChange={onChangeColumns} />}
-      contentDescription={t("Detailed report table")}
-      isEmpty={entries.length === 0}
-      emptyState={{
-        title: t("No time entries match"),
-        description: t("Try a wider period or clear one of the active filters."),
-        action: (
-          <Button variant="secondary" onPress={onClear}>
-            <ArrowRotateLeft className="size-4" />
-            {t("Clear filters")}
-          </Button>
-        ),
-      }}
-    >
-      <DataTable
-        label={t("Detailed report table")}
-        minWidth="min-w-full"
-        contentClassName="table-auto"
-        scrollContainerClassName="max-h-[60vh] overflow-y-auto md:max-h-[calc(100vh-22.5rem)]"
-      >
-        <Table.Header className="sticky top-0 z-10">
-          {visibleColumns.map((column, index) => (
-            <Table.Column
-              key={column.id}
-              isRowHeader={index === 0}
-              {...(column.id === "description"
-                ? { className: "max-w-[26rem]" }
-                : column.id === "task"
-                  ? { className: "max-w-[22rem]" }
-                  : {})}
-            >
-              {t(column.label)}
-            </Table.Column>
-          ))}
-        </Table.Header>
-        <Table.Body>
-          {entries.map((entry) => (
-            <Table.Row key={entry.id}>
-              {visibleColumns.map((column) => (
-                <Table.Cell
-                  key={column.id}
-                  className={
-                    column.id === "task"
-                      ? "max-w-[22rem] whitespace-normal"
-                      : column.id === "description"
-                        ? "max-w-[26rem] whitespace-normal"
-                        : column.id === "projectClient"
-                          ? ""
-                          : "whitespace-nowrap"
-                  }
-                >
-                  {renderDetailedCell(
-                    entry,
-                    column.id,
-                    members,
-                    projects,
-                    clients,
-                    fallbackForEntry,
-                    locale,
-                  )}
-                </Table.Cell>
-              ))}
-            </Table.Row>
-          ))}
-        </Table.Body>
-      </DataTable>
-    </ReportTableWidget>
-  );
-}
-
-function renderDetailedCell(
-  entry: TimeEntry,
-  column: DetailedColumn,
-  members: Member[],
-  projects: Project[],
-  clients: Client[],
-  fallbackForEntry: (entry: TimeEntry) => BillingPreference,
-  locale: Locale,
-): ReactNode {
-  if (column === "date") return formatDate(entry.date, locale);
-  if (column === "member") return nameForMember(members, entry.userId);
-  if (column === "projectClient") {
-    return (
-      <div className="min-w-0">
-        <ProjectLabel
-          project={projectFor(projects, entry.projectId)}
-          label={projectNameFor(projects, entry.projectId)}
-        />
-        <div className="truncate">{clientNameFor(clients, projects, entry.projectId)}</div>
-      </div>
-    );
-  }
-  if (column === "task") {
-    return (
-      <div className="max-w-[22rem] whitespace-normal break-words leading-relaxed">
-        {entry.task}
-      </div>
-    );
-  }
-  if (column === "description") {
-    return (
-      <div className="max-w-[26rem] whitespace-normal break-words leading-relaxed">
-        {entry.description ?? "—"}
-      </div>
-    );
-  }
-  if (column === "start") return entry.start;
-  if (column === "end") return endLabel(entry);
-  if (column === "duration") return formatDuration(entry.seconds, locale);
-  if (column === "billability") return <BillableIndicator billable={entry.billable} />;
-  const billing = billingForEntry(entry, fallbackForEntry(entry));
-  if (column === "hourlyRate") return formatMoney(billing.hourlyRate, billing.currency, locale);
-  if (column === "currency") return billing.currency;
-  return formatMoney(billableValue(entry, billing), billing.currency, locale);
-}
-
-function ReportColumnPicker({
-  columns,
-  onChange,
-}: {
-  columns: DetailedColumn[];
-  onChange: (columns: DetailedColumn[]) => void;
-}) {
-  const { t } = useI18n();
-  return (
-    <Popover>
-      <Popover.Trigger
-        render={(triggerProps) => {
-          const buttonProps = Object.fromEntries(
-            Object.entries(triggerProps).filter(([, value]) => value !== undefined),
-          );
-          return (
-            <Button {...buttonProps} variant="tertiary" size="sm" aria-label={t("Choose columns")}>
-              {t("Columns")}
-            </Button>
-          );
-        }}
-      />
-      <Popover.Content placement="bottom end" className="w-64 max-w-[calc(100vw-1rem)] p-2">
-        <Popover.Dialog>
-          <Typography type="body-xs" color="muted" weight="semibold" className="px-2 py-2">
-            {t("Visible columns")}
-          </Typography>
-          <div className="space-y-1">
-            {detailedColumnOptions.map((column) => {
-              const checked = columns.includes(column.id);
-              return (
-                <Checkbox
-                  key={column.id}
-                  isSelected={checked}
-                  isDisabled={checked && columns.length === 1}
-                  onChange={(selected) => {
-                    const next = selected
-                      ? [...columns, column.id]
-                      : columns.filter((current) => current !== column.id);
-                    onChange([...new Set(next)]);
-                  }}
-                >
-                  <Checkbox.Content>
-                    <Checkbox.Control>
-                      <Checkbox.Indicator />
-                    </Checkbox.Control>
-                    <Label>{t(column.label)}</Label>
-                  </Checkbox.Content>
-                </Checkbox>
-              );
-            })}
-          </div>
-        </Popover.Dialog>
-      </Popover.Content>
-    </Popover>
   );
 }
