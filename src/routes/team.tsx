@@ -13,6 +13,7 @@ import { Typography } from "@heroui/react/typography";
 import { toast } from "@heroui/react/toast";
 import { createFileRoute } from "@tanstack/react-router";
 import {
+  ArrowRightFromSquare,
   ChevronDown,
   Copy,
   PaperPlane,
@@ -65,6 +66,8 @@ function TeamPage() {
     entries,
     can,
     currentMember,
+    activeWorkspaceId,
+    leaveWorkspace,
     preferencesByUserId,
     inviteMember,
     resendInvite,
@@ -74,6 +77,8 @@ function TeamPage() {
     updateMemberRole,
   } = useStore();
   const { locale, t, error } = useI18n();
+  const [leaveOpen, setLeaveOpen] = useState(false);
+  const [leaveError, setLeaveError] = useState<string | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<InviteRole>("Member");
@@ -204,6 +209,17 @@ function TeamPage() {
     });
     setPendingRemove(null);
     setRemoveError(null);
+  };
+
+  const confirmLeave = () => {
+    const result = leaveWorkspace(activeWorkspaceId);
+    if (!result.success) {
+      setLeaveError(error(result.error));
+      return;
+    }
+    setLeaveOpen(false);
+    setLeaveError(null);
+    toast.success(t("You left the team"));
   };
 
   const manageRole = (member: Member) => {
@@ -375,8 +391,26 @@ function TeamPage() {
                         }}
                       />
                     </div>
-                  ) : isCurrentMember ? (
-                    <span className="sr-only">{t("No actions available for your account")}</span>
+                  ) : isCurrentMember && member.status === "active" ? (
+                    <div className="flex justify-end">
+                      <ActionDropdown
+                        ariaLabel={t("Actions for {name}", { name: member.name })}
+                        items={[
+                          {
+                            id: "leave",
+                            label: t("Leave team"),
+                            icon: <ArrowRightFromSquare className="size-4" />,
+                            tone: "danger",
+                          },
+                        ]}
+                        onAction={(key) => {
+                          if (key === "leave") {
+                            setLeaveError(null);
+                            setLeaveOpen(true);
+                          }
+                        }}
+                      />
+                    </div>
                   ) : null}
                 </Table.Cell>
               </Table.Row>
@@ -384,6 +418,50 @@ function TeamPage() {
           })}
         </Table.Body>
       </DataTable>
+
+      <Modal
+        isOpen={leaveOpen}
+        onOpenChange={(open) => {
+          setLeaveOpen(open);
+          if (!open) setLeaveError(null);
+        }}
+      >
+        <ModalTriggerRegistration />
+        <Modal.Backdrop>
+          <Modal.Container size="sm">
+            <Modal.Dialog>
+              <Modal.CloseTrigger />
+              <ModalLayout.Header>{t("Leave team?")}</ModalLayout.Header>
+              <ModalLayout.Body>
+                {leaveError ? (
+                  <FormAlert title={t("We couldn't leave this team")} description={leaveError} />
+                ) : null}
+                <Typography type="body-sm" color="muted">
+                  {currentMember?.role === "Owner"
+                    ? t(
+                        "The team owner cannot leave. You can archive the workspace from the Workspaces page.",
+                      )
+                    : t(
+                        "You will lose access to this workspace. Your tracked history stays intact.",
+                      )}
+                </Typography>
+              </ModalLayout.Body>
+              <ModalLayout.Footer>
+                <Button slot="close" variant="secondary">
+                  {t("Cancel")}
+                </Button>
+                <Button
+                  variant="danger"
+                  isDisabled={currentMember?.role === "Owner"}
+                  onPress={confirmLeave}
+                >
+                  {t("Leave team")}
+                </Button>
+              </ModalLayout.Footer>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
+      </Modal>
 
       <Modal
         isOpen={inviteOpen}

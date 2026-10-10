@@ -1058,6 +1058,12 @@ const ptBR: Record<string, string> = {
   Archive: "Arquivar",
   Restore: "Restaurar",
   Leave: "Sair",
+  "Leave team": "Sair da equipe",
+  "Leave team?": "Sair da equipe?",
+  "You left the team": "Você saiu da equipe",
+  "We couldn't leave this team": "Não foi possível sair da equipe",
+  "The team owner cannot leave. You can archive the workspace from the Workspaces page.":
+    "O proprietário não pode sair da equipe. Você pode arquivar o workspace na página Workspaces.",
   "Create workspace": "Criar workspace",
   "Create company workspace": "Criar workspace da empresa",
   "Create your company workspace": "Crie o workspace da sua empresa",
