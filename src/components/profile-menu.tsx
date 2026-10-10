@@ -1,11 +1,11 @@
 import { Dropdown } from "@heroui/react/dropdown";
 import { Label } from "@heroui/react/label";
 import { Separator } from "@heroui/react/separator";
-import { Tabs } from "@heroui/react/tabs";
+import { ThemeTabs } from "@/components/theme-tabs";
 import { toast } from "@heroui/react/toast";
 import { Typography } from "@heroui/react/typography";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowRightFromSquare, Display, Gear, Moon, Sun } from "@gravity-ui/icons";
+import { ArrowRightFromSquare, Gear } from "@gravity-ui/icons";
 import { useState } from "react";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { useI18n } from "@/lib/i18n";
@@ -28,12 +28,6 @@ export function ProfileMenu({
   const [themeSaving, setThemeSaving] = useState(false);
 
   if (!currentMember) return null;
-
-  const themeOptions = [
-    { id: "system" as const, label: "System", Icon: Display },
-    { id: "light" as const, label: "Light", Icon: Sun },
-    { id: "dark" as const, label: "Dark", Icon: Moon },
-  ];
 
   const handleThemeChange = async (theme: ThemeMode) => {
     if (themeSaving || theme === preferences.theme) return;
@@ -90,7 +84,7 @@ export function ProfileMenu({
       </Dropdown.Trigger>
       <Dropdown.Popover
         placement={placement ?? (showName ? "right" : "bottom")}
-        className="w-64 max-w-[calc(100vw-1.5rem)] p-2"
+        className="profile-menu w-[257px] max-w-[calc(100vw-1.5rem)] p-2"
       >
         <div className="space-y-0.5 px-2 py-1.5">
           <Typography type="body-sm" weight="semibold" truncate>
@@ -102,22 +96,12 @@ export function ProfileMenu({
         </div>
         <Separator className="my-1" />
         <div className="px-2 py-1">
-          <Tabs
-            className="w-full"
-            selectedKey={preferences.theme}
-            onSelectionChange={(key) => void handleThemeChange(String(key) as ThemeMode)}
-          >
-            <Tabs.ListContainer>
-              <Tabs.List aria-label={t("Theme")} className="w-full">
-                {themeOptions.map(({ id, label, Icon }) => (
-                  <Tabs.Tab key={id} id={id} aria-label={t(label)} className="flex-1">
-                    <Icon aria-hidden="true" />
-                    <Tabs.Indicator />
-                  </Tabs.Tab>
-                ))}
-              </Tabs.List>
-            </Tabs.ListContainer>
-          </Tabs>
+          <ThemeTabs
+            icons
+            value={preferences.theme}
+            isDisabled={themeSaving}
+            onChange={(theme) => void handleThemeChange(theme)}
+          />
         </div>
         <Dropdown.Menu className="mt-1" onAction={(key) => handleAction(String(key))}>
           <Dropdown.Item id="settings">
@@ -125,7 +109,7 @@ export function ProfileMenu({
             <Label>{t("Settings")}</Label>
           </Dropdown.Item>
           <Dropdown.Item id="sign-out" variant="danger">
-            <ArrowRightFromSquare className="size-4" />
+            <ArrowRightFromSquare className="size-4 text-danger" />
             <Label>{t("Sign out")}</Label>
           </Dropdown.Item>
         </Dropdown.Menu>

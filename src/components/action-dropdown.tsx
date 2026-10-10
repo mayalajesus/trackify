@@ -1,5 +1,4 @@
 import { IconTooltip } from "@/components/icon-tooltip";
-import { Chip } from "@heroui/react/chip";
 import { Dropdown } from "@heroui/react/dropdown";
 import type { ReactNode } from "react";
 import { Ellipsis } from "@gravity-ui/icons";
@@ -9,6 +8,7 @@ export type ActionDropdownItem = {
   label: string;
   icon?: ReactNode;
   trailing?: ReactNode;
+  isSelected?: boolean;
   tone?: "default" | "danger" | "warning";
   isDisabled?: boolean;
 };
@@ -29,28 +29,38 @@ export function ActionDropdown({
           <Ellipsis className="size-4" />
         </Dropdown.Trigger>
       </IconTooltip>
-      <Dropdown.Popover placement="bottom end" className="max-w-[calc(100vw-1.5rem)] min-w-48">
-        <Dropdown.Menu onAction={(key) => onAction(String(key))}>
+      <Dropdown.Popover placement="bottom end" className="action-menu" containerPadding={12}>
+        <Dropdown.Menu
+          aria-label={ariaLabel}
+          className="action-menu__list"
+          onAction={(key) => onAction(String(key))}
+        >
           {items.map((item) => (
             <Dropdown.Item
               key={item.id}
               id={item.id}
+              textValue={item.label}
+              className="action-menu__item"
+              data-tone={item.tone ?? "default"}
               {...(item.isDisabled ? { isDisabled: true } : {})}
               {...(item.tone === "danger" ? { variant: "danger" as const } : {})}
             >
-              {item.tone === "warning" ? (
-                <Chip color="warning" size="sm" variant="tertiary" className="px-0 py-0">
+              {item.icon ? (
+                <span aria-hidden="true" className="action-menu__icon">
                   {item.icon}
-                  <Chip.Label>{item.label}</Chip.Label>
-                </Chip>
-              ) : (
-                <span className="flex items-center gap-3">
-                  {item.icon ? <span>{item.icon}</span> : null}
-                  {item.label}
                 </span>
-              )}
-              {item.trailing ? (
-                <span className="ml-auto flex shrink-0 items-center">{item.trailing}</span>
+              ) : null}
+              <span className="action-menu__label">{item.label}</span>
+              {item.isSelected !== undefined ? (
+                <span
+                  aria-hidden="true"
+                  className="action-menu__switch"
+                  data-selected={item.isSelected}
+                >
+                  <span />
+                </span>
+              ) : item.trailing ? (
+                <span className="action-menu__trailing">{item.trailing}</span>
               ) : null}
             </Dropdown.Item>
           ))}

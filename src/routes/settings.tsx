@@ -7,7 +7,7 @@ import { Label } from "@heroui/react/label";
 import { ListBox } from "@heroui/react/list-box";
 import { Select } from "@heroui/react/select";
 import { Switch } from "@heroui/react/switch";
-import { Tabs } from "@heroui/react/tabs";
+import { ThemeTabs } from "@/components/theme-tabs";
 import { TextField } from "@heroui/react/textfield";
 import { Tooltip } from "@heroui/react/tooltip";
 import { Modal } from "@heroui/react/modal";
@@ -25,7 +25,7 @@ import {
   isUserUploadedAvatarUrl,
   prepareAvatarImage,
 } from "@/lib/profile-image";
-import { useStore, type ThemeMode } from "@/lib/store";
+import { useStore } from "@/lib/store";
 import { updateEmail, updatePassword } from "@/lib/auth";
 import { passwordRequirements } from "@/lib/password-policy";
 import { useAuth } from "@/lib/auth-context";
@@ -133,15 +133,6 @@ function SettingsPage() {
       title: "Idle detection",
       hint: "Ask whether to pause the timer after long inactivity.",
     },
-  ];
-
-  const themeOptions: Array<{
-    id: ThemeMode;
-    label: string;
-  }> = [
-    { id: "system", label: "System" },
-    { id: "light", label: "Light" },
-    { id: "dark", label: "Dark" },
   ];
 
   const savePreference = async (patch: Partial<typeof preferences>) => {
@@ -589,22 +580,10 @@ function SettingsPage() {
 
         <div className="flex flex-col gap-1.5">
           <Label>{t("Theme")}</Label>
-          <Tabs
-            className="w-full"
-            selectedKey={preferences.theme}
-            onSelectionChange={(key) => savePreference({ theme: String(key) as ThemeMode })}
-          >
-            <Tabs.ListContainer>
-              <Tabs.List aria-label={t("Theme")} className="w-full">
-                {themeOptions.map((option) => (
-                  <Tabs.Tab key={option.id} id={option.id} className="flex-1">
-                    {t(option.label)}
-                    <Tabs.Indicator />
-                  </Tabs.Tab>
-                ))}
-              </Tabs.List>
-            </Tabs.ListContainer>
-          </Tabs>
+          <ThemeTabs
+            value={preferences.theme}
+            onChange={(theme) => void savePreference({ theme })}
+          />
         </div>
 
         <div className="space-y-3">

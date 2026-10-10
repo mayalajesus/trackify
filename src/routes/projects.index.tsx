@@ -18,6 +18,7 @@ import {
   Archive,
   ArrowRotateLeft,
   ChevronDown,
+  CircleDollar,
   Copy,
   Folder,
   Pencil,
@@ -456,32 +457,13 @@ function ProjectsPage() {
                                   id: project.status === "active" ? "deactivate" : "activate",
                                   label: project.status === "active" ? t("Active") : t("Inactive"),
                                   icon: <Power className="size-4" />,
-                                  trailing: (
-                                    <span
-                                      aria-hidden="true"
-                                      className={`pointer-events-none flex h-5 w-8 shrink-0 items-center rounded-full p-0.5 ${
-                                        project.status === "active" ? "bg-accent" : "bg-default"
-                                      }`}
-                                    >
-                                      <span
-                                        className={`size-4 rounded-full bg-white shadow-sm transition-transform ${
-                                          project.status === "active" ? "translate-x-3" : "translate-x-0"
-                                        }`}
-                                      />
-                                    </span>
-                                  ),
+                                  isSelected: project.status === "active",
                                 },
                               ]),
                           {
                             id: "billable",
                             label: project.billable ? t("Make internal") : t("Make billable"),
-                            icon: (
-                              <BillableIndicator
-                                billable={!project.billable}
-                                mode="icon"
-                                size="md"
-                              />
-                            ),
+                            icon: <CircleDollar className="size-4" />,
                           },
                           ...(project.status === "archived"
                             ? [
@@ -501,16 +483,7 @@ function ProjectsPage() {
                                 {
                                   id: "archive",
                                   label: t("Archive project"),
-                                  icon: (
-                                    <Chip
-                                      color="warning"
-                                      size="sm"
-                                      variant="tertiary"
-                                      className="px-0 py-0"
-                                    >
-                                      <Archive className="size-4" />
-                                    </Chip>
-                                  ),
+                                  icon: <Archive className="size-4" />,
                                   tone: "warning" as const,
                                 },
                               ]),
