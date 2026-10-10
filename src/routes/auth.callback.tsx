@@ -1,4 +1,5 @@
 import { Button } from "@heroui/react/button";
+import { ArrowLeft } from "@gravity-ui/icons";
 import { Spinner } from "@heroui/react/spinner";
 import { Typography } from "@heroui/react/typography";
 import { createFileRoute } from "@tanstack/react-router";
@@ -63,6 +64,7 @@ function AuthCallbackPage() {
             window.location.replace("/login?redirect=" + encodeURIComponent(getAuthReturnPath()))
           }
         >
+          <ArrowLeft aria-hidden="true" className="size-4 shrink-0" />
           {t("Back to sign in")}
         </Button>
       </AuthPage>

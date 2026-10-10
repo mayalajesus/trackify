@@ -1,4 +1,5 @@
 import { Button } from "@heroui/react/button";
+import { ArrowLeft } from "@gravity-ui/icons";
 import { Checkbox } from "@heroui/react/checkbox";
 import { Label } from "@heroui/react/label";
 import { Form } from "@heroui/react/form";
@@ -90,6 +91,7 @@ function LoginPage() {
         <>
           <ConfirmationEmail initialEmail={email} />
           <Button variant="ghost" className="w-full" onPress={() => setShowConfirmation(false)}>
+            <ArrowLeft aria-hidden="true" className="size-4 shrink-0" />
             {t("Back to sign in")}
           </Button>
         </>

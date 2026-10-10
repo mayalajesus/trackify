@@ -3,7 +3,7 @@ import { Form } from "@heroui/react/form";
 import { Typography } from "@heroui/react/typography";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Check } from "@gravity-ui/icons";
+import { ArrowLeft, Check } from "@gravity-ui/icons";
 import { AuthField, AuthFooter, AuthPage } from "@/components/auth-page";
 import { FormAlert } from "@/components/form-feedback";
 import { requestPasswordReset } from "@/lib/auth";
@@ -130,6 +130,7 @@ function ForgotPasswordPage() {
             {t("Correct email")}
           </Button>
           <Button className="w-full" variant="ghost" onPress={() => navigate({ to: "/login" })}>
+            <ArrowLeft aria-hidden="true" className="size-4 shrink-0" />
             {t("Back to sign in")}
           </Button>
         </div>

@@ -1,5 +1,5 @@
 import { Button } from "@heroui/react/button";
-import { Check } from "@gravity-ui/icons";
+import { ArrowLeft, Check } from "@gravity-ui/icons";
 import { Form } from "@heroui/react/form";
 import { Typography } from "@heroui/react/typography";
 import { createFileRoute } from "@tanstack/react-router";
@@ -139,6 +139,7 @@ function SignupPage() {
               window.location.assign(`/login?redirect=${encodeURIComponent(getAuthReturnPath())}`)
             }
           >
+            <ArrowLeft aria-hidden="true" className="size-4 shrink-0" />
             {t("Back to sign in")}
           </Button>
         </div>
