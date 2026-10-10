@@ -14,7 +14,13 @@ import { signOut as signOutRemote } from "@/lib/auth";
 import { useAuth } from "@/lib/auth-context";
 import { resetSessionDefaultAvatar } from "@/lib/default-avatar";
 
-export function ProfileMenu({ showName = false }: { showName?: boolean }) {
+export function ProfileMenu({
+  showName = false,
+  placement,
+}: {
+  showName?: boolean;
+  placement?: "top start" | "right" | "bottom";
+}) {
   const { currentMember, preferences, saveUserPreferences, signOut } = useStore();
   const { configured } = useAuth();
   const { t, error } = useI18n();
@@ -83,7 +89,7 @@ export function ProfileMenu({ showName = false }: { showName?: boolean }) {
         ) : null}
       </Dropdown.Trigger>
       <Dropdown.Popover
-        placement={showName ? "right" : "bottom"}
+        placement={placement ?? (showName ? "right" : "bottom")}
         className="w-64 max-w-[calc(100vw-1.5rem)] p-2"
       >
         <div className="space-y-0.5 px-2 py-1.5">

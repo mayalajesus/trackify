@@ -10,7 +10,6 @@ import { Label } from "@heroui/react/label";
 import { Link } from "@heroui/react/link";
 import { Dropdown } from "@heroui/react/dropdown";
 import { ButtonGroup } from "@heroui/react/button-group";
-import { Separator } from "@heroui/react/separator";
 import { Spinner } from "@heroui/react/spinner";
 import { Surface } from "@heroui/react/surface";
 import { TextField } from "@heroui/react/textfield";
@@ -242,26 +241,34 @@ function AppShellContent({ children }: { children: ReactNode }) {
       </Link>
       <div className="min-h-screen">
         <aside
-          className={`fixed inset-y-0 left-0 z-30 hidden h-screen shrink-0 flex-col overflow-hidden p-2 md:flex ${
-            collapsed ? "w-20" : "w-56"
+          className={`app-sidebar fixed inset-y-0 left-0 z-30 hidden h-dvh shrink-0 flex-col overflow-hidden border-r px-2.5 py-5 md:flex ${
+            collapsed ? "w-[65px]" : "w-56"
           }`}
         >
           <div
-            className={`flex gap-1 px-1 py-2 ${collapsed ? "flex-col items-center" : "items-center"}`}
+            className={`flex shrink-0 ${collapsed ? "flex-col items-center gap-3" : "h-8 items-center justify-between"}`}
           >
-            <div className={collapsed ? "flex w-10 justify-center" : "min-w-0 flex-1"}>
-              <ProfileMenu showName={!collapsed} />
-            </div>
+            <Link href="/tracker" aria-label={t("Trackify")} className="shrink-0">
+              <img
+                src={collapsed ? "/brand/trackify-mark.svg" : "/brand/trackify-logo.svg"}
+                alt="Trackify"
+                className={collapsed ? "h-8 w-auto" : "trackify-wordmark h-8 w-[149px]"}
+              />
+            </Link>
             <Button
               aria-label={t("Toggle sidebar")}
               isIconOnly
               size="sm"
               variant="ghost"
-              className={`shrink-0 ${collapsed ? "size-10 min-w-10" : ""}`}
+              className="size-8 min-w-8 shrink-0 p-0"
               onPress={() => setCollapsed((c) => !c)}
             >
-              <LayoutSideContentLeft aria-hidden="true" className="size-4" />
+              <LayoutSideContentLeft aria-hidden="true" className="size-5" />
             </Button>
+          </div>
+
+          <div className={`mb-5 mt-6 shrink-0 ${collapsed ? "flex justify-center" : ""}`}>
+            <WorkspaceSwitcher collapsed={collapsed} />
           </div>
 
           <SidebarNavigation
@@ -271,20 +278,19 @@ function AppShellContent({ children }: { children: ReactNode }) {
           />
 
           <div
-            className={`relative z-10 mt-3 shrink-0 ${collapsed ? "flex justify-center" : "px-1"}`}
+            className={`relative z-10 mt-auto shrink-0 pt-5 ${collapsed ? "flex justify-center" : ""}`}
           >
-            <WorkspaceSwitcher collapsed={collapsed} popoverPlacement="footer" />
+            <ProfileMenu showName={!collapsed} placement="top start" />
           </div>
-          <Separator orientation="vertical" className="absolute right-0 top-0 h-full" />
         </aside>
 
-        <div className={`min-h-screen min-w-0 ${collapsed ? "md:pl-20" : "md:pl-56"}`}>
+        <div className={`min-h-screen min-w-0 ${collapsed ? "md:pl-[65px]" : "md:pl-56"}`}>
           <header
-            className={`fixed inset-x-0 top-0 z-20 bg-background ${
-              collapsed ? "md:left-20" : "md:left-56"
+            className={`app-navbar fixed inset-x-0 top-0 z-20 border-b ${
+              collapsed ? "md:left-[65px]" : "md:left-56"
             }`}
           >
-            <div className="flex items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3">
+            <div className="flex h-[59px] items-center gap-2 px-3.5 sm:gap-3">
               <div className="md:hidden">
                 <Button
                   aria-label={t("Open navigation")}
@@ -298,7 +304,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
               </div>
               <div className="min-w-0 flex-1">
                 <GlobalSearchForm
-                  className="max-w-sm"
+                  className="max-w-[398px]"
                   query={query}
                   onQueryChange={setQuery}
                   onSubmit={() => navigate({ to: "/search", search: { q: query } })}
@@ -308,10 +314,9 @@ function AppShellContent({ children }: { children: ReactNode }) {
                 <HeaderTimerControl />
               </div>
             </div>
-            <Separator />
           </header>
 
-          <div aria-hidden="true" className="h-[61px] shrink-0 sm:h-[65px]" />
+          <div aria-hidden="true" className="h-[60px] shrink-0" />
 
           <main id="main-content" tabIndex={-1} className="min-w-0 w-full flex-1 px-4 py-6 md:px-8">
             {children}
@@ -322,10 +327,12 @@ function AppShellContent({ children }: { children: ReactNode }) {
           <DrawerTriggerRegistration />
           <Drawer.Backdrop>
             <Drawer.Content placement="left" className="w-[min(18rem,calc(100vw-1rem))]">
-              <Drawer.Dialog className="flex h-full flex-col">
+              <Drawer.Dialog className="app-sidebar flex h-full flex-col">
                 <Drawer.Header className="flex items-center gap-3 px-4 py-3">
                   <div className="min-w-0 flex-1">
-                    <ProfileMenu showName />
+                    <Link href="/tracker" aria-label={t("Trackify")}>
+                      <img src="/brand/trackify-logo.svg" alt="Trackify" className="trackify-wordmark h-8 w-[149px]" />
+                    </Link>
                   </div>
                   <div className="sr-only">
                     <Drawer.Heading>{t("Navigation")}</Drawer.Heading>
@@ -335,6 +342,9 @@ function AppShellContent({ children }: { children: ReactNode }) {
                   </div>
                   <Drawer.CloseTrigger aria-label={t("Close navigation")} />
                 </Drawer.Header>
+                <div className="shrink-0 px-3 pb-5 pt-3">
+                  <WorkspaceSwitcher />
+                </div>
                 <Drawer.Body className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
                   <SidebarNavigation
                     reportsOpen={reportsOpen}
@@ -343,7 +353,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
                   />
                 </Drawer.Body>
                 <Drawer.Footer className="flex shrink-0 flex-col gap-2 px-3 py-3">
-                  <WorkspaceSwitcher popoverPlacement="footer" />
+                  <ProfileMenu showName placement="top start" />
                 </Drawer.Footer>
               </Drawer.Dialog>
             </Drawer.Content>
@@ -385,7 +395,7 @@ function GlobalSearchForm({
       <TextField fullWidth name="global-search" value={query} onChange={onQueryChange}>
         <Label className="sr-only">{t("Search")}</Label>
         <div className="relative min-w-0">
-          <Input placeholder={t("Search…")} />
+          <Input placeholder={t("Search…")} className="navbar-search h-[34px] min-h-[34px] rounded-[14px] border pl-5 pr-16 text-sm shadow-none" />
           <Kbd aria-hidden="true" className="absolute right-2 top-1/2 -translate-y-1/2">
             Ctrl K
           </Kbd>

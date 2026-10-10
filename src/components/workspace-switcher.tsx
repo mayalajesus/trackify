@@ -6,7 +6,7 @@ import { Dropdown } from "@heroui/react/dropdown";
 import { Modal } from "@heroui/react/modal";
 import { Typography } from "@heroui/react/typography";
 import { toast } from "@heroui/react/toast";
-import { Check, ChevronDown, Layers } from "@gravity-ui/icons";
+import { Check, ChevronDown, Layers3Diagonal } from "@gravity-ui/icons";
 import { useState } from "react";
 import { ModalLayout } from "@/components/modal-layout";
 import { useI18n } from "@/lib/i18n";
@@ -23,7 +23,7 @@ function WorkspaceLogo({
   return (
     <Avatar
       aria-hidden="true"
-      className={`${enlarged ? "size-10" : "size-6"} shrink-0 overflow-hidden rounded-full`}
+      className={`${enlarged ? "size-10" : "size-4"} shrink-0 overflow-hidden rounded-full`}
       size="sm"
     >
       {workspace.logoDataUrl ? (
@@ -33,8 +33,8 @@ function WorkspaceLogo({
           className={enlarged ? "size-full object-cover" : "object-contain"}
         />
       ) : null}
-      <Avatar.Fallback>
-        <Layers className="size-4" />
+      <Avatar.Fallback className={enlarged ? undefined : "bg-transparent"}>
+        <Layers3Diagonal className="size-4" />
       </Avatar.Fallback>
     </Avatar>
   );
@@ -191,7 +191,7 @@ export function WorkspaceSwitcher({
     <>
       <Card
         variant="secondary"
-        className={collapsed ? "size-10 shrink-0 gap-0 p-0 shadow-none" : "w-full p-0.5"}
+        className={collapsed ? "workspace-selector size-10 shrink-0 gap-0 rounded-full p-0 shadow-none" : "workspace-selector w-full rounded-[22px] border p-0"}
       >
         <Dropdown>
           <Dropdown.Trigger
@@ -199,7 +199,7 @@ export function WorkspaceSwitcher({
             className={
               collapsed
                 ? "flex size-10 min-h-10 min-w-10 items-center justify-center p-0"
-                : "flex min-w-0 w-full items-center gap-2 px-2 py-1"
+                : "flex h-9 min-w-0 w-full items-center gap-2.5 rounded-[22px] px-3 py-0"
             }
           >
             {triggerContent}

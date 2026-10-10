@@ -11,7 +11,7 @@ import {
   ChevronRight,
   Clock,
   Folder,
-  Layers,
+  Layers3Diagonal,
   Person,
   Persons,
   Puzzle,
@@ -36,7 +36,7 @@ const managementNavigation: NavigationItem[] = [
 
 const moreNavigation: NavigationItem[] = [
   { to: "/integrations", label: "Integrations", icon: Puzzle },
-  { to: "/workspaces", label: "Workspaces", icon: Layers },
+  { to: "/workspaces", label: "Workspaces", icon: Layers3Diagonal },
 ];
 
 function getReportView(search: unknown) {
@@ -52,7 +52,7 @@ function isNavigationItemActive(pathname: string, item: NavigationItem) {
 
 function SectionLabel({ children }: { children: string }) {
   return (
-    <Typography type="body-xs" color="muted" weight="semibold" className="px-3 pb-1 pt-3">
+    <Typography type="body-xs" className="px-2.5 pb-1 pt-3 font-normal text-foreground">
       {children}
     </Typography>
   );
@@ -250,7 +250,7 @@ export function SidebarNavigation({
 
   return (
     <ScrollShadow orientation="vertical" hideScrollBar className="min-h-0 flex-1">
-      <nav aria-label={t("Main navigation")} className="py-3">
+      <nav aria-label={t("Main navigation")} className="sidebar-navigation">
         <div className={collapsed ? "flex flex-col items-center gap-0.5" : "space-y-0.5"}>
           <NavigationLink item={trackerNavigation} collapsed={collapsed} onNavigate={onNavigate} />
           <ReportsNavigation

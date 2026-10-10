@@ -21,6 +21,84 @@ body {
   min-height: 100vh;
 }
 
+/* Navigation measurements from the Trackify Figma navigation components. */
+.app-sidebar,
+.app-navbar {
+  --navigation-surface: #fff;
+  --navigation-border: #eaebec;
+  --navigation-selected: #eaebec;
+  --navigation-field-border: #c7ccd1;
+  background: var(--navigation-surface);
+  border-color: var(--navigation-border);
+}
+
+.dark .app-sidebar,
+.dark .app-navbar {
+  --navigation-surface: var(--surface);
+  --navigation-border: var(--border);
+  --navigation-selected: var(--default);
+  --navigation-field-border: var(--border);
+}
+
+.dark .trackify-wordmark {
+  /* Keep the original logo geometry legible on a dark surface. */
+  filter: brightness(0) invert(1);
+}
+
+.sidebar-navigation button {
+  border-radius: 22px;
+}
+
+.sidebar-navigation button[aria-current="page"],
+.sidebar-navigation button[aria-expanded="true"] {
+  background: var(--navigation-selected);
+}
+
+.sidebar-navigation button .typography {
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.workspace-selector {
+  background: var(--navigation-surface, var(--surface));
+  border-color: var(--navigation-border, var(--border));
+  box-shadow: 0 3px 4px #11182712;
+}
+
+.navbar-search {
+  background: var(--background);
+  border-color: var(--navigation-field-border);
+}
+
+.app-navbar [data-header-timer-control],
+.app-navbar [data-header-timer-control] > div {
+  gap: 7px;
+}
+
+.app-navbar [data-header-timer-control] [data-slot="textfield"] {
+  width: 34px;
+  min-width: 34px;
+}
+
+.app-navbar [data-header-timer-control] input {
+  height: 34px;
+  min-height: 34px;
+  border-radius: 10px;
+  background: var(--navigation-selected);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  box-shadow: none;
+}
+
+.app-navbar [data-header-timer-control] > div > span[aria-hidden="true"] {
+  display: none;
+}
+
+.app-navbar [data-header-timer-control] button {
+  border-radius: 50%;
+}
+
 @layer theme {
   :root,
   .light,
