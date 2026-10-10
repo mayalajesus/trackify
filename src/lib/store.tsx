@@ -252,7 +252,11 @@ function isValidClient(value: unknown): value is Client {
     Boolean(client.name.trim()) &&
     typeof client.contact === "string" &&
     (client.billable === undefined || typeof client.billable === "boolean") &&
-    (client.currency === undefined || clientCurrencyOptions.includes(client.currency))
+    (client.currency === undefined || clientCurrencyOptions.includes(client.currency)) &&
+    (client.contractedHours == null ||
+      (typeof client.contractedHours === "number" &&
+        Number.isFinite(client.contractedHours) &&
+        client.contractedHours > 0))
   );
 }
 
@@ -1957,6 +1961,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (!client.name.trim()) return { success: false, error: "A client name is required." };
       if (client.currency !== undefined && !clientCurrencyOptions.includes(client.currency))
         return { success: false, error: "Choose a valid currency." };
+      if (
+        client.contractedHours != null &&
+        (typeof client.contractedHours !== "number" ||
+          !Number.isFinite(client.contractedHours) ||
+          client.contractedHours <= 0)
+      )
+        return { success: false, error: "Enter a positive number of contracted hours." };
       setClients((list) => [
         {
           id: nextId(
@@ -1966,6 +1977,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           name: client.name.trim(),
           contact: client.contact.trim(),
           billable: client.billable ?? false,
+          contractedHours: client.contractedHours ?? null,
           currency:
             client.currency ??
             (clientCurrencyOptions.includes(workspaceBilling.currency)
@@ -1982,6 +1994,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return { success: false, error: "Only Admins and the Owner can manage clients." };
       if (patch.currency !== undefined && !clientCurrencyOptions.includes(patch.currency))
         return { success: false, error: "Choose a valid currency." };
+      if (
+        patch.contractedHours != null &&
+        (typeof patch.contractedHours !== "number" ||
+          !Number.isFinite(patch.contractedHours) ||
+          patch.contractedHours <= 0)
+      )
+        return { success: false, error: "Enter a positive number of contracted hours." };
       const current = clients.find((client) => client.id === id);
       if (!current) return { success: false, error: "This client no longer exists." };
       const next = {

@@ -10,6 +10,8 @@ export interface Client {
   /** Missing in older account snapshots; defaults to false. */
   billable?: boolean;
   currency?: CurrencyCode;
+  /** Total hours contracted; null or absent means no limit configured. */
+  contractedHours?: number | null;
 }
 
 export interface Project {

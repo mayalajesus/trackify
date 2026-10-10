@@ -560,7 +560,7 @@ export async function loadAccount(client, user, config) {
     [workspaceIds],
   );
   const clients = await client.query(
-    `select id::text, workspace_id::text, name, contact, billable, currency from public.clients where workspace_id = any($1::uuid[])`,
+    `select id::text, workspace_id::text, name, contact, billable, currency, contracted_hours from public.clients where workspace_id = any($1::uuid[])`,
     [workspaceIds],
   );
   const projects = await client.query(
@@ -648,6 +648,7 @@ export async function loadAccount(client, user, config) {
       name: row.name,
       contact: row.contact,
       billable: row.billable ?? false,
+      contractedHours: row.contracted_hours == null ? null : Number(row.contracted_hours),
       ...(row.currency ? { currency: row.currency } : {}),
     });
     clientsByWorkspace.set(row.workspace_id, list);
@@ -1266,12 +1267,21 @@ async function syncAccount(client, user, config, account) {
       if (item.currency !== undefined && !["BRL", "USD", "EUR"].includes(item.currency)) {
         throw new DataApiError(400, "Choose a valid currency.");
       }
+      if (
+        item.contractedHours != null &&
+        (typeof item.contractedHours !== "number" ||
+          !Number.isFinite(item.contractedHours) ||
+          item.contractedHours <= 0)
+      ) {
+        throw new DataApiError(400, "Enter a positive number of contracted hours.");
+      }
       const result = await client.query(
-        `insert into public.clients (id, workspace_id, name, contact, billable, currency)
-         values ($1, $2, $3, $4, coalesce($5::boolean, false), $6)
+        `insert into public.clients (id, workspace_id, name, contact, billable, currency, contracted_hours)
+         values ($1, $2, $3, $4, coalesce($5::boolean, false), $6, $7)
          on conflict (id) do update set name = excluded.name, contact = excluded.contact,
            billable = coalesce($5::boolean, clients.billable),
-           currency = coalesce(excluded.currency, clients.currency)
+           currency = coalesce(excluded.currency, clients.currency),
+           contracted_hours = case when $8::boolean then excluded.contracted_hours else clients.contracted_hours end
          where clients.workspace_id = excluded.workspace_id
          returning id::text`,
         [
@@ -1281,6 +1291,8 @@ async function syncAccount(client, user, config, account) {
           optionalText(item.contact, "Client contact", 2_000) ?? "",
           item.billable ?? null,
           optionalCurrency(item.currency),
+          item.contractedHours ?? null,
+          Object.hasOwn(item, "contractedHours"),
         ],
       );
       if (!result.rowCount) {
