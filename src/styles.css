@@ -212,9 +212,6 @@ body {
 .action-menu [role="menuitem"][data-tone="danger"] {
   color: var(--danger);
 }
-.dark .action-menu [role="menuitem"][data-tone="warning"] {
-  color: var(--warning);
-}
 
 .modal__footer,
 .alert-dialog__footer {

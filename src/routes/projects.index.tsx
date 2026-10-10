@@ -433,10 +433,8 @@ function ProjectsPage() {
                 <Button slot="close" variant="secondary">
                   {t("Cancel")}
                 </Button>
-                <Button variant="secondary" onPress={archiveProject}>
-                  <Chip color="warning" size="sm" variant="tertiary" className="px-0 py-0">
-                    {t("Archive project")}
-                  </Chip>
+                <Button variant="secondary" className="text-[#9C5D0F]" onPress={archiveProject}>
+                  {t("Archive project")}
                 </Button>
               </ModalLayout.Footer>
             </Modal.Dialog>
