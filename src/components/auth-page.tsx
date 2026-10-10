@@ -1,4 +1,5 @@
 import { Button } from "@heroui/react/button";
+import { Card } from "@heroui/react/card";
 import { Description } from "@heroui/react/description";
 import { FieldError } from "@heroui/react/field-error";
 import { Input } from "@heroui/react/input";
@@ -26,9 +27,9 @@ export function AuthPage({
   return (
     <main
       data-page="auth"
-      className="flex min-h-screen items-center justify-center px-4 py-8 sm:px-6 sm:py-10"
+      className="flex min-h-dvh items-center justify-center bg-background px-4 py-8 sm:px-6 sm:py-10"
     >
-      <section className="mx-auto w-full max-w-md">
+      <Card className="mx-auto w-full max-w-[508px] gap-0 overflow-visible rounded-[24px] bg-surface p-5 shadow-[0_4px_10px_0_rgba(0,0,0,0.14)] sm:p-[30px]">
         <div className="mb-8 text-center">
           <Typography type="h1" weight="semibold" align="center">
             {title}
@@ -43,7 +44,7 @@ export function AuthPage({
           {" · "}
           <RouterLink to="/privacy">Aviso de Privacidade</RouterLink>
         </Typography>
-      </section>
+      </Card>
     </main>
   );
 }
