@@ -1,6 +1,5 @@
 import { Avatar } from "@heroui/react/avatar";
 import { Button } from "@heroui/react/button";
-import { ColorSwatchPicker } from "@heroui/react/color-swatch-picker";
 import { Dropdown } from "@heroui/react/dropdown";
 import { EmptyState } from "@heroui/react/empty-state";
 import { FieldError } from "@heroui/react/field-error";
@@ -9,7 +8,7 @@ import { Input } from "@heroui/react/input";
 import { Label } from "@heroui/react/label";
 import { ListBox } from "@heroui/react/list-box";
 import { Modal } from "@heroui/react/modal";
-import { useFilter, parseColor } from "@heroui/react/rac";
+import { useFilter } from "@heroui/react/rac";
 import { SearchField } from "@heroui/react/search-field";
 import { Select } from "@heroui/react/select";
 import { Tag } from "@heroui/react/tag";
@@ -20,13 +19,14 @@ import { Typography } from "@heroui/react/typography";
 import { toast } from "@heroui/react/toast";
 import { ChevronDown } from "@gravity-ui/icons";
 import { useEffect, useMemo, useState } from "react";
+import { ProjectColorPicker } from "@/components/project-color-picker";
 import { FormAlert } from "@/components/form-feedback";
 import { ModalLayout } from "@/components/modal-layout";
 import { ModalTriggerRegistration } from "@/components/overlay-trigger-registration";
 import { getSessionDefaultAvatarUrl } from "@/lib/default-avatar";
 import type { Project } from "@/lib/domain";
 import { useI18n } from "@/lib/i18n";
-import { defaultProjectColor, projectColorOptions, projectColorValue } from "@/lib/project-colors";
+import { defaultProjectColor, projectColorValue } from "@/lib/project-colors";
 import { useStore } from "@/lib/store";
 
 export interface CreatedProjectSelection {
@@ -194,28 +194,7 @@ export function ProjectFormModal({
                   </Switch.Content>
                 </Switch>
 
-                <div className="space-y-2">
-                  <Label>{t("Project color")}</Label>
-                  <ColorSwatchPicker
-                    aria-label={t("Project color")}
-                    value={parseColor(projectColorValue(projectColor))}
-                    onChange={(color) =>
-                      setProjectColor(typeof color === "string" ? color : color.toString("hex"))
-                    }
-                    size="md"
-                  >
-                    {projectColorOptions.map((option) => (
-                      <ColorSwatchPicker.Item
-                        key={option.id}
-                        color={parseColor(option.value)}
-                        aria-label={t(option.label)}
-                      >
-                        <ColorSwatchPicker.Swatch />
-                        <ColorSwatchPicker.Indicator />
-                      </ColorSwatchPicker.Item>
-                    ))}
-                  </ColorSwatchPicker>
-                </div>
+                <ProjectColorPicker value={projectColor} onChange={setProjectColor} />
 
                 <Select
                   isRequired

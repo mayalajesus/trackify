@@ -5,17 +5,17 @@ export type ProjectColorOption = {
 };
 
 export const projectColorOptions: readonly ProjectColorOption[] = [
-  { id: "sky", label: "Sky", value: "#9ddcf3" },
-  { id: "violet", label: "Violet", value: "#c6b5f2" },
-  { id: "pink", label: "Pink", value: "#f2b3cb" },
-  { id: "orange", label: "Orange", value: "#f2a77c" },
-  { id: "emerald", label: "Emerald", value: "#b8f26b" },
-  { id: "amber", label: "Amber", value: "#f3d77c" },
-  { id: "red", label: "Red", value: "#f2a1a1" },
-  { id: "slate", label: "Slate", value: "#b0bbc8" },
+  { id: "sky", label: "Sky", value: "#019ed4" },
+  { id: "violet", label: "Violet", value: "#a37be4" },
+  { id: "pink", label: "Pink", value: "#d52467" },
+  { id: "orange", label: "Orange", value: "#f26e23" },
+  { id: "emerald", label: "Emerald", value: "#60a702" },
+  { id: "amber", label: "Amber", value: "#d4a200" },
+  { id: "red", label: "Red", value: "#dd1d0d" },
+  { id: "slate", label: "Slate", value: "#909499" },
 ];
 
-export const defaultProjectColor = projectColorOptions[0]?.value ?? "#9ddcf3";
+export const defaultProjectColor = projectColorOptions[0]?.value ?? "#019ed4";
 
 const legacyProjectColors: Record<string, string> = {
   accent: defaultProjectColor,
