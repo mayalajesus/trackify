@@ -4,6 +4,7 @@ import { FieldError } from "@heroui/react/field-error";
 import { Form } from "@heroui/react/form";
 import { Input } from "@heroui/react/input";
 import { Label } from "@heroui/react/label";
+import { ProgressBar } from "@heroui/react/progress-bar";
 import { Modal } from "@heroui/react/modal";
 import { Table } from "@heroui/react/table";
 import { Switch } from "@heroui/react/switch";
@@ -60,6 +61,11 @@ function ClientsPage() {
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [billable, setBillable] = useState(false);
+  const [contractedHours, setContractedHours] = useState("");
+  const parsedContractedHours = Number(contractedHours.replace(",", "."));
+  const validContractedHours =
+    !contractedHours.trim() ||
+    (Number.isFinite(parsedContractedHours) && parsedContractedHours > 0);
   const defaultCurrency = clientCurrencyOptions.includes(workspaceBilling.currency)
     ? workspaceBilling.currency
     : defaultCurrencyForLocale(locale);
@@ -85,13 +91,24 @@ function ClientsPage() {
     setName("");
     setContact("");
     setBillable(false);
+    setContractedHours("");
     setCurrency(defaultCurrency);
     setFormError(null);
   };
 
   const save = () => {
     if (!name.trim()) return;
-    const values = { name: name.trim(), contact: contact.trim(), billable, currency };
+    if (!validContractedHours) {
+      setFormError(t("Enter a positive number of contracted hours."));
+      return;
+    }
+    const values = {
+      name: name.trim(),
+      contact: contact.trim(),
+      billable,
+      currency,
+      contractedHours: contractedHours.trim() ? parsedContractedHours : null,
+    };
     const result = editingClientId ? updateClient(editingClientId, values) : addClient(values);
     if (!result.success) {
       setFormError(error(result.error));
@@ -115,6 +132,18 @@ function ClientsPage() {
     setPendingDelete(null);
     setDeleteError(null);
   };
+
+  const usedSeconds = editingClientId ? secondsFor(editingClientId) : 0;
+  const usage =
+    validContractedHours && parsedContractedHours > 0
+      ? usedSeconds / (parsedContractedHours * 3600)
+      : 0;
+  const hoursStatus =
+    usage > 1
+      ? "Beyond the contracted limit"
+      : usage >= 0.8
+        ? "Approaching the contracted limit"
+        : "Within the contracted limit";
 
   const pendingProjectCount = pendingDelete ? projectCountFor(pendingDelete.id) : 0;
 
@@ -204,6 +233,9 @@ function ClientsPage() {
                             setName(client.name);
                             setContact(client.contact);
                             setBillable(client.billable ?? false);
+                            setContractedHours(
+                              client.contractedHours == null ? "" : String(client.contractedHours),
+                            );
                             setCurrency(client.currency ?? defaultCurrency);
                             setFormError(null);
                             setFormOpen(true);
@@ -244,7 +276,7 @@ function ClientsPage() {
                   save();
                 }}
               >
-                <ModalLayout.Body>
+                <ModalLayout.Body className="gap-3">
                   {formError ? (
                     <FormAlert
                       title={t(
@@ -307,12 +339,61 @@ function ClientsPage() {
                     options={clientCurrencyOptions.map((option) => ({ id: option, label: option }))}
                     onChange={(value) => setCurrency(value as CurrencyCode)}
                   />
+                  <section className="space-y-2" aria-label={t("Contracted hours")}>
+                    <TextField
+                      fullWidth
+                      name="client-contracted-hours"
+                      value={contractedHours}
+                      onChange={setContractedHours}
+                      validate={() =>
+                        validContractedHours
+                          ? null
+                          : t("Enter a positive number of contracted hours.")
+                      }
+                    >
+                      <Label>{t("Contracted hours")}</Label>
+                      <Input
+                        variant="secondary"
+                        inputMode="decimal"
+                        placeholder={t("Enter the total contracted hours")}
+                      />
+                      <FieldError />
+                    </TextField>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-0.5">
+                        <ProgressBar
+                          aria-label={t("Contracted hours usage")}
+                          aria-valuetext={t(hoursStatus)}
+                          value={Math.min(usage * 100, 100)}
+                          className="min-w-0 flex-1"
+                          size="sm"
+                        >
+                          <ProgressBar.Track className="h-[5px] rounded-full bg-[#EEEEEE]">
+                            <ProgressBar.Fill
+                              className={usage >= 0.8 ? "bg-[#9C5D0F]" : "bg-[#147A4D]"}
+                            />
+                          </ProgressBar.Track>
+                        </ProgressBar>
+                        {usage > 1 ? (
+                          <span
+                            aria-hidden="true"
+                            className="h-[5px] w-14 shrink-0 rounded-full bg-danger"
+                          />
+                        ) : (
+                          <span aria-hidden="true" className="w-14 shrink-0" />
+                        )}
+                      </div>
+                      <p className="text-xs text-muted" aria-live="polite">
+                        {t(hoursStatus)}
+                      </p>
+                    </div>
+                  </section>
                 </ModalLayout.Body>
                 <ModalLayout.Footer>
                   <Button slot="close" type="button" variant="secondary">
                     {t("Cancel")}
                   </Button>
-                  <Button type="submit" isDisabled={!name.trim()}>
+                  <Button type="submit" isDisabled={!name.trim() || !validContractedHours}>
                     {t(editingClientId ? "Save changes" : "Create client")}
                   </Button>
                 </ModalLayout.Footer>
