@@ -1208,6 +1208,7 @@ const ptBR: Record<string, string> = {
   "We couldn't delete this client": "Não conseguimos excluir este cliente.",
   "Project is ready": "O projeto está pronto.",
   "Project is on hold": "O projeto está pausado.",
+  "Project deactivated": "Projeto desativado.",
   "Project is active again": "O projeto está ativo novamente.",
   "Project is internal now": "O projeto agora é interno.",
   "Project is billable now": "O projeto agora é faturável.",

@@ -6,7 +6,6 @@ import { EmptyState } from "@heroui/react/empty-state";
 import { Label } from "@heroui/react/label";
 import { Modal } from "@heroui/react/modal";
 import { SearchField } from "@heroui/react/search-field";
-import { Switch } from "@heroui/react/switch";
 import { Tag } from "@heroui/react/tag";
 import { TagGroup } from "@heroui/react/tag-group";
 import { Dropdown } from "@heroui/react/dropdown";
@@ -133,15 +132,14 @@ function ProjectsPage() {
     toast.success(t("Project duplicated"), { description: project.name });
   };
 
-  const toggleProjectStatus = (project: Project) => {
-    const nextStatus = project.status === "active" ? "on-hold" : "active";
+  const setProjectStatus = (project: Project, nextStatus: "active" | "on-hold") => {
     const result = updateProject(project.id, { status: nextStatus });
     if (!result.success) {
       setStatusError(error(result.error));
       return;
     }
     setStatusError(null);
-    toast.success(t(nextStatus === "on-hold" ? "Project is on hold" : "Project is active again"), {
+    toast.success(t(nextStatus === "on-hold" ? "Project deactivated" : "Project is active again"), {
       description: project.name,
     });
   };
@@ -455,20 +453,22 @@ function ProjectsPage() {
                             ? []
                             : [
                                 {
-                                  id: "status",
+                                  id: project.status === "active" ? "deactivate" : "activate",
                                   label: project.status === "active" ? t("Active") : t("Inactive"),
                                   icon: <Power className="size-4" />,
                                   trailing: (
-                                    <Switch
+                                    <span
                                       aria-hidden="true"
-                                      className="pointer-events-none"
-                                      isReadOnly
-                                      isSelected={project.status === "active"}
+                                      className={`pointer-events-none flex h-5 w-8 shrink-0 items-center rounded-full p-0.5 ${
+                                        project.status === "active" ? "bg-accent" : "bg-default"
+                                      }`}
                                     >
-                                      <Switch.Control>
-                                        <Switch.Thumb />
-                                      </Switch.Control>
-                                    </Switch>
+                                      <span
+                                        className={`size-4 rounded-full bg-white shadow-sm transition-transform ${
+                                          project.status === "active" ? "translate-x-3" : "translate-x-0"
+                                        }`}
+                                      />
+                                    </span>
                                   ),
                                 },
                               ]),
@@ -519,9 +519,8 @@ function ProjectsPage() {
                           if (key === "members") openMemberManager(project);
                           if (key === "edit") openProjectForm(project);
                           if (key === "duplicate") duplicateProject(project);
-                          if (key === "status") {
-                            toggleProjectStatus(project);
-                          }
+                          if (key === "deactivate") setProjectStatus(project, "on-hold");
+                          if (key === "activate") setProjectStatus(project, "active");
                           if (key === "billable") toggleProjectBillable(project);
                           if (key === "archive") setPendingArchive(project);
                           if (key === "restore") restoreProject(project);

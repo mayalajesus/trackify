@@ -1,7 +1,6 @@
 import { IconTooltip } from "@/components/icon-tooltip";
 import { Chip } from "@heroui/react/chip";
 import { Dropdown } from "@heroui/react/dropdown";
-import { Label } from "@heroui/react/label";
 import type { ReactNode } from "react";
 import { Ellipsis } from "@gravity-ui/icons";
 
@@ -45,10 +44,10 @@ export function ActionDropdown({
                   <Chip.Label>{item.label}</Chip.Label>
                 </Chip>
               ) : (
-                <Label className="flex items-center gap-3">
+                <span className="flex items-center gap-3">
                   {item.icon ? <span>{item.icon}</span> : null}
                   {item.label}
-                </Label>
+                </span>
               )}
               {item.trailing ? (
                 <span className="ml-auto flex shrink-0 items-center">{item.trailing}</span>
