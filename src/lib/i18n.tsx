@@ -513,6 +513,11 @@ const ptBR: Record<string, string> = {
   "Go to overview": "Ir para a Visão geral",
   "Busiest day": "Dia com maior atividade",
   "Top project": "Principal projeto",
+  "Top client": "Principal cliente",
+  "Project with the most tracked time in the selected period.":
+    "Projeto com mais tempo registrado no período selecionado.",
+  "Client with the most tracked time in the selected period.":
+    "Cliente com mais tempo registrado no período selecionado.",
   "Time without project": "Tempo sem projeto",
   "of tracked time": "do tempo registrado",
   Metric: "Métrica",

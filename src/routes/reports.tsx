@@ -1,10 +1,9 @@
-import { Button } from "@heroui/react/button";
-import { Badge } from "@heroui/react/badge";
-import { Card } from "@heroui/react/card";
-import { Chip } from "@heroui/react/chip";
 import { Checkbox } from "@heroui/react/checkbox";
 import { Label } from "@heroui/react/label";
 import { Popover } from "@heroui/react/popover";
+import { BillableIndicator } from "@/components/billable-indicator";
+import { Button } from "@heroui/react/button";
+import { Chip } from "@heroui/react/chip";
 import { ProgressBar } from "@heroui/react/progress-bar";
 import { Table } from "@heroui/react/table";
 import { Tabs } from "@heroui/react/tabs";
@@ -14,7 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   ArrowDown,
-  ArrowDownToLine,
+  ArrowUpFromSquare,
   ArrowRotateLeft,
   ArrowUp,
   CircleInfo,
@@ -32,7 +31,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { BillableIndicator } from "@/components/billable-indicator";
 import { ProjectLabel } from "@/components/project-color";
 import { DataTable } from "@/components/data-table";
 import { ExportModal } from "@/components/export-modal";
@@ -1619,7 +1617,7 @@ function ReportExportButton({ onPress }: { onPress: () => void }) {
   const { t } = useI18n();
   return (
     <Button variant="primary" onPress={onPress}>
-      <ArrowDownToLine className="size-4" />
+      <ArrowUpFromSquare aria-hidden="true" className="size-4" />
       {t("Export")}
     </Button>
   );
@@ -1740,13 +1738,6 @@ function OverviewDashboard({
     true,
     true,
   );
-  const billableVariation = comparisonVariation(
-    analytics.comparison.metrics.billableSeconds,
-    locale,
-    t,
-    true,
-    true,
-  );
   const dailyAverageVariation = comparisonVariation(
     analytics.comparison.metrics.averageSecondsPerActiveDay,
     locale,
@@ -1768,38 +1759,6 @@ function OverviewDashboard({
     false,
     true,
   );
-  const monetaryTotals = currencyOptions.filter(
-    (currency) =>
-      summary.billableValueByCurrency[currency] !== undefined ||
-      analytics.comparison.billableValueByCurrency[currency] !== undefined,
-  );
-  const periodValueData = monetaryTotals.map((currency) => {
-    const comparison = analytics.comparison.billableValueByCurrency[currency] ?? {
-      current: summary.billableValueByCurrency[currency] ?? 0,
-      previous: 0,
-      delta: summary.billableValueByCurrency[currency] ?? 0,
-      percentageChange: null,
-    };
-    const deltaPrefix = comparison.delta > 0 ? "+" : comparison.delta < 0 ? "−" : "";
-    const percentageChange = comparison.previous > 0 ? (comparison.percentageChange ?? 0) : null;
-    const percentagePrefix =
-      percentageChange === null ? "" : percentageChange > 0 ? "+" : percentageChange < 0 ? "−" : "";
-    return {
-      currency,
-      value: formatMoney(comparison.current, currency, locale),
-      previous: formatMoney(comparison.previous, currency, locale),
-      delta: `${deltaPrefix}${formatMoney(Math.abs(comparison.delta), currency, locale)}`,
-      comparison:
-        percentageChange === null
-          ? null
-          : `${percentagePrefix}${percentageFormatter.format(Math.abs(percentageChange))}%`,
-      direction: comparison.delta > 0 ? "up" : comparison.delta < 0 ? "down" : "neutral",
-    };
-  });
-  const predominantShift = [...analytics.shifts].sort(
-    (first, second) => second.seconds - first.seconds,
-  )[0];
-  const hasPredominantShift = Boolean(predominantShift && predominantShift.seconds > 0);
   const evolutionData = overviewEvolutionRows(analytics, locale);
   const activityTime = overviewActivityTime(analytics);
   const formattedActivityTimePercentage = percentageFormatter.format(activityTime.percentage);
@@ -1836,16 +1795,20 @@ function OverviewDashboard({
   const evolutionAxis = overviewDurationAxis(
     Math.max(0, ...evolutionData.map((item) => item.currentTotal)),
   );
-  const shiftData = analytics.shifts.map((shift) => {
-    const percentage = summary.totalSeconds > 0 ? (shift.seconds / summary.totalSeconds) * 100 : 0;
-    return {
-      id: shift.shift,
-      shift: t(shiftLabels[shift.shift]),
-      seconds: shift.seconds,
-      percentage,
-      display: `${formatDuration(shift.seconds, locale)} · ${percentageFormatter.format(percentage)}%`,
-    };
-  });
+  const shiftOrder: ShiftId[] = ["morning", "afternoon", "night", "overnight"];
+  const shiftData = [...analytics.shifts]
+    .sort((a, b) => shiftOrder.indexOf(a.shift) - shiftOrder.indexOf(b.shift))
+    .map((shift) => {
+      const percentage =
+        summary.totalSeconds > 0 ? (shift.seconds / summary.totalSeconds) * 100 : 0;
+      return {
+        id: shift.shift,
+        shift: t(shiftLabels[shift.shift]),
+        seconds: shift.seconds,
+        percentage,
+        display: `${formatDuration(shift.seconds, locale)} · ${percentageFormatter.format(percentage)}%`,
+      };
+    });
   const projectData = overviewProjectRows(analytics, projects, clients);
   const billablePercentage = percentageFormatter.format(summary.billablePercentage);
   const internalPercentage =
@@ -1928,89 +1891,25 @@ function OverviewDashboard({
         <ReportKpi
           title={
             <OverviewTooltipTitle
-              label={t("Billable time")}
-              help={t("Only entries marked as billable are included in this total.")}
+              label={t("Top project")}
+              help={t("Project with the most tracked time in the selected period.")}
             />
           }
-          value={formatDuration(summary.billableSeconds, locale)}
-          variation={billableVariation}
-          neutralComparisonLabel={t("No comparison")}
+          value={<span className="break-words">{summary.topProject?.label ?? "—"}</span>}
           showNeutralComparison={false}
-          comparisonContext={billableVariation ? t("vs. previous period") : undefined}
-          contentDescription={`${t("Billable")}: ${formatDuration(
-            summary.billableSeconds,
-            locale,
-          )}, ${billablePercentage}% ${t("of tracked time")}. ${t(
-            "Internal",
-          )}: ${formatDuration(summary.internalSeconds, locale)}.`}
         />
       </div>
       <div className="grid min-w-0 xl:col-span-3">
-        <ReportWidget
+        <ReportKpi
           title={
             <OverviewTooltipTitle
-              label={t("Estimated billable value")}
-              help={`${t(
-                "Estimate based on billable time and the hourly-rate snapshot of each entry.",
-              )} ${t("No currency conversion applied.")}`}
+              label={t("Top client")}
+              help={t("Client with the most tracked time in the selected period.")}
             />
           }
-          contentDescription={periodValueData
-            .map(
-              (item) =>
-                `${item.currency}: ${item.value}.${
-                  item.comparison
-                    ? ` ${t("Previous")}: ${item.previous}. ${t("Change")}: ${item.delta}.`
-                    : ""
-                }`,
-            )
-            .join(" ")}
-        >
-          <div className="space-y-3">
-            {periodValueData.map((item) => {
-              const DirectionIcon =
-                item.direction === "up" ? ArrowUp : item.direction === "down" ? ArrowDown : Minus;
-              return (
-                <div key={item.currency} className="min-w-0 space-y-3">
-                  <div className="flex min-w-0 items-baseline gap-2">
-                    <Typography type={periodValueData.length > 1 ? "h3" : "h2"} weight="semibold">
-                      {item.value}
-                    </Typography>
-                    <Typography type="body-xs" color="muted">
-                      {item.currency}
-                    </Typography>
-                  </div>
-                  {item.comparison ? (
-                    <div className="flex items-center gap-2">
-                      <OverviewAccessibleTooltip
-                        label={`${t("Change")}: ${item.comparison}. ${t("Previous")}: ${item.previous}`}
-                        content={`${t("Previous")}: ${item.previous} · ${t("Change")}: ${item.delta}`}
-                      >
-                        <Chip
-                          size="sm"
-                          variant="soft"
-                          color={
-                            item.direction === "up"
-                              ? "success"
-                              : item.direction === "down"
-                                ? "danger"
-                                : "default"
-                          }
-                        >
-                          <DirectionIcon aria-hidden="true" className="size-3" />
-                          <Chip.Label>{item.comparison}</Chip.Label>
-                        </Chip>
-                      </OverviewAccessibleTooltip>
-                      <Typography type="body-xs" color="muted">
-                        {t("vs. previous period")}
-                      </Typography>
-                    </div>
-                  ) : null}
-                </div>
-              );
-            })}
-          </div>
-        </ReportWidget>
+          value={<span className="break-words">{summary.topClient?.label ?? "—"}</span>}
+          showNeutralComparison={false}
+        />
       </div>
       <div className="grid min-w-0 xl:col-span-3">
         <ReportKpi
@@ -2031,7 +1930,7 @@ function OverviewDashboard({
           )}. ${t("Active days")}: ${summary.activeDays}.`}
         />
       </div>
-      <div className="grid min-w-0 md:col-span-2 xl:col-span-8">
+      <div className="grid min-w-0 md:col-span-2 xl:col-span-12">
         <ReportWidget
           title={
             <OverviewTooltipTitle
@@ -2137,6 +2036,68 @@ function OverviewDashboard({
               </BarChart>
             </ReportChart>
           </div>
+        </ReportWidget>
+      </div>
+      <div className="grid min-w-0 md:col-span-2 xl:col-span-8">
+        <ReportWidget
+          title={t("Top projects")}
+          contentDescription={projectSummary || t("No activity")}
+          isEmpty={projectData.length === 0}
+          emptyState={{ title: t("No projects found") }}
+        >
+          <DataTable
+            label={t("Top projects")}
+            contentClassName="table-auto"
+            scrollHint={t("Scroll horizontally to see all columns")}
+          >
+            <Table.Header>
+              <Table.Column isRowHeader className="w-full min-w-64">
+                {t("Project / client")}
+              </Table.Column>
+              <Table.Column className="w-36 whitespace-nowrap">{t("Tracked")}</Table.Column>
+            </Table.Header>
+            <Table.Body>
+              {projectData.map((project) => (
+                <Table.Row key={project.id}>
+                  <Table.Cell>
+                    <div className="min-w-0">
+                      <ProjectLabel
+                        project={project.projectColor ? { color: project.projectColor } : null}
+                        label={project.id === "none" ? t("No project") : project.project}
+                      />
+                      <Typography type="body-xs" color="muted" truncate>
+                        {project.client ?? t("No client")}
+                      </Typography>
+                    </div>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <div className="w-36 max-w-full space-y-2">
+                      <div className="flex items-center justify-between gap-3 whitespace-nowrap">
+                        <Typography type="body-sm" weight="medium">
+                          {formatDuration(project.seconds, locale)}
+                        </Typography>
+                        <Typography type="body-xs" color="muted">
+                          {percentageFormatter.format(project.percentage)}%
+                        </Typography>
+                      </div>
+                      <ProgressBar
+                        aria-label={`${project.project}: ${percentageFormatter.format(
+                          project.percentage,
+                        )}%`}
+                        color="accent"
+                        size="sm"
+                        value={project.percentage}
+                      >
+                        <ProgressBar.Track>
+                          <ProgressBar.Fill />
+                        </ProgressBar.Track>
+                      </ProgressBar>
+                    </div>
+                  </Table.Cell>
+                </Table.Row>
+              ))}
+            </Table.Body>
+          </DataTable>
         </ReportWidget>
       </div>
       <div className="grid min-w-0 md:col-span-2 xl:col-span-4">
@@ -2258,149 +2219,42 @@ function OverviewDashboard({
           </PieChart>
         </ReportChartWidget>
       </div>
-      <div className="grid min-w-0 md:col-span-2 xl:col-span-8">
+      <div className="grid min-w-0 md:col-span-2 xl:col-span-12">
         <ReportWidget
-          title={t("Top projects")}
-          contentDescription={projectSummary || t("No activity")}
-          isEmpty={projectData.length === 0}
-          emptyState={{ title: t("No projects found") }}
-        >
-          <DataTable
-            label={t("Top projects")}
-            contentClassName="table-auto"
-            scrollHint={t("Scroll horizontally to see all columns")}
-          >
-            <Table.Header>
-              <Table.Column isRowHeader className="w-full min-w-64">
-                {t("Project / client")}
-              </Table.Column>
-              <Table.Column className="w-36 whitespace-nowrap">{t("Tracked")}</Table.Column>
-              <Table.Column className="w-px whitespace-nowrap text-center">
-                {t("Billing")}
-              </Table.Column>
-            </Table.Header>
-            <Table.Body>
-              {projectData.map((project) => (
-                <Table.Row key={project.id}>
-                  <Table.Cell>
-                    <div className="min-w-0">
-                      <ProjectLabel
-                        project={project.projectColor ? { color: project.projectColor } : null}
-                        label={project.id === "none" ? t("No project") : project.project}
-                      />
-                      <Typography type="body-xs" color="muted" truncate>
-                        {project.client ?? t("No client")}
-                      </Typography>
-                    </div>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <div className="w-36 max-w-full space-y-2">
-                      <div className="flex items-center justify-between gap-3 whitespace-nowrap">
-                        <Typography type="body-sm" weight="medium">
-                          {formatDuration(project.seconds, locale)}
-                        </Typography>
-                        <Typography type="body-xs" color="muted">
-                          {percentageFormatter.format(project.percentage)}%
-                        </Typography>
-                      </div>
-                      <ProgressBar
-                        aria-label={`${project.project}: ${percentageFormatter.format(
-                          project.percentage,
-                        )}%`}
-                        color="accent"
-                        size="sm"
-                        value={project.percentage}
-                      >
-                        <ProgressBar.Track>
-                          <ProgressBar.Fill />
-                        </ProgressBar.Track>
-                      </ProgressBar>
-                    </div>
-                  </Table.Cell>
-                  <Table.Cell className="whitespace-nowrap text-center">
-                    {formatMoneyTotals(project.valueByCurrency, locale) || "—"}
-                  </Table.Cell>
-                </Table.Row>
-              ))}
-            </Table.Body>
-          </DataTable>
-        </ReportWidget>
-      </div>
-      <div className="grid min-w-0 md:col-span-2 xl:col-span-4">
-        <ReportWidget
-          title={t("Hours by shift")}
-          contentDescription={shiftSummary || t("No activity")}
+          title={<span className="text-sm font-normal">{t("Hours by shift")}</span>}
+          contentDescription={shiftSummary}
           width="compact"
-          className="h-full"
-          isEmpty={summary.totalSeconds === 0}
-          emptyState={{ title: t("No chart data") }}
+          className="min-h-[133px] rounded-3xl"
         >
-          <div className="grid h-full grid-rows-[repeat(4,minmax(0,1fr))] gap-2">
-            {shiftData.map((item) => {
-              const isPredominant = hasPredominantShift && predominantShift?.shift === item.id;
-              const [primaryDuration, secondaryDuration] = formatDuration(
-                item.seconds,
-                locale,
-              ).split(" ");
-
-              return (
-                <OverviewAccessibleTooltip
-                  key={item.id}
-                  label={`${item.shift}: ${item.display}`}
-                  content={`${item.shift}: ${item.display}`}
-                  className="block min-w-0"
-                >
-                  <Card
-                    variant="secondary"
-                    className="relative h-full min-h-0 min-w-0 overflow-visible p-0"
-                  >
-                    <Card.Content className="grid h-full min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 px-3 py-2">
-                      <div className="flex min-w-0 items-center gap-2">
-                        <Typography
-                          type="h1"
-                          aria-hidden="true"
-                          {...(item.id === "overnight" ? { className: "scale-110" } : {})}
-                        >
-                          {shiftEmoji[item.id]}
-                        </Typography>
-                        <Typography type="body-sm" weight="medium" truncate>
-                          {item.shift}
-                        </Typography>
-                      </div>
-                      <div className="flex items-baseline gap-1 whitespace-nowrap">
-                        <Typography type="body-sm" weight="semibold">
-                          {primaryDuration}
-                        </Typography>
-                        {secondaryDuration ? (
-                          <Typography type="body-xs" color="muted" weight="medium">
-                            {secondaryDuration}
-                          </Typography>
-                        ) : null}
-                      </div>
-                      <Typography
-                        type="body-xs"
-                        color="muted"
-                        weight="medium"
-                        className="whitespace-nowrap"
-                      >
-                        {percentageFormatter.format(item.percentage)}%
-                      </Typography>
-                    </Card.Content>
-                    {isPredominant ? (
-                      <Badge
-                        size="sm"
-                        variant="soft"
-                        color="accent"
-                        placement="top-right"
-                        style={{ transform: "translate(0, 0)" }}
-                      >
-                        <Badge.Label className="truncate">{t("Predominant")}</Badge.Label>
-                      </Badge>
-                    ) : null}
-                  </Card>
-                </OverviewAccessibleTooltip>
-              );
-            })}
+          <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {shiftData.map((item) => (
+              <OverviewAccessibleTooltip
+                key={item.id}
+                label={`${item.shift}: ${item.display}`}
+                content={`${item.shift}: ${item.display}`}
+                className="block min-w-0 rounded-3xl"
+              >
+                <div className="flex h-14 min-w-0 items-center justify-between gap-1 rounded-3xl bg-background px-2.5 xl:gap-2">
+                  <div className="flex min-w-0 items-center gap-1 xl:gap-2">
+                    <span
+                      aria-hidden="true"
+                      className="flex size-10 shrink-0 items-center justify-center text-[40px] leading-none"
+                    >
+                      {shiftEmoji[item.id]}
+                    </span>
+                    <span className="truncate text-sm">{item.shift}</span>
+                  </div>
+                  <div className="flex shrink-0 items-baseline gap-2 whitespace-nowrap xl:gap-3">
+                    <span className="text-sm font-medium tabular-nums">
+                      {formatDuration(item.seconds, locale)}
+                    </span>
+                    <span className="text-xs text-muted tabular-nums">
+                      {percentageFormatter.format(item.percentage)}%
+                    </span>
+                  </div>
+                </div>
+              </OverviewAccessibleTooltip>
+            ))}
           </div>
         </ReportWidget>
       </div>
