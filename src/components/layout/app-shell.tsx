@@ -267,7 +267,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
             </Button>
           </div>
 
-          <div className={`mb-5 mt-6 shrink-0 ${collapsed ? "flex justify-center" : ""}`}>
+          <div className={`mb-5 shrink-0 ${collapsed ? "mt-4 flex justify-center" : "mt-6"}`}>
             <WorkspaceSwitcher collapsed={collapsed} />
           </div>
 
@@ -331,7 +331,11 @@ function AppShellContent({ children }: { children: ReactNode }) {
                 <Drawer.Header className="flex items-center gap-3 px-4 py-3">
                   <div className="min-w-0 flex-1">
                     <Link href="/tracker" aria-label={t("Trackify")}>
-                      <img src="/brand/trackify-logo.svg" alt="Trackify" className="trackify-wordmark h-8 w-[149px]" />
+                      <img
+                        src="/brand/trackify-logo.svg"
+                        alt="Trackify"
+                        className="trackify-wordmark h-8 w-[149px]"
+                      />
                     </Link>
                   </div>
                   <div className="sr-only">
@@ -395,7 +399,10 @@ function GlobalSearchForm({
       <TextField fullWidth name="global-search" value={query} onChange={onQueryChange}>
         <Label className="sr-only">{t("Search")}</Label>
         <div className="relative min-w-0">
-          <Input placeholder={t("Search…")} className="navbar-search h-[34px] min-h-[34px] rounded-[14px] border pl-5 pr-16 text-sm shadow-none" />
+          <Input
+            placeholder={t("Search…")}
+            className="navbar-search h-[34px] min-h-[34px] rounded-[14px] border pl-5 pr-16 text-sm shadow-none"
+          />
           <Kbd aria-hidden="true" className="absolute right-2 top-1/2 -translate-y-1/2">
             Ctrl K
           </Kbd>

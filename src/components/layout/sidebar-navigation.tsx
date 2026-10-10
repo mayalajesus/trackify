@@ -80,7 +80,7 @@ function NavigationLink({
       variant={active ? "tertiary" : "ghost"}
       className={
         collapsed
-          ? "mx-auto block h-10 min-h-10 w-10 px-2.5 py-0"
+          ? "mx-auto flex h-10 min-h-10 w-10 px-2.5 py-0"
           : "h-10 min-h-10 w-full justify-start gap-3 px-3 py-0"
       }
       onPress={() => {
@@ -178,7 +178,7 @@ function ReportsNavigation({
             aria-label={t("Reports")}
             isIconOnly
             variant={reportsActive ? "tertiary" : "ghost"}
-            className="mx-auto block h-10 min-h-10 w-10 px-2.5 py-0"
+            className="mx-auto flex h-10 min-h-10 w-10 px-2.5 py-0"
           >
             <span className="flex size-5 shrink-0 items-center justify-center">
               <ChartColumn aria-hidden="true" className="size-4" />
@@ -264,7 +264,7 @@ export function SidebarNavigation({
         {!collapsed ? (
           <SectionLabel>{t("Manage")}</SectionLabel>
         ) : (
-          <Separator className="mx-auto my-2 w-10" />
+          <Separator className="mx-auto my-2 w-8" />
         )}
         <div className={`${collapsed ? "flex flex-col items-center gap-0.5" : "space-y-0.5"}`}>
           {managementNavigation.map((item) => (
@@ -280,7 +280,7 @@ export function SidebarNavigation({
         {!collapsed ? (
           <SectionLabel>{t("More")}</SectionLabel>
         ) : (
-          <Separator className="mx-auto my-2 w-10" />
+          <Separator className="mx-auto my-2 w-8" />
         )}
         <div className={collapsed ? "flex flex-col items-center gap-0.5" : "space-y-0.5"}>
           {moreNavigation.map((item) => (
