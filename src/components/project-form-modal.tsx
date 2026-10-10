@@ -226,114 +226,113 @@ export function ProjectFormModal({
                   <FieldError>{t("Choose an existing client for this project.")}</FieldError>
                 </Select>
 
-                {project ? (
-                  <div className="space-y-2">
-                    <Label>{t("Project members")}</Label>
-                    <Dropdown>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        aria-label={t("Add project members")}
-                        className="h-9 w-full justify-between gap-2 px-3"
-                      >
-                        <span className="truncate text-sm">{t("Add members")}</span>
-                        <ChevronDown aria-hidden="true" className="size-4 shrink-0" />
-                      </Button>
-                      <Dropdown.Popover
-                        className="w-[var(--trigger-width)] max-w-[calc(100vw-2rem)] min-w-0"
-                        onOpenChange={(open) => {
-                          if (!open) setMemberQuery("");
-                        }}
-                      >
-                        <div className="flex flex-col gap-2 p-2">
-                          <SearchField
-                            autoFocus
-                            aria-label={t("Search members")}
-                            name="new-project-member-search"
-                            value={memberQuery}
-                            onChange={setMemberQuery}
-                            variant="secondary"
-                          >
-                            <SearchField.Group>
-                              <SearchField.SearchIcon />
-                              <SearchField.Input placeholder={`${t("Search members")}...`} />
-                              <SearchField.ClearButton />
-                            </SearchField.Group>
-                          </SearchField>
-                          {memberSearchResults.length === 0 ? (
-                            <EmptyState>{t("No matching active members")}</EmptyState>
-                          ) : (
-                            <Dropdown.Menu
-                              aria-label={t("Active members")}
-                              selectionMode="single"
-                              onAction={(key) => addMember(String(key))}
-                              className="max-h-60 overflow-y-auto"
-                            >
-                              {memberSearchResults.map((member) => (
-                                <Dropdown.Item
-                                  key={member.id}
-                                  id={member.id}
-                                  textValue={`${member.name} ${member.email}`}
-                                >
-                                  <Avatar size="sm" className="shrink-0">
-                                    <Avatar.Fallback>{member.initials}</Avatar.Fallback>
-                                  </Avatar>
-                                  <div className="min-w-0">
-                                    <Typography type="body-sm" truncate>
-                                      {member.name}
-                                    </Typography>
-                                  </div>
-                                </Dropdown.Item>
-                              ))}
-                            </Dropdown.Menu>
-                          )}
-                        </div>
-                      </Dropdown.Popover>
-                    </Dropdown>
-                    <div className="pt-1">
-                      <TagGroup
-                        aria-label={t("Selected members")}
-                        size="sm"
-                        onRemove={(keys) => {
-                          const removedIds = new Set(Array.from(keys, String));
-                          removedIds.delete(currentUserId);
-                          setAssignedMemberIds((current) =>
-                            current.filter((id) => !removedIds.has(id)),
-                          );
-                        }}
-                      >
-                        <Label>{t("Selected members")}</Label>
-                        <TagGroup.List
-                          items={assignedMembers}
-                          renderEmptyState={() => (
-                            <EmptyState className="p-1">{t("No members selected")}</EmptyState>
-                          )}
+                <div className="space-y-2">
+                  <Label>{t("Project members")}</Label>
+                  <Dropdown>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      aria-label={t("Add project members")}
+                      className="h-9 w-full justify-between gap-2 px-3"
+                    >
+                      <span className="truncate text-sm">{t("Add members")}</span>
+                      <ChevronDown aria-hidden="true" className="size-4 shrink-0" />
+                    </Button>
+                    <Dropdown.Popover
+                      className="w-[var(--trigger-width)] max-w-[calc(100vw-2rem)] min-w-0"
+                      onOpenChange={(open) => {
+                        if (!open) setMemberQuery("");
+                      }}
+                    >
+                      <div className="flex flex-col gap-2 p-2">
+                        <SearchField
+                          autoFocus
+                          aria-label={t("Search members")}
+                          name="new-project-member-search"
+                          value={memberQuery}
+                          onChange={setMemberQuery}
+                          variant="secondary"
                         >
-                          {(member) => (
-                            <Tag key={member.id} id={member.id} textValue={member.name}>
-                              <Avatar className="size-4 shrink-0" size="sm">
-                                <Avatar.Image
-                                  alt={member.name}
-                                  src={
-                                    preferencesByUserId[member.id]?.avatarUrl ??
-                                    getSessionDefaultAvatarUrl(member.id)
-                                  }
-                                />
-                                <Avatar.Fallback>{member.initials}</Avatar.Fallback>
-                              </Avatar>
-                              <span className="max-w-40 truncate">{member.name}</span>
-                              <Tag.RemoveButton
-                                aria-label={t("Remove {name}", { name: member.name })}
-                                {...(member.id === currentUserId ? { className: "hidden" } : {})}
-                                isDisabled={member.id === currentUserId}
+                          <SearchField.Group>
+                            <SearchField.SearchIcon />
+                            <SearchField.Input placeholder={`${t("Search members")}...`} />
+                            <SearchField.ClearButton />
+                          </SearchField.Group>
+                        </SearchField>
+                        {memberSearchResults.length === 0 ? (
+                          <EmptyState>{t("No matching active members")}</EmptyState>
+                        ) : (
+                          <Dropdown.Menu
+                            aria-label={t("Active members")}
+                            selectionMode="single"
+                            onAction={(key) => addMember(String(key))}
+                            className="max-h-60 overflow-y-auto"
+                          >
+                            {memberSearchResults.map((member) => (
+                              <Dropdown.Item
+                                key={member.id}
+                                id={member.id}
+                                textValue={`${member.name} ${member.email}`}
+                              >
+                                <Avatar size="sm" className="shrink-0">
+                                  <Avatar.Fallback>{member.initials}</Avatar.Fallback>
+                                </Avatar>
+                                <div className="min-w-0">
+                                  <Typography type="body-sm" truncate>
+                                    {member.name}
+                                  </Typography>
+                                </div>
+                              </Dropdown.Item>
+                            ))}
+                          </Dropdown.Menu>
+                        )}
+                      </div>
+                    </Dropdown.Popover>
+                  </Dropdown>
+                  <div className="pt-3">
+                    <TagGroup
+                      aria-label={t("Selected members")}
+                      className="project-members"
+                      size="sm"
+                      onRemove={(keys) => {
+                        const removedIds = new Set(Array.from(keys, String));
+                        removedIds.delete(currentUserId);
+                        setAssignedMemberIds((current) =>
+                          current.filter((id) => !removedIds.has(id)),
+                        );
+                      }}
+                    >
+                      <Label>{t("Selected members")}</Label>
+                      <TagGroup.List
+                        items={assignedMembers}
+                        renderEmptyState={() => (
+                          <EmptyState className="p-1">{t("No members selected")}</EmptyState>
+                        )}
+                      >
+                        {(member) => (
+                          <Tag key={member.id} id={member.id} textValue={member.name}>
+                            <Avatar className="size-5 shrink-0" size="sm">
+                              <Avatar.Image
+                                alt={member.name}
+                                src={
+                                  preferencesByUserId[member.id]?.avatarUrl ??
+                                  getSessionDefaultAvatarUrl(member.id)
+                                }
                               />
-                            </Tag>
-                          )}
-                        </TagGroup.List>
-                      </TagGroup>
-                    </div>
+                              <Avatar.Fallback>{member.initials}</Avatar.Fallback>
+                            </Avatar>
+                            <span className="max-w-40 truncate">{member.name}</span>
+                            <Tag.RemoveButton
+                              aria-label={t("Remove {name}", { name: member.name })}
+                              {...(member.id === currentUserId ? { className: "hidden" } : {})}
+                              isDisabled={member.id === currentUserId}
+                            />
+                          </Tag>
+                        )}
+                      </TagGroup.List>
+                    </TagGroup>
                   </div>
-                ) : null}
+                </div>
               </ModalLayout.Body>
               <ModalLayout.Footer>
                 <Button slot="close" type="button" variant="secondary">

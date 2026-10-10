@@ -1,17 +1,11 @@
 import { AlertDialog } from "@heroui/react/alert-dialog";
-import { Avatar } from "@heroui/react/avatar";
 import { Button } from "@heroui/react/button";
 import { Chip } from "@heroui/react/chip";
-import { EmptyState } from "@heroui/react/empty-state";
 import { Label } from "@heroui/react/label";
 import { Modal } from "@heroui/react/modal";
-import { SearchField } from "@heroui/react/search-field";
-import { Tag } from "@heroui/react/tag";
-import { TagGroup } from "@heroui/react/tag-group";
 import { Dropdown } from "@heroui/react/dropdown";
 import { Table } from "@heroui/react/table";
 import { Typography } from "@heroui/react/typography";
-import { useFilter } from "@heroui/react/rac";
 import { toast } from "@heroui/react/toast";
 import { createFileRoute } from "@tanstack/react-router";
 import {
@@ -22,12 +16,11 @@ import {
   Copy,
   Folder,
   Pencil,
-  Persons,
   Plus,
   Power,
   TrashBin,
 } from "@gravity-ui/icons";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { ActionDropdown } from "@/components/action-dropdown";
 import { BillableIndicator } from "@/components/billable-indicator";
 import { DataTable } from "@/components/data-table";
@@ -40,7 +33,6 @@ import { ModalTriggerRegistration } from "@/components/overlay-trigger-registrat
 import { ProjectFormModal } from "@/components/project-form-modal";
 import { EmptyBlock } from "@/components/states";
 import { formatDate, formatDuration } from "@/lib/format";
-import { getSessionDefaultAvatarUrl } from "@/lib/default-avatar";
 import { useI18n } from "@/lib/i18n";
 import type { Project } from "@/lib/domain";
 import { projectColorValue } from "@/lib/project-colors";
@@ -65,19 +57,8 @@ export const Route = createFileRoute("/projects/")({
 });
 
 function ProjectsPage() {
-  const {
-    projects,
-    clients,
-    entries,
-    members,
-    preferencesByUserId,
-    today,
-    currentUserId,
-    can,
-    addProject,
-    updateProject,
-    deleteProject,
-  } = useStore();
+  const { projects, clients, entries, today, can, addProject, updateProject, deleteProject } =
+    useStore();
   const { locale, t, error } = useI18n();
   const [filter, setFilter] = useState<string>("all");
   const [clientFilter, setClientFilter] = useState<string>("all");
@@ -87,11 +68,6 @@ function ProjectsPage() {
   const [pendingArchive, setPendingArchive] = useState<Project | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Project | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [assignedMemberIds, setAssignedMemberIds] = useState<string[]>([currentUserId]);
-  const [pendingMembers, setPendingMembers] = useState<Project | null>(null);
-  const [memberError, setMemberError] = useState<string | null>(null);
-  const [memberQuery, setMemberQuery] = useState("");
-  const { contains } = useFilter({ sensitivity: "base" });
   const pendingDeleteHasEntries = pendingDelete
     ? entries.some((entry) => entry.projectId === pendingDelete.id)
     : false;
@@ -191,90 +167,6 @@ function ProjectsPage() {
     setPendingDelete(null);
   };
 
-  const openMemberManager = (project: Project) => {
-    setMemberError(null);
-    setAssignedMemberIds(project.memberIds);
-    setMemberQuery("");
-    setPendingMembers(project);
-  };
-
-  const saveMembers = () => {
-    if (!pendingMembers) return;
-    const result = updateProject(pendingMembers.id, { memberIds: assignedMemberIds });
-    if (!result.success) {
-      setMemberError(error(result.error));
-      return;
-    }
-    toast.success(t("Project access updated"), { description: pendingMembers.name });
-    setPendingMembers(null);
-    setMemberError(null);
-    setMemberQuery("");
-  };
-
-  const activeMembers = useMemo(
-    () => members.filter((member) => member.status === "active"),
-    [members],
-  );
-  const assignedMemberIdSet = useMemo(() => new Set(assignedMemberIds), [assignedMemberIds]);
-  const assignedMembers = useMemo(
-    () => activeMembers.filter((member) => assignedMemberIdSet.has(member.id)),
-    [activeMembers, assignedMemberIdSet],
-  );
-  const memberSearchResults = useMemo(() => {
-    const query = memberQuery.trim();
-
-    return activeMembers
-      .filter(
-        (member) =>
-          member.id !== currentUserId &&
-          !assignedMemberIdSet.has(member.id) &&
-          (query.length === 0 || contains(member.name, query) || contains(member.email, query)),
-      )
-      .slice(0, 50);
-  }, [activeMembers, assignedMemberIdSet, contains, currentUserId, memberQuery]);
-  const addMember = (memberId: string) => {
-    setAssignedMemberIds((current) =>
-      current.includes(memberId) ? current : [...current, memberId],
-    );
-    setMemberQuery("");
-  };
-  const renderAssignedMemberTags = () => (
-    <TagGroup
-      aria-label={t("Selected members")}
-      size="sm"
-      onRemove={(keys) => {
-        const removedIds = new Set(Array.from(keys, String));
-        removedIds.delete(currentUserId);
-        setAssignedMemberIds((current) => current.filter((id) => !removedIds.has(id)));
-      }}
-    >
-      <Label>{t("Selected members")}</Label>
-      <TagGroup.List
-        items={assignedMembers}
-        renderEmptyState={() => <EmptyState className="p-1">{t("No members selected")}</EmptyState>}
-      >
-        {(member) => (
-          <Tag key={member.id} id={member.id} textValue={member.name}>
-            <Avatar className="size-4 shrink-0" size="sm">
-              <Avatar.Image
-                alt={member.name}
-                src={
-                  preferencesByUserId[member.id]?.avatarUrl ?? getSessionDefaultAvatarUrl(member.id)
-                }
-              />
-              <Avatar.Fallback>{member.initials}</Avatar.Fallback>
-            </Avatar>
-            <span className="max-w-40 truncate">{member.name}</span>
-            <Tag.RemoveButton
-              aria-label={t("Remove {name}", { name: member.name })}
-              {...(member.id === currentUserId ? { className: "hidden" } : {})}
-              isDisabled={member.id === currentUserId}
-            />
-          </Tag>
-        )}
-      </TagGroup.List>
-    </TagGroup>
-  );
   const projectFilterOptions = [
     { id: "all", label: t("All") },
     { id: "active", label: t("Active") },
@@ -436,11 +328,6 @@ function ProjectsPage() {
                         })}
                         items={[
                           {
-                            id: "members",
-                            label: t("Manage members"),
-                            icon: <Persons className="size-4" />,
-                          },
-                          {
                             id: "edit",
                             label: t("Edit project"),
                             icon: <Pencil className="size-4" />,
@@ -489,7 +376,6 @@ function ProjectsPage() {
                               ]),
                         ]}
                         onAction={(key) => {
-                          if (key === "members") openMemberManager(project);
                           if (key === "edit") openProjectForm(project);
                           if (key === "duplicate") duplicateProject(project);
                           if (key === "deactivate") setProjectStatus(project, "on-hold");
@@ -618,104 +504,6 @@ function ProjectsPage() {
           else closeProjectForm();
         }}
       />
-
-      <Modal
-        isOpen={pendingMembers !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setPendingMembers(null);
-            setMemberError(null);
-            setMemberQuery("");
-          }
-        }}
-      >
-        <ModalTriggerRegistration />
-        <Modal.Backdrop>
-          <Modal.Container size="sm">
-            <Modal.Dialog>
-              <Modal.CloseTrigger />
-              <ModalLayout.Header>{t("Manage project members")}</ModalLayout.Header>
-              <ModalLayout.Body>
-                {memberError ? (
-                  <FormAlert
-                    title={t("We couldn't update project access")}
-                    description={memberError}
-                  />
-                ) : null}
-                <Dropdown>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    aria-label={t("Add project members")}
-                    className="h-9 w-full justify-between gap-2 px-3"
-                  >
-                    <span className="truncate text-sm">{t("Add members")}</span>
-                    <ChevronDown aria-hidden="true" className="size-4 shrink-0" />
-                  </Button>
-                  <Dropdown.Popover
-                    className="max-w-[calc(100vw-2rem)] min-w-0"
-                    style={{ width: "var(--trigger-width)", maxWidth: "calc(100vw - 2rem)" }}
-                    onOpenChange={(open) => {
-                      if (!open) setMemberQuery("");
-                    }}
-                  >
-                    <div className="flex flex-col gap-2 p-2">
-                      <SearchField
-                        autoFocus
-                        aria-label={t("Search members")}
-                        name="project-member-search"
-                        value={memberQuery}
-                        onChange={setMemberQuery}
-                        variant="secondary"
-                      >
-                        <SearchField.Group>
-                          <SearchField.SearchIcon />
-                          <SearchField.Input placeholder={`${t("Search members")}...`} />
-                          <SearchField.ClearButton />
-                        </SearchField.Group>
-                      </SearchField>
-                      {memberSearchResults.length === 0 ? (
-                        <EmptyState>{t("No matching active members")}</EmptyState>
-                      ) : (
-                        <Dropdown.Menu
-                          aria-label={t("Active members")}
-                          selectionMode="single"
-                          onAction={(key) => addMember(String(key))}
-                          className="max-h-60 overflow-y-auto"
-                        >
-                          {memberSearchResults.map((member) => (
-                            <Dropdown.Item
-                              key={member.id}
-                              id={member.id}
-                              textValue={`${member.name} ${member.email}`}
-                            >
-                              <Avatar size="sm" className="shrink-0">
-                                <Avatar.Fallback>{member.initials}</Avatar.Fallback>
-                              </Avatar>
-                              <div className="min-w-0">
-                                <Typography type="body-sm" truncate>
-                                  {member.name}
-                                </Typography>
-                              </div>
-                            </Dropdown.Item>
-                          ))}
-                        </Dropdown.Menu>
-                      )}
-                    </div>
-                  </Dropdown.Popover>
-                </Dropdown>
-                {renderAssignedMemberTags()}
-              </ModalLayout.Body>
-              <ModalLayout.Footer>
-                <Button slot="close" variant="secondary">
-                  {t("Cancel")}
-                </Button>
-                <Button onPress={saveMembers}>{t("Save members")}</Button>
-              </ModalLayout.Footer>
-            </Modal.Dialog>
-          </Modal.Container>
-        </Modal.Backdrop>
-      </Modal>
     </div>
   );
 }

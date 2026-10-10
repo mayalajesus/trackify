@@ -21,6 +21,41 @@ body {
   min-height: 100vh;
 }
 
+.project-members,
+.project-members .tag-group__list {
+  gap: 8px;
+}
+.project-members .tag {
+  height: 32px;
+  max-width: 100%;
+  gap: 6px;
+  padding: 5px 8px 5px 6px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--foreground);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+}
+.project-members .avatar {
+  width: 20px;
+  height: 20px;
+}
+.project-members .label {
+  font-size: 14px;
+  font-weight: 400;
+}
+.project-members .tag__remove-button {
+  width: 14px;
+  height: 14px;
+  color: var(--muted);
+}
+.project-members .tag__remove-button svg {
+  width: 14px;
+  height: 14px;
+}
+
 .detailed-report-table {
   border-radius: 24px;
 }
