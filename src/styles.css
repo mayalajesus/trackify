@@ -21,6 +21,28 @@ body {
   min-height: 100vh;
 }
 
+.modal__footer,
+.alert-dialog__footer {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  width: 100%;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.modal__footer > button,
+.alert-dialog__footer > button {
+  width: 100%;
+  min-width: 0;
+  min-height: 36px;
+  height: auto;
+  padding-block: 8px;
+  font-size: 14px;
+  line-height: 20px;
+  white-space: normal;
+}
+
 /* Navigation measurements from the Trackify Figma navigation components. */
 .app-sidebar,
 .app-navbar {
