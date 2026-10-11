@@ -1,3 +1,4 @@
+import { projectIsBillable } from "./project-billability";
 import {
   createContext,
   useCallback,
@@ -11,7 +12,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { isFavoriteTasks } from "./favorite-tasks";
 import { useAuth } from "./auth-context";
-import { createApiDataSource } from "./api-data-source";
+import { createApiDataSource, request } from "./api-data-source";
 import type {
   PersistedAccount,
   SessionStatus,
@@ -84,6 +85,7 @@ export type {
 export type TimerStatus = "idle" | "running" | "paused";
 
 export interface TimerState {
+  taskDetails?: import("./domain").TaskDetails;
   status: TimerStatus;
   workspaceId: string | null;
   task: string;
@@ -757,9 +759,16 @@ interface StoreValue {
   setActiveMember: (memberId: string) => StoreResult;
   currentUserId: string;
   today: string;
-  startTimer: (task: string, projectId: string | null, billable?: boolean) => StoreResult;
+  startTimer: (
+    task: string,
+    projectId: string | null,
+    billable?: boolean,
+    taskDetails?: import("./domain").TaskDetails,
+  ) => StoreResult;
+  acceptTaskInvitation: (invitationId: string) => Promise<StoreResult>;
   startTimerFromTask: (task: TimerTaskPreset) => StoreResult;
   updateTimer: (patch: {
+    taskDetails?: import("./domain").TaskDetails;
     task?: string;
     projectId?: string | null;
     billable?: boolean;
@@ -1009,6 +1018,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const currentMember = members.find((member) => member.id === activeMemberId) ?? null;
   const timerRef = useRef(timer);
   const timerRevisionRef = useRef(0);
+  const acceptingTaskRef = useRef(false);
+  const timerWorkspaceRef = useRef(activeWorkspaceId);
+  timerWorkspaceRef.current = activeWorkspaceId;
   timerRef.current = timer;
   const recentTasks = useMemo(() => {
     const entriesForMember = entries.filter((entry) => entry.userId === activeMemberId);
@@ -1536,10 +1548,38 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       );
     };
 
+    const billableForProject = (projectId: string | null) =>
+      projectIsBillable(projectId, projects, clients);
+
+    const acceptTaskInvitation = async (invitationId: string): Promise<StoreResult> => {
+      if (acceptingTaskRef.current || timerRef.current.status !== "idle")
+        return { success: false, error: "Stop the active timer before accepting a task invitation." };
+      acceptingTaskRef.current = true;
+      try {
+        await timerSyncPromiseRef.current;
+        if (accountScopeRef.current !== accountScope || timerWorkspaceRef.current !== activeWorkspaceId || timerRef.current.status !== "idle")
+          return { success: false, error: "Stop the active timer before accepting a task invitation." };
+        const result = await request<{ timer: TimerState }>("respondTaskInvitation", {
+          workspaceId: activeWorkspaceId, invitationId, response: "accepted",
+        });
+        if (!result.success) return result;
+        if (accountScopeRef.current !== accountScope || timerWorkspaceRef.current !== activeWorkspaceId) return { success: true };
+        timerRevisionRef.current += 1;
+        timerRef.current = result.data.timer;
+        persistedTimerRef.current = { scope: accountScope, workspaceId: activeWorkspaceId, value: JSON.stringify(result.data.timer) };
+        setTimer(result.data.timer);
+        setElapsed(elapsedForTimer(result.data.timer));
+        return { success: true };
+      } finally {
+        acceptingTaskRef.current = false;
+      }
+    };
+
     const startTimer = (
       task: string,
       projectId: string | null,
-      billable?: boolean,
+      _billable?: boolean,
+      taskDetails?: import("./domain").TaskDetails,
     ): StoreResult => {
       if (workspaceCreationRef.current?.scope === accountScope)
         return { success: false, error: "Wait for workspace creation to finish." };
@@ -1551,13 +1591,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (!details.success) return details;
       const projectValidation = validateProjectId(projectId);
       if (!projectValidation.success) return projectValidation;
-      const projectDefault =
-        projectId === null
-          ? false
-          : (projects.find((project) => project.id === projectId)?.billable ?? false);
+      if (acceptingTaskRef.current)
+        return { success: false, error: "Wait for the task invitation to finish." };
+      const projectDefault = billableForProject(projectId);
       const now = Date.now();
       const next = createRunningTimer(
-        { task, projectId, billable: billable ?? projectDefault },
+        { task, projectId, billable: projectDefault },
         {
           workspaceId: activeWorkspaceId,
           now,
@@ -1569,6 +1608,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       );
       timerRevisionRef.current += 1;
 
+      if (taskDetails) next.taskDetails = taskDetails;
       timerRef.current = next;
       setElapsed(0);
       setTimer(next);
@@ -1586,10 +1626,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         validation.preset.task,
         validation.preset.projectId,
         validation.preset.billable,
+        task.taskDetails,
       );
     };
 
     const updateTimer = (patch: {
+      taskDetails?: import("./domain").TaskDetails;
       task?: string;
       projectId?: string | null;
       billable?: boolean;
@@ -1610,6 +1652,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const next = {
         ...current,
         ...patch,
+        billable: billableForProject(patch.projectId ?? current.projectId),
         ...(patch.task !== undefined ? { task: patch.task.trim() } : {}),
         ...(patch.projectId !== undefined && patch.projectId !== current.projectId
           ? { currency: currencyForProject(patch.projectId) }
@@ -1618,7 +1661,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (
         next.task === current.task &&
         next.projectId === current.projectId &&
-        next.billable === current.billable
+        next.billable === current.billable &&
+        next.taskDetails === current.taskDetails
       )
         return { success: true };
       timerRevisionRef.current += 1;
@@ -1708,7 +1752,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           userId: activeMemberId,
           projectId: current.projectId,
           task: current.task,
-          billable: current.billable,
+          billable: billableForProject(current.projectId),
+          ...(current.taskDetails ? { taskDetails: current.taskDetails } : {}),
           hourlyRate: current.hourlyRate ?? workspaceBilling.hourlyRate,
           currency: current.currency ?? workspaceBilling.currency,
         };
@@ -1743,6 +1788,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return { success: false, error: "Stop the active timer before adding time manually." };
       const billedEntry = {
         ...entry,
+        billable: billableForProject(entry.projectId),
         hourlyRate:
           options.refreshBilling || entry.hourlyRate === undefined
             ? workspaceBilling.hourlyRate
@@ -1784,6 +1830,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const next = {
         ...current,
         ...patch,
+        billable: patch.projectId !== undefined && patch.projectId !== current.projectId
+          ? billableForProject(patch.projectId)
+          : current.billable,
         ...(patch.projectId !== undefined && patch.projectId !== current.projectId
           ? { currency: currencyForProject(patch.projectId) }
           : {}),
@@ -2799,6 +2848,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       today,
       startTimer,
       startTimerFromTask,
+      acceptTaskInvitation,
       updateTimer,
       setTimerElapsed,
       pauseTimer,

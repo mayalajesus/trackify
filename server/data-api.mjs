@@ -1,3 +1,4 @@
+import { taskDetailsValue, handleTaskAction } from "./task-actions.mjs";
 import { createClient } from "@supabase/supabase-js";
 import { queueEmail, deliverInvitation, welcomeOnAccess } from "./transactional-emails.mjs";
 import { createHash, randomUUID } from "node:crypto";
@@ -485,6 +486,7 @@ function timeEntryFromRow(row) {
     userId: row.user_id,
     projectId: row.project_id,
     task: row.task,
+    ...(row.task_details ? { taskDetails: row.task_details } : {}),
     ...(row.description ? { description: row.description } : {}),
     billable: row.billable,
     ...(row.hourly_rate !== null ? { hourlyRate: numberValue(row.hourly_rate) } : {}),
@@ -572,7 +574,7 @@ export async function loadAccount(client, user, config) {
     [workspaceIds],
   );
   const entries = await client.query(
-    `select id::text, workspace_id::text, date::text, start_time::text, end_time::text, end_date::text, start_at, end_at, duration_seconds, user_id, project_id::text, task, description, billable, hourly_rate, currency
+    `select id::text, workspace_id::text, date::text, start_time::text, end_time::text, end_date::text, start_at, end_at, duration_seconds, user_id, project_id::text, task, description, billable, hourly_rate, currency, task_details
        from public.time_entries e
       where e.workspace_id = any($1::uuid[])
         and (
@@ -829,7 +831,7 @@ async function loadReportEntries(client, user, body) {
   const result = await client.query(
     `select id::text, date::text, start_time::text, end_time::text, end_date::text,
             start_at, end_at, duration_seconds, user_id, project_id::text, task,
-            description, billable, hourly_rate, currency
+            description, billable, hourly_rate, currency, task_details
        from public.time_entries e
       where e.workspace_id = $1
         and (
@@ -873,9 +875,12 @@ export async function upsertOwnEntry(client, userId, workspaceId, entry, entryId
     throw new DataApiError(400, "The data payload contains an invalid time interval.");
   }
   const result = await client.query(
-    `insert into public.time_entries (id, workspace_id, user_id, date, start_time, end_time, end_date, start_at, end_at, duration_seconds, project_id, task, description, billable, hourly_rate, currency)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-     on conflict (id) do update set date = excluded.date, start_time = excluded.start_time, end_date = excluded.end_date, end_time = excluded.end_time, start_at = excluded.start_at, end_at = excluded.end_at, duration_seconds = excluded.duration_seconds, project_id = excluded.project_id, task = excluded.task, description = excluded.description, billable = excluded.billable, hourly_rate = excluded.hourly_rate, currency = excluded.currency, updated_at = now()
+    `insert into public.time_entries (id, workspace_id, user_id, date, start_time, end_time, end_date, start_at, end_at, duration_seconds, project_id, task, description, billable, hourly_rate, currency, task_details)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
+       coalesce((select p.billable or coalesce(c.billable, false) from public.projects p
+         left join public.clients c on c.id = p.client_id and c.workspace_id = p.workspace_id
+         where p.id = $11 and p.workspace_id = $2), false), $14, $15, $16)
+     on conflict (id) do update set date = excluded.date, start_time = excluded.start_time, end_date = excluded.end_date, end_time = excluded.end_time, start_at = excluded.start_at, end_at = excluded.end_at, duration_seconds = excluded.duration_seconds, project_id = excluded.project_id, task = excluded.task, description = excluded.description, billable = case when time_entries.project_id is not distinct from excluded.project_id then time_entries.billable else excluded.billable end, hourly_rate = excluded.hourly_rate, currency = excluded.currency, task_details = excluded.task_details, updated_at = now()
      where time_entries.workspace_id = excluded.workspace_id
        and time_entries.user_id = excluded.user_id
      returning id::text`,
@@ -893,9 +898,9 @@ export async function upsertOwnEntry(client, userId, workspaceId, entry, entryId
       entry.projectId ? uuid(entry.projectId) : null,
       requiredText(entry.task, "Task", 240),
       optionalText(entry.description, "Description", 10_000),
-      Boolean(entry.billable),
       hourlyRate,
       optionalCurrency(entry.currency),
+      taskDetailsValue(entry.taskDetails),
     ],
   );
   if (!result.rowCount) {
@@ -1371,6 +1376,7 @@ function timerFromRow(row) {
     status: row.status,
     workspaceId: row.workspace_id,
     task: row.task,
+    ...(row.task_details ? { taskDetails: row.task_details } : {}),
     projectId: row.project_id,
     billable: row.billable,
     startedAt: row.started_at ? new Date(row.started_at).getTime() : null,
@@ -1907,6 +1913,8 @@ async function operation(request, user, config, body) {
         throw error;
       }
     }
+    if (["inviteToTask", "listTaskInvitations", "respondTaskInvitation", "listTaskParticipants"].includes(body.operation))
+      return await handleTaskAction(client, user, body, { requireWorkspaceAccess, uuid, timerFromRow });
     if (body.operation === "loadAccount") {
       const account = await loadAccount(client, user, config);
       await welcomeOnAccess(client, user, config);
@@ -1974,7 +1982,7 @@ async function operation(request, user, config, body) {
       const workspaceId = uuid(body.workspaceId);
       await requireWorkspaceAccess(client, user.id, workspaceId);
       const result = await client.query(
-        `select user_id, workspace_id::text, status, task, project_id::text, billable, started_at, started_date::text, accumulated_seconds, start_clock::text, hourly_rate, currency from public.active_timers where user_id = $1 and workspace_id = $2`,
+        `select user_id, workspace_id::text, status, task, project_id::text, billable, started_at, started_date::text, accumulated_seconds, start_clock::text, hourly_rate, currency, task_details from public.active_timers where user_id = $1 and workspace_id = $2`,
         [user.id, workspaceId],
       );
       return result.rows[0] ? timerFromRow(result.rows[0]) : null;
@@ -2034,20 +2042,23 @@ async function operation(request, user, config, body) {
         }
       }
       const result = await client.query(
-        `insert into public.active_timers (user_id, workspace_id, status, task, project_id, billable, started_at, started_date, accumulated_seconds, start_clock, hourly_rate, currency) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) on conflict (user_id, workspace_id) do update set status = excluded.status, task = excluded.task, project_id = excluded.project_id, billable = excluded.billable, started_at = excluded.started_at, started_date = excluded.started_date, accumulated_seconds = excluded.accumulated_seconds, start_clock = excluded.start_clock, hourly_rate = excluded.hourly_rate, currency = excluded.currency, updated_at = now() returning user_id, workspace_id::text, status, task, project_id::text, billable, started_at, started_date::text, accumulated_seconds, start_clock::text, hourly_rate, currency`,
+        `insert into public.active_timers (user_id, workspace_id, status, task, project_id, billable, started_at, started_date, accumulated_seconds, start_clock, hourly_rate, currency, task_details) values ($1, $2, $3, $4, $5,
+          coalesce((select p.billable or coalesce(c.billable, false) from public.projects p
+            left join public.clients c on c.id = p.client_id and c.workspace_id = p.workspace_id
+            where p.id = $5 and p.workspace_id = $2), false), $6, $7, $8, $9, $10, $11, $12) on conflict (user_id, workspace_id) do update set status = excluded.status, task = excluded.task, project_id = excluded.project_id, billable = excluded.billable, started_at = excluded.started_at, started_date = excluded.started_date, accumulated_seconds = excluded.accumulated_seconds, start_clock = excluded.start_clock, hourly_rate = excluded.hourly_rate, currency = excluded.currency, task_details = excluded.task_details, updated_at = now() returning user_id, workspace_id::text, status, task, project_id::text, billable, started_at, started_date::text, accumulated_seconds, start_clock::text, hourly_rate, currency, task_details`,
         [
           user.id,
           workspaceId,
           timer.status,
           task,
           timer.projectId ? uuid(timer.projectId) : null,
-          Boolean(timer.billable),
           startedAt,
           timer.startedDate ? dateValue(timer.startedDate) : null,
           Math.floor(accumulated),
           timeValue(timer.startClock),
           hourlyRate,
           optionalCurrency(timer.currency),
+          taskDetailsValue(timer.taskDetails),
         ],
       );
       return timerFromRow(result.rows[0]);

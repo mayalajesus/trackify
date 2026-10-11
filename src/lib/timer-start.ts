@@ -3,6 +3,7 @@ import type { TimerState, TimerStatus } from "./store";
 import type { BillingPreference } from "./billing";
 
 export type TimerTaskPreset = Pick<TimeEntry, "task" | "projectId" | "billable"> & {
+  taskDetails?: TimeEntry["taskDetails"];
   favorite?: boolean;
 };
 

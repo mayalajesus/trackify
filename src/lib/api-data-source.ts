@@ -49,7 +49,7 @@ async function token(currentSession: Session): Promise<string> {
   throw new Error("Your authentication session is unavailable.");
 }
 
-async function request<T>(
+export async function request<T>(
   operation: string,
   payload: Record<string, unknown> = {},
 ): Promise<DataSourceResult<T>> {

@@ -35,7 +35,14 @@ export interface Member {
   invitedAt?: string;
 }
 
+export interface TaskDetails {
+  id: string;
+  urgent: boolean;
+  trelloCard?: { id: string; name: string; url: string; board: string } | null;
+}
+
 export interface TimeEntry {
+  taskDetails?: TaskDetails;
   id: string;
   date: string;
   start: string;
