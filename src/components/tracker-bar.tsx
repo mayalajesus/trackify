@@ -12,10 +12,12 @@ import { Toolbar } from "@heroui/react/toolbar";
 import { toast } from "@heroui/react/toast";
 import { Button } from "@heroui/react/button";
 import { useFavoriteTasks } from "@/lib/use-favorite-tasks";
-import { favoriteTaskKey, type FavoriteTask } from "@/lib/favorite-tasks";
-import { Star, StarFill, Xmark, Square } from "@gravity-ui/icons";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { BillableIndicator } from "@/components/billable-indicator";
+import { type FavoriteTask } from "@/lib/favorite-tasks";
+import { Star, StarFill, Square, Thunderbolt, PersonPlus, LayoutColumns } from "@gravity-ui/icons";
+import { useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref } from "react";
+import { ActionDropdown } from "@/components/action-dropdown";
+import { TrackerTaskModal } from "@/components/tracker-task-modal";
+import type { TaskDetails } from "@/lib/domain";
 import { FormAlert } from "@/components/form-feedback";
 import { formatOverlapConflict } from "@/components/overlap-confirmation";
 import { ProjectFormModal, type CreatedProjectSelection } from "@/components/project-form-modal";
@@ -26,9 +28,14 @@ import { useI18n } from "@/lib/i18n";
 import { useStore, useTimerTicker } from "@/lib/store";
 import { focusTimerTaskInput } from "@/lib/timer-input";
 
-export function TrackerBar() {
+export interface TrackerBarHandle {
+  selectFavorite: (favorite: FavoriteTask) => void;
+}
+
+export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
   const {
     timer,
+    activeWorkspaceId,
     entries,
     projects,
     can,
@@ -39,7 +46,7 @@ export function TrackerBar() {
     resumeTimer,
     stopTimer,
   } = useStore();
-  const { favorites, isFavorite, toggleFavorite } = useFavoriteTasks();
+  const { isFavorite, toggleFavorite } = useFavoriteTasks();
   const { elapsed } = useTimerTicker();
   const { locale, t, error } = useI18n();
   const [task, setTask] = useState("");
@@ -54,7 +61,21 @@ export function TrackerBar() {
   const [projectInitialName, setProjectInitialName] = useState("");
   const [pendingCreatedProject, setPendingCreatedProject] =
     useState<CreatedProjectSelection | null>(null);
+  const [taskDetails, setTaskDetails] = useState<TaskDetails>(() => ({
+    id: crypto.randomUUID(),
+    urgent: false,
+  }));
+  const [taskModal, setTaskModal] = useState<"members" | "trello" | null>(null);
   const active = timer.status !== "idle";
+  const details = active ? (timer.taskDetails ?? taskDetails) : taskDetails;
+  const changeDetails = (next: TaskDetails) => {
+    setTaskDetails(next);
+    if (active) updateActiveTimer({ taskDetails: next });
+  };
+  useEffect(() => {
+    setTaskDetails({ id: crypto.randomUUID(), urgent: false });
+    setTaskModal(null);
+  }, [activeWorkspaceId]);
   const taskSuggestions = useMemo(() => {
     const uniqueTasks = new Map<string, string>();
 
@@ -116,6 +137,7 @@ export function TrackerBar() {
       !projects.some((project) => project.id === favorite.projectId && project.status === "active")
     )
       return;
+    setTaskDetails({ id: crypto.randomUUID(), urgent: false });
     setTask(favorite.task);
     setProjectId(favorite.projectId);
     setBillable(favorite.billable);
@@ -125,62 +147,19 @@ export function TrackerBar() {
     taskInputRef.current?.focus();
   };
 
+  useImperativeHandle(ref, () => ({ selectFavorite }));
+
   return (
     <div className="space-y-3" data-tracker-bar>
-      {favorites.length > 0 ? (
-        <div
-          className="flex flex-wrap items-center gap-2"
-          role="group"
-          aria-label={t("Favorite tasks")}
-        >
-          {favorites.map((favorite) => {
-            const project = projects.find((item) => item.id === favorite.projectId);
-            const unavailable = !project || project.status !== "active";
-            return (
-              <div
-                key={favoriteTaskKey(favorite)}
-                className="inline-flex max-w-full items-center rounded-full bg-default"
-              >
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="min-w-0 rounded-full px-3"
-                  isDisabled={active || unavailable}
-                  aria-label={t("Use favorite {task}, {project}", {
-                    task: favorite.task,
-                    project: project?.name ?? t("Project unavailable"),
-                  })}
-                  onPress={() => selectFavorite(favorite)}
-                >
-                  <StarFill className="size-3.5 shrink-0 text-warning" aria-hidden="true" />
-                  <span className="max-w-48 truncate">{favorite.task}</span>
-                  <span className="max-w-32 truncate text-xs text-muted">
-                    {unavailable ? t("Project unavailable") : project?.name}
-                  </span>
-                </Button>
-                <IconTooltip>
-                  <Button
-                    isIconOnly
-                    size="sm"
-                    variant="ghost"
-                    className="size-7 min-w-7 rounded-full"
-                    aria-label={t("Remove {task} from favorites", { task: favorite.task })}
-                    onPress={() => toggleFavorite(favorite)}
-                  >
-                    <Xmark className="size-3" />
-                  </Button>
-                </IconTooltip>
-              </div>
-            );
-          })}
-        </div>
-      ) : null}
-      <Card className="w-full gap-0 p-1.5" variant="default">
+      <Card
+        className="tracker-timer w-full gap-0 rounded-3xl p-1.5 lg:rounded-full"
+        variant="default"
+      >
         <Toolbar
           aria-label={t("Timer")}
           data-status={timer.status}
           orientation="horizontal"
-          className="grid-flow-row w-full max-w-full gap-1 grid-cols-1 sm:grid-flow-col sm:grid-cols-[minmax(0,1fr)_auto_minmax(11rem,15rem)_auto_auto_auto]"
+          className="grid w-full max-w-full grid-cols-1 items-center gap-3 lg:grid-cols-[minmax(10rem,1fr)_auto_minmax(10rem,15rem)_auto_auto_auto]"
         >
           <ComboBox
             isRequired
@@ -201,7 +180,7 @@ export function TrackerBar() {
               <Input
                 ref={taskInputRef}
                 data-timer-task-input
-                className="rounded-s-[calc(var(--radius)*3)] !pe-3"
+                className="rounded-xl !pe-3"
                 placeholder={t("What are you working on?")}
                 variant="secondary"
                 onBlur={() => {
@@ -233,7 +212,7 @@ export function TrackerBar() {
             </ComboBox.Popover>
           </ComboBox>
 
-          <Separator orientation="vertical" className="hidden h-6 sm:block" />
+          <Separator orientation="vertical" className="hidden h-6 lg:block" />
 
           <div className="min-w-0">
             <Label className="sr-only">{t("Project")}</Label>
@@ -277,24 +256,13 @@ export function TrackerBar() {
             />
           </div>
 
-          <Separator orientation="vertical" className="hidden h-6 sm:block" />
-
-          <TimerDurationEditor
-            elapsed={elapsed}
-            isReadOnly={!active}
-            onElapsedChange={(seconds) => {
-              const result = setTimerElapsed(seconds);
-              setTimerError(result.success ? null : result.error);
-            }}
-          />
-
-          <Toolbar aria-label={t("Timer")} className="shrink-0 gap-1">
+          <div className="flex items-center gap-1">
             <IconTooltip>
               <Button
                 isIconOnly
                 size="sm"
                 variant="ghost"
-                className="size-9 min-w-9"
+                className="size-7 min-w-7"
                 aria-label={t(
                   isFavorite(currentTask) ? "Remove from favorites" : "Add to favorites",
                 )}
@@ -308,101 +276,128 @@ export function TrackerBar() {
                 )}
               </Button>
             </IconTooltip>
-            <TimerActionButton
-              status={timer.status}
-              onPress={() => {
-                if (timer.status === "idle") {
-                  if (!task.trim()) {
-                    setProjectValidationVisible(false);
-                    setTimerError(null);
-                    focusTimerTaskInput(t("A task is required."));
-                    return;
-                  }
-                  if (!projectId) {
-                    setTimerError(null);
-                    projectTriggerRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
-                    setProjectValidationVisible(true);
-                    return;
-                  }
-                  const result = startTimer(task, projectId, billable);
-                  setTimerError(result.success ? null : result.error);
+
+            <IconTooltip>
+              <Button
+                isIconOnly
+                size="sm"
+                variant="ghost"
+                className="size-7 min-w-7"
+                aria-label={t(details.urgent ? "Unmark urgent" : "Mark urgent")}
+                aria-pressed={details.urgent}
+                onPress={() => changeDetails({ ...details, urgent: !details.urgent })}
+              >
+                <Thunderbolt className={details.urgent ? "size-4 text-danger" : "size-4"} />
+              </Button>
+            </IconTooltip>
+            <ActionDropdown
+              ariaLabel={t("Task actions")}
+              orientation="vertical"
+              items={[
+                { id: "members", label: t("Add members"), icon: <PersonPlus className="size-4" /> },
+                {
+                  id: "trello",
+                  label: t("Link to Trello"),
+                  icon: <LayoutColumns className="size-4 text-[#0052CC]" />,
+                },
+              ]}
+              onAction={(key) => {
+                if (!currentTask.task.trim()) {
+                  focusTimerTaskInput(t("A task is required."));
                   return;
                 }
-
-                if (timer.status === "running") pauseTimer();
-                else {
-                  const result = resumeTimer();
-                  setTimerError(result.success ? null : result.error);
+                if (!currentTask.projectId) {
+                  setProjectValidationVisible(true);
+                  return;
                 }
+                setTaskModal(key === "members" ? "members" : "trello");
+              }}
+            />
+          </div>
+          <Separator orientation="vertical" className="hidden h-6 lg:block" />
+
+          <div className="flex items-center gap-1 justify-end">
+            <TimerDurationEditor
+              elapsed={elapsed}
+              isReadOnly={!active}
+              onElapsedChange={(seconds) => {
+                const result = setTimerElapsed(seconds);
+                setTimerError(result.success ? null : result.error);
               }}
             />
 
-            {timer.status !== "idle" ? (
-              <ToggleButtonGroup
-                aria-label={t("Timer")}
-                size="sm"
-                className="shrink-0 gap-0.5"
-                selectionMode="multiple"
-              >
-                <IconTooltip>
-                  <ToggleButton
-                    aria-label={t("Stop")}
-                    className="size-9 min-h-9 min-w-9"
-                    isIconOnly
-                    isSelected={false}
-                    onPress={() => {
-                      const result = stopTimer();
-                      if (!result.success) {
-                        setTimerError(result.error);
-                        return;
-                      }
-                      if (result.warning) {
-                        toast.info(t("Overlapping time"), {
-                          description: result.conflict
-                            ? formatOverlapConflict(result.conflict, locale)
-                            : error(result.warning),
-                        });
-                      }
-                      setTask("");
+            <Toolbar aria-label={t("Timer")} className="shrink-0 gap-1">
+              <TimerActionButton
+                status={timer.status}
+                onPress={() => {
+                  if (timer.status === "idle") {
+                    if (!task.trim()) {
+                      setProjectValidationVisible(false);
                       setTimerError(null);
-                      setActiveTask("");
-                      setProjectId(null);
-                    }}
-                  >
-                    <Square aria-hidden="true" />
-                  </ToggleButton>
-                </IconTooltip>
-              </ToggleButtonGroup>
-            ) : null}
+                      focusTimerTaskInput(t("A task is required."));
+                      return;
+                    }
+                    if (!projectId) {
+                      setTimerError(null);
+                      projectTriggerRef.current
+                        ?.querySelector<HTMLButtonElement>("button")
+                        ?.focus();
+                      setProjectValidationVisible(true);
+                      return;
+                    }
+                    const result = startTimer(task, projectId, billable, taskDetails);
+                    setTimerError(result.success ? null : result.error);
+                    return;
+                  }
 
-            <Separator orientation="vertical" className="hidden h-6 sm:block" />
+                  if (timer.status === "running") pauseTimer();
+                  else {
+                    const result = resumeTimer();
+                    setTimerError(result.success ? null : result.error);
+                  }
+                }}
+              />
 
-            <ToggleButtonGroup
-              aria-label={t("Timer")}
-              size="sm"
-              className="shrink-0 gap-0.5"
-              selectionMode="multiple"
-            >
-              <IconTooltip>
-                <ToggleButton
-                  aria-label={t("Billable")}
-                  className="size-9 min-h-9 min-w-9"
-                  isIconOnly
-                  isSelected={active ? timer.billable : billable}
-                  onChange={(selected: boolean) => {
-                    if (active) updateActiveTimer({ billable: selected });
-                    else setBillable(selected);
-                  }}
+              {timer.status !== "idle" ? (
+                <ToggleButtonGroup
+                  aria-label={t("Timer")}
+                  size="sm"
+                  className="shrink-0 gap-0.5"
+                  selectionMode="multiple"
                 >
-                  <BillableIndicator
-                    billable={active ? timer.billable : billable}
-                    mode="icon"
-                    size="md"
-                  />
-                </ToggleButton>
-              </IconTooltip>
-            </ToggleButtonGroup>
-          </Toolbar>
+                  <IconTooltip>
+                    <ToggleButton
+                      aria-label={t("Stop")}
+                      className="size-9 min-h-9 min-w-9 bg-danger text-danger-foreground data-[hovered=true]:bg-danger/90"
+                      isIconOnly
+                      isSelected={false}
+                      onPress={() => {
+                        const result = stopTimer();
+                        if (!result.success) {
+                          setTimerError(result.error);
+                          return;
+                        }
+                        if (result.warning) {
+                          toast.info(t("Overlapping time"), {
+                            description: result.conflict
+                              ? formatOverlapConflict(result.conflict, locale)
+                              : error(result.warning),
+                          });
+                        }
+                        setTaskDetails({ id: crypto.randomUUID(), urgent: false });
+                        setTask("");
+                        setTimerError(null);
+                        setActiveTask("");
+                        setProjectId(null);
+                      }}
+                    >
+                      <Square aria-hidden="true" />
+                    </ToggleButton>
+                  </IconTooltip>
+                </ToggleButtonGroup>
+              ) : null}
+            </Toolbar>
+          </div>
         </Toolbar>
       </Card>
 
@@ -410,6 +405,20 @@ export function TrackerBar() {
         <FormAlert title={t("We couldn't update the timer")} description={error(timerError)} />
       ) : null}
 
+      <TrackerTaskModal
+        mode={taskModal}
+        onClose={() => setTaskModal(null)}
+        task={currentTask.task}
+        projectId={currentTask.projectId}
+        details={details}
+        onDetailsChange={changeDetails}
+        onBeforeInvite={() => {
+          if (active) return true;
+          const result = startTimer(task, projectId, undefined, details);
+          setTimerError(result.success ? null : result.error);
+          return result.success;
+        }}
+      />
       <ProjectFormModal
         isOpen={projectFormOpen}
         initialName={projectInitialName}

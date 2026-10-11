@@ -1,9 +1,10 @@
+import { EntryTrelloModal } from "@/components/entry-trello-modal";
 import { Button } from "@heroui/react/button";
 import { Modal } from "@heroui/react/modal";
 import { Table } from "@heroui/react/table";
 import { Typography } from "@heroui/react/typography";
 import { toast } from "@heroui/react/toast";
-import { Pencil, TrashBin } from "@gravity-ui/icons";
+import { Pencil, TrashBin, Thunderbolt, LayoutColumns, PersonPlus } from "@gravity-ui/icons";
 import { BillableIndicator } from "@/components/billable-indicator";
 import { ProjectLabel } from "@/components/project-color";
 import { useState } from "react";
@@ -28,6 +29,8 @@ export function EntriesTable({
 }) {
   const { projects, members, currentUserId, deleteEntry, restoreEntry, updateEntry } = useStore();
   const { locale, t, error } = useI18n();
+  const [entryTaskMode, setEntryTaskMode] = useState<"trello" | "members">("trello");
+  const [trelloEntry, setTrelloEntry] = useState<TimeEntry | null>(null);
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
   const [pendingDelete, setPendingDelete] = useState<TimeEntry | null>(null);
 
@@ -75,7 +78,15 @@ export function EntriesTable({
               <Table.Row key={entry.id}>
                 <Table.Cell>
                   <div className="flex flex-col">
-                    <span>{entry.task}</span>
+                    <span className="flex items-center gap-2">
+                      {entry.taskDetails?.urgent ? (
+                        <Thunderbolt
+                          className="size-3.5 shrink-0 text-danger"
+                          aria-label={t("Urgent")}
+                        />
+                      ) : null}
+                      {entry.task}
+                    </span>
                     {entry.description ? <span>{entry.description}</span> : null}
                   </div>
                 </Table.Cell>
@@ -98,7 +109,7 @@ export function EntriesTable({
                 </Table.Cell>
                 <Table.Cell>{formatDuration(entry.seconds, locale)}</Table.Cell>
                 <Table.Cell>
-                  <BillableIndicator billable={entry.billable} />
+                  {entry.billable ? <BillableIndicator billable mode="icon" /> : null}
                 </Table.Cell>
                 <Table.Cell>
                   {isOwnEntry ? (
@@ -107,16 +118,24 @@ export function EntriesTable({
                         ariaLabel={t("Entry actions")}
                         items={[
                           {
+                            id: "members",
+                            label: t("Add members"),
+                            icon: <PersonPlus className="size-4" />,
+                          },
+                          {
+                            id: "trello",
+                            label: t("Link to Trello"),
+                            icon: <LayoutColumns className="size-4" />,
+                          },
+                          {
+                            id: "urgent",
+                            label: t(entry.taskDetails?.urgent ? "Unmark urgent" : "Mark urgent"),
+                            icon: <Thunderbolt className="size-4" />,
+                          },
+                          {
                             id: "edit",
                             label: t("Edit entry"),
                             icon: <Pencil className="size-4" />,
-                          },
-                          {
-                            id: "billable",
-                            label: entry.billable ? t("Mark as internal") : t("Mark as billable"),
-                            icon: (
-                              <BillableIndicator billable={!entry.billable} mode="icon" size="md" />
-                            ),
                           },
                           {
                             id: "delete",
@@ -126,8 +145,23 @@ export function EntriesTable({
                           },
                         ]}
                         onAction={(key) => {
-                          if (key === "billable") {
-                            updateEntry(entry.id, { billable: !entry.billable });
+                          if (key === "trello" || key === "members") {
+                            setEntryTaskMode(key);
+                            setTrelloEntry(entry);
+                          }
+                          if (key === "urgent") {
+                            const result = updateEntry(entry.id, {
+                              taskDetails: {
+                                id: entry.taskDetails?.id ?? crypto.randomUUID(),
+                                ...entry.taskDetails,
+                                urgent: !entry.taskDetails?.urgent,
+                              },
+                            });
+                            if (!result.success) {
+                              toast.danger(t("Unable to save urgency"), {
+                                description: error(result.error),
+                              });
+                            }
                           }
                           if (key === "edit") setEditingEntry(entry);
                           if (key === "delete") setPendingDelete(entry);
@@ -141,6 +175,13 @@ export function EntriesTable({
           })}
         </Table.Body>
       </DataTable>
+      {trelloEntry ? (
+        <EntryTrelloModal
+          mode={entryTaskMode}
+          entries={[trelloEntry]}
+          onClose={() => setTrelloEntry(null)}
+        />
+      ) : null}
       <LogTimeModal
         entry={editingEntry}
         isOpen={editingEntry !== null}

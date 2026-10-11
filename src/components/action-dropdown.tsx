@@ -17,7 +17,9 @@ export function ActionDropdown({
   ariaLabel,
   items,
   onAction,
+  orientation = "horizontal",
 }: {
+  orientation?: "horizontal" | "vertical";
   ariaLabel: string;
   items: readonly ActionDropdownItem[];
   onAction: (id: string) => void;
@@ -26,7 +28,7 @@ export function ActionDropdown({
     <Dropdown>
       <IconTooltip>
         <Dropdown.Trigger aria-label={ariaLabel} className="h-8 w-8 min-w-8 shrink-0 p-0">
-          <Ellipsis className="size-4" />
+          <Ellipsis className={orientation === "vertical" ? "size-4 rotate-90" : "size-4"} />
         </Dropdown.Trigger>
       </IconTooltip>
       <Dropdown.Popover placement="bottom end" className="action-menu" containerPadding={12}>

@@ -1,4 +1,6 @@
-import { Star } from "@gravity-ui/icons";
+import { TaskParticipantsProvider, TrackerTaskTeam } from "./tracker-task-team";
+import { EntryTrelloModal } from "@/components/entry-trello-modal";
+import { Star, Thunderbolt, LayoutColumns, PersonPlus } from "@gravity-ui/icons";
 import { useFavoriteTasks } from "@/lib/use-favorite-tasks";
 import { IconTooltip } from "@/components/icon-tooltip";
 import { TableEditingMode } from "@/components/table-editing-mode";
@@ -24,7 +26,6 @@ import { HeroUIDatePicker } from "@/components/hero-ui-date-picker";
 import { ModalLayout } from "@/components/modal-layout";
 import { ModalTriggerRegistration } from "@/components/overlay-trigger-registration";
 import { OverlapConfirmation } from "@/components/overlap-confirmation";
-import { ProjectLabel } from "@/components/project-color";
 import { ProjectSelect } from "@/components/project-select";
 import { useStore } from "@/lib/store";
 import {
@@ -241,6 +242,8 @@ function groupKeyFor(entry: TimeEntry): string {
     entry.task.trim().toLocaleLowerCase(),
     entry.projectId ?? "none",
     entry.billable ? "billable" : "internal",
+    entry.taskDetails?.urgent ? "urgent" : "normal",
+    entry.taskDetails?.trelloCard?.id ?? "",
   ].join("::");
 }
 
@@ -324,7 +327,7 @@ export function TrackerEntries({ days }: { days: TrackerDay[] }) {
   const { t, error } = useI18n();
   const [activeCell, setActiveCell] = useState<ActiveCell>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => new Set());
-  const [pendingDelete, setPendingDelete] = useState<TimeEntry | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<TimeEntry[] | null>(null);
   const groups = useMemo(() => groupEntries(days), [days]);
   const rowKeys = useMemo(
     () =>
@@ -366,19 +369,21 @@ export function TrackerEntries({ days }: { days: TrackerDay[] }) {
 
   const confirmDelete = () => {
     if (!pendingDelete) return;
-    const deletedEntry = pendingDelete;
-    deleteEntry(deletedEntry.id);
+    const deletedEntries = pendingDelete;
+    deletedEntries.forEach((entry) => deleteEntry(entry.id));
     setPendingDelete(null);
     setActiveCell(null);
     toast.info(t("Time entry moved to trash"), {
       actionProps: {
         children: t("Undo"),
         onPress: () => {
-          const result = restoreEntry(deletedEntry);
-          if (!result.success)
-            toast.danger(t("We couldn't restore this time entry"), {
-              description: error(result.error),
-            });
+          for (const entry of deletedEntries) {
+            const result = restoreEntry(entry);
+            if (!result.success)
+              toast.danger(t("We couldn't restore this time entry"), {
+                description: error(result.error),
+              });
+          }
         },
       },
       timeout: 20_000,
@@ -386,28 +391,30 @@ export function TrackerEntries({ days }: { days: TrackerDay[] }) {
   };
 
   return (
-    <>
+    <TaskParticipantsProvider>
       <DataTable
+        className="tracker-entries-table"
         label={t("Time entries for selected period")}
         scrollHint={t("Scroll horizontally to see all columns")}
-        minWidth="min-w-[1040px] lg:min-w-0"
+        minWidth="min-w-[1040px]"
         contentClassName="table-fixed"
         selectedKeys={selectedRowKeys}
       >
         <Table.Header>
-          <Table.Column isRowHeader className="w-[21%] whitespace-nowrap">
+          <Table.Column isRowHeader className="w-[27%] whitespace-nowrap">
             {t("Task")}
           </Table.Column>
-          <Table.Column className="w-[18%] whitespace-nowrap">{t("Project / client")}</Table.Column>
-          <Table.Column className="w-[12%] whitespace-nowrap text-center">
-            {t("Start")}
+          <Table.Column className="w-[20%] whitespace-nowrap">{t("Project / client")}</Table.Column>
+          <Table.Column className="w-[8%] whitespace-nowrap text-center">
+            {t("Start column")}
           </Table.Column>
-          <Table.Column className="w-[12%] whitespace-nowrap text-center">{t("End")}</Table.Column>
-          <Table.Column className="w-[13%] whitespace-nowrap text-center">{t("Date")}</Table.Column>
+          <Table.Column className="w-[8%] whitespace-nowrap text-center">{t("End")}</Table.Column>
+          <Table.Column className="w-[11%] whitespace-nowrap text-center">{t("Date")}</Table.Column>
           <Table.Column className="w-[10%] whitespace-nowrap text-center">
             {t("Duration")}
           </Table.Column>
-          <Table.Column className="w-[10%]" aria-label={t("Actions")} />
+          <Table.Column className="w-[9%] text-center">{t("Team")}</Table.Column>
+          <Table.Column className="w-[7%]" aria-label={t("Actions")} />
         </Table.Header>
         <Table.Body>
           {groups.flatMap((group) => {
@@ -426,7 +433,7 @@ export function TrackerEntries({ days }: { days: TrackerDay[] }) {
                       activeField={activeCell?.rowKey === rowKey ? activeCell.field : null}
                       onActivate={(field) => setActiveCell({ rowKey: rowKey ?? entry.id, field })}
                       onDeactivate={() => setActiveCell(null)}
-                      onRequestDelete={setPendingDelete}
+                      onRequestDelete={(entry) => setPendingDelete([entry])}
                     />,
                   ]
                 : [];
@@ -438,6 +445,7 @@ export function TrackerEntries({ days }: { days: TrackerDay[] }) {
                 group={group}
                 isExpanded={isExpanded}
                 onToggle={() => toggleGroup(group.id)}
+                onRequestDelete={() => setPendingDelete(group.entries)}
               />,
               ...(isExpanded
                 ? group.entries.flatMap((entry, index) => {
@@ -451,7 +459,7 @@ export function TrackerEntries({ days }: { days: TrackerDay[] }) {
                         activeField={activeCell?.rowKey === rowKey ? activeCell.field : null}
                         onActivate={(field) => setActiveCell({ rowKey, field })}
                         onDeactivate={() => setActiveCell(null)}
-                        onRequestDelete={setPendingDelete}
+                        onRequestDelete={(entry) => setPendingDelete([entry])}
                       />,
                     ];
                   })
@@ -473,9 +481,15 @@ export function TrackerEntries({ days }: { days: TrackerDay[] }) {
               <ModalLayout.Body>
                 <Typography type="body-sm" color="muted">
                   {pendingDelete
-                    ? t("Delete “{task}”? This action cannot be undone.", {
-                        task: pendingDelete.task,
-                      })
+                    ? t(
+                        pendingDelete.length > 1
+                          ? "Delete {count} entries for “{task}”?"
+                          : "Delete “{task}”? This action cannot be undone.",
+                        {
+                          count: pendingDelete.length,
+                          task: pendingDelete[0]?.task ?? "",
+                        },
+                      )
                     : null}
                 </Typography>
               </ModalLayout.Body>
@@ -491,7 +505,7 @@ export function TrackerEntries({ days }: { days: TrackerDay[] }) {
           </Modal.Container>
         </Modal.Backdrop>
       </Modal>
-    </>
+    </TaskParticipantsProvider>
   );
 }
 
@@ -499,23 +513,27 @@ function TrackerGroupSummaryRow({
   group,
   isExpanded,
   onToggle,
+  onRequestDelete,
 }: {
   group: TrackerGroup;
   isExpanded: boolean;
   onToggle: () => void;
+  onRequestDelete: () => void;
 }) {
-  const { projects, clients, timer, startTimerFromTask, addEntry } = useStore();
+  const { projects, clients, timer, startTimerFromTask, addEntry, updateEntry } = useStore();
   const { isFavorite, toggleFavorite } = useFavoriteTasks();
   const { locale, t, error } = useI18n();
   const [isHovered, setIsHovered] = useState(false);
+  const [entryTaskMode, setEntryTaskMode] = useState<"trello" | "members" | null>(null);
   const project = projects.find((item) => item.id === group.projectId);
   const projectName = project?.name ?? t("No project");
   const clientName = project
     ? (clients.find((client) => client.id === project.clientId)?.name ?? t("Unknown client"))
     : t("No client");
+  const urgent = group.entries.some((entry) => entry.taskDetails?.urgent);
   const summaryCellClass = "overflow-hidden";
   const summaryTextClass = "block min-w-0 truncate whitespace-nowrap";
-  const summarySurfaceVariant = isExpanded ? (isHovered ? "tertiary" : "secondary") : "transparent";
+  const summarySurfaceVariant = "transparent";
   const toggleLabel = t(
     `${isExpanded ? "Collapse" : "Expand"} {count} entries for {task}; {type}`,
     {
@@ -526,7 +544,10 @@ function TrackerGroupSummaryRow({
   );
 
   const startAgain = () => {
-    const result = startTimerFromTask(group);
+    const result = startTimerFromTask({
+      ...group,
+      ...(group.entries[0]?.taskDetails ? { taskDetails: group.entries[0].taskDetails } : {}),
+    });
     if (!result.success)
       toast.danger(t("We couldn't start the timer"), { description: error(result.error) });
   };
@@ -564,8 +585,8 @@ function TrackerGroupSummaryRow({
       onHoverChange={setIsHovered}
     >
       <Table.Cell className={`${summaryCellClass} min-w-0 p-0`}>
-        <Surface variant={summarySurfaceVariant} className="min-h-20 px-4 py-3">
-          <div className="flex min-h-[3.5rem] min-w-0 flex-col justify-center">
+        <Surface variant={summarySurfaceVariant} className="min-h-[76px] px-4 py-3">
+          <div className="flex min-h-[3rem] min-w-0 flex-col justify-center">
             <Tooltip delay={350}>
               <Button
                 size="sm"
@@ -580,6 +601,21 @@ function TrackerGroupSummaryRow({
                 onPress={onToggle}
               >
                 <span className="min-w-0 truncate">{group.task}</span>
+                {isFavorite(group) ? (
+                  <Star
+                    className="size-3.5 shrink-0 text-warning"
+                    aria-label={t("Favorite tasks")}
+                  />
+                ) : null}
+                {group.entries[0]?.taskDetails?.trelloCard ? (
+                  <LayoutColumns
+                    className="size-3.5 shrink-0 text-accent"
+                    aria-label={t("Link to Trello")}
+                  />
+                ) : null}
+                {urgent ? (
+                  <Thunderbolt className="size-3.5 shrink-0 text-danger" aria-label={t("Urgent")} />
+                ) : null}
                 {isExpanded ? (
                   <ChevronUp className="ml-1 size-4 shrink-0" aria-hidden="true" />
                 ) : (
@@ -602,16 +638,21 @@ function TrackerGroupSummaryRow({
         </Surface>
       </Table.Cell>
       <Table.Cell className={`${summaryCellClass} p-0`}>
-        <Surface variant={summarySurfaceVariant} className="flex min-h-20 items-center px-4 py-3">
+        <Surface
+          variant={summarySurfaceVariant}
+          className="flex min-h-[76px] items-center px-4 py-3"
+        >
           <Tooltip delay={350}>
             <Tooltip.Trigger
               className="flex min-w-0 flex-col"
               aria-label={`${projectName}, ${clientName}`}
             >
               <span className={`${summaryTextClass} flex items-center gap-2 font-medium`}>
-                <ProjectLabel project={project ?? null} label={projectName} />
+                {projectName}
               </span>
-              <span className={`${summaryTextClass} text-xs font-light`}>{clientName}</span>
+              <span className={`${summaryTextClass} text-sm font-normal text-muted`}>
+                {clientName}
+              </span>
             </Tooltip.Trigger>
             <Tooltip.Content
               showArrow
@@ -623,7 +664,7 @@ function TrackerGroupSummaryRow({
       <Table.Cell className={`${summaryCellClass} p-0 text-center`}>
         <Surface
           variant={summarySurfaceVariant}
-          className="flex min-h-20 items-center justify-center px-4 py-3"
+          className="flex min-h-[76px] items-center justify-center px-4 py-3"
         >
           <span className={`${summaryTextClass} text-center`}>{group.start}</span>
         </Surface>
@@ -631,7 +672,7 @@ function TrackerGroupSummaryRow({
       <Table.Cell className={`${summaryCellClass} p-0 text-center`}>
         <Surface
           variant={summarySurfaceVariant}
-          className="flex min-h-20 items-center justify-center px-4 py-3"
+          className="flex min-h-[76px] items-center justify-center px-4 py-3"
         >
           <span className={`${summaryTextClass} text-center`}>
             <EndTimeValue startDate={group.date} end={group.end} endDate={group.endDate} />
@@ -641,7 +682,7 @@ function TrackerGroupSummaryRow({
       <Table.Cell className={`${summaryCellClass} p-0 text-center`}>
         <Surface
           variant={summarySurfaceVariant}
-          className="flex min-h-20 items-center justify-center px-4 py-3"
+          className="flex min-h-[76px] items-center justify-center px-4 py-3"
         >
           <span className={`${summaryTextClass} text-center`}>
             {formatDate(group.date, locale)}
@@ -651,15 +692,18 @@ function TrackerGroupSummaryRow({
       <Table.Cell className={`${summaryCellClass} p-0 text-center`}>
         <Surface
           variant={summarySurfaceVariant}
-          className="flex min-h-20 items-center justify-center px-4 py-3"
+          className="flex min-h-[76px] items-center justify-center px-4 py-3"
         >
           <span className={summaryTextClass}>{formatDuration(group.totalSeconds, locale)}</span>
         </Surface>
       </Table.Cell>
+      <Table.Cell className="text-center">
+        <TrackerTaskTeam entries={group.entries} />
+      </Table.Cell>
       <Table.Cell className="overflow-hidden whitespace-nowrap p-0">
         <Surface
           variant={summarySurfaceVariant}
-          className="flex min-h-20 items-center justify-end px-2 py-3"
+          className="flex min-h-[76px] items-center justify-end px-2 py-3"
         >
           <div className={trackerActionLayoutClass} data-tracker-action>
             <IconTooltip>
@@ -678,6 +722,11 @@ function TrackerGroupSummaryRow({
               ariaLabel={t("Actions for {task} group", { task: group.task })}
               items={[
                 {
+                  id: "urgent",
+                  label: t(urgent ? "Unmark urgent" : "Mark urgent"),
+                  icon: <Thunderbolt className="size-4" />,
+                },
+                {
                   id: "favorite",
                   label: t(isFavorite(group) ? "Remove from favorites" : "Add to favorites"),
                   icon: <Star className="size-4" />,
@@ -688,17 +737,53 @@ function TrackerGroupSummaryRow({
                   icon: <Copy className="size-4" />,
                 },
                 {
-                  id: "toggle",
-                  label: t(isExpanded ? "Collapse group" : "Expand group"),
-                  icon: <ChevronDown className="size-4" />,
+                  id: "members",
+                  label: t("Add members"),
+                  icon: <PersonPlus className="size-4" />,
+                },
+                {
+                  id: "trello",
+                  label: t("Link to Trello"),
+                  icon: <LayoutColumns className="size-4 text-[#0052CC]" />,
+                },
+                {
+                  id: "delete",
+                  label: t("Delete entry"),
+                  icon: <TrashBin className="size-4" />,
+                  tone: "danger",
                 },
               ]}
               onAction={(key) => {
+                if (key === "trello" || key === "members") setEntryTaskMode(key);
+                if (key === "urgent") {
+                  for (const entry of group.entries) {
+                    const result = updateEntry(entry.id, {
+                      taskDetails: {
+                        id: entry.taskDetails?.id ?? crypto.randomUUID(),
+                        ...entry.taskDetails,
+                        urgent: !urgent,
+                      },
+                    });
+                    if (!result.success) {
+                      toast.danger(t("Unable to save urgency"), {
+                        description: error(result.error),
+                      });
+                      break;
+                    }
+                  }
+                }
                 if (key === "favorite") toggleFavorite(group);
                 if (key === "duplicate") duplicateLatestEntry();
-                if (key === "toggle") onToggle();
+                if (key === "delete") onRequestDelete();
               }}
             />
+            {entryTaskMode ? (
+              <EntryTrelloModal
+                entries={group.entries}
+                mode={entryTaskMode}
+                onClose={() => setEntryTaskMode(null)}
+              />
+            ) : null}
           </div>
         </Surface>
       </Table.Cell>
@@ -742,6 +827,7 @@ function TrackerEntryRow({
   const [draft, setDraft] = useState<EntryDraft>(() => toDraft(entry));
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const [isHovered, setIsHovered] = useState(false);
+  const [entryTaskMode, setEntryTaskMode] = useState<"trello" | "members" | null>(null);
   const [pendingEdit, setPendingEdit] = useState<{
     candidate: EntryDraft;
     patch: Partial<Omit<TimeEntry, "id">>;
@@ -1141,6 +1227,11 @@ function TrackerEntryRow({
           ariaLabel={t("Actions for {task}", { task: entry.task })}
           items={[
             {
+              id: "urgent",
+              label: t(entry.taskDetails?.urgent ? "Unmark urgent" : "Mark urgent"),
+              icon: <Thunderbolt className="size-4" />,
+            },
+            {
               id: "favorite",
               label: t(isFavorite(entry) ? "Remove from favorites" : "Add to favorites"),
               icon: <Star className="size-4" />,
@@ -1151,6 +1242,16 @@ function TrackerEntryRow({
               icon: <Copy className="size-4" />,
             },
             {
+              id: "members",
+              label: t("Add members"),
+              icon: <PersonPlus className="size-4" />,
+            },
+            {
+              id: "trello",
+              label: t("Link to Trello"),
+              icon: <LayoutColumns className="size-4 text-[#0052CC]" />,
+            },
+            {
               id: "delete",
               label: t("Delete entry"),
               icon: <TrashBin className="size-4" />,
@@ -1158,11 +1259,31 @@ function TrackerEntryRow({
             },
           ]}
           onAction={(key) => {
+            if (key === "trello" || key === "members") setEntryTaskMode(key);
+            if (key === "urgent") {
+              const result = updateEntry(entry.id, {
+                taskDetails: {
+                  id: entry.taskDetails?.id ?? crypto.randomUUID(),
+                  ...entry.taskDetails,
+                  urgent: !entry.taskDetails?.urgent,
+                },
+              });
+              if (!result.success) {
+                toast.danger(t("Unable to save urgency"), { description: error(result.error) });
+              }
+            }
             if (key === "favorite") toggleFavorite(entry);
             if (key === "duplicate") duplicateEntry();
             if (key === "delete") onRequestDelete(entry);
           }}
         />
+        {entryTaskMode ? (
+          <EntryTrelloModal
+            entries={[entry]}
+            mode={entryTaskMode}
+            onClose={() => setEntryTaskMode(null)}
+          />
+        ) : null}
         <OverlapConfirmation
           conflict={pendingEdit?.conflict ?? null}
           isOpen={pendingEdit !== null}
@@ -1243,13 +1364,13 @@ function TrackerEntryRow({
   const cellButtonClass =
     "inline-flex min-w-0 max-w-full truncate whitespace-nowrap px-1 py-1 text-left";
   const descriptionButtonClass =
-    "inline-flex min-w-0 max-w-full truncate whitespace-nowrap px-0 py-0 text-left text-xs font-light";
+    "inline-flex min-w-0 max-w-full truncate whitespace-nowrap px-0 py-0 text-left text-sm font-normal text-muted";
   const taskButtonClass =
     "inline-flex h-5 min-h-5 min-w-0 max-w-full flex-[0_1_auto] items-center justify-start px-0 py-0 text-left whitespace-nowrap font-semibold";
   const projectButtonClass =
     "inline-flex h-auto min-h-8 w-full min-w-0 items-start justify-center px-1 py-1 text-left font-medium";
   const timeSlotClass =
-    "inline-flex h-8 w-[5.75rem] min-w-[5.75rem] shrink-0 items-center justify-center px-1 whitespace-nowrap";
+    "inline-flex h-8 w-full min-w-0 items-center justify-center px-1 whitespace-nowrap";
   const compactInputClass = "h-8 min-h-8 px-2 py-1";
   const durationInputClass = `${compactInputClass} w-full min-w-0 max-w-full`;
   return (
@@ -1257,6 +1378,7 @@ function TrackerEntryRow({
       {...(rowId ? { id: rowId } : {})}
       ref={rowRef}
       data-tracker-entry="true"
+      data-grouped-child={isGroupedChild || undefined}
       onHoverChange={setIsHovered}
     >
       <Table.Cell className={`${trackerCellClass} min-w-0 ${isGroupedChild ? "pl-8" : ""}`.trim()}>
@@ -1305,6 +1427,24 @@ function TrackerEntryRow({
                     onPress={() => onActivate("task")}
                   >
                     <span className="truncate">{entry.task}</span>
+                    {isFavorite(entry) ? (
+                      <Star
+                        className="size-3.5 shrink-0 text-warning"
+                        aria-label={t("Favorite tasks")}
+                      />
+                    ) : null}
+                    {entry.taskDetails?.trelloCard ? (
+                      <LayoutColumns
+                        className="size-3.5 shrink-0 text-accent"
+                        aria-label={entry.taskDetails.trelloCard.name}
+                      />
+                    ) : null}
+                    {entry.taskDetails?.urgent ? (
+                      <Thunderbolt
+                        className="size-3.5 shrink-0 text-danger"
+                        aria-label={t("Urgent")}
+                      />
+                    ) : null}
                   </Button>
                   <Tooltip.Content
                     showArrow
@@ -1315,25 +1455,7 @@ function TrackerEntryRow({
                 </Tooltip>
               </div>
             )}
-            <IconTooltip>
-              <Button
-                isIconOnly
-                size="sm"
-                variant="ghost"
-                aria-label={t("Billable: {value}", {
-                  value: entry.billable ? t("yes") : t("no"),
-                })}
-                aria-pressed={entry.billable}
-                data-tracker-field="billable"
-                className="size-4 min-w-4 p-0"
-                onPress={() => {
-                  const next = !entry.billable;
-                  if (commitField("billable", next)) onDeactivate();
-                }}
-              >
-                <BillableIndicator billable={entry.billable} mode="icon" />
-              </Button>
-            </IconTooltip>
+            {entry.billable ? <BillableIndicator billable mode="icon" /> : null}
           </div>
           {activeField === "description" ? (
             <div className="flex min-w-0 items-start gap-1">
@@ -1377,7 +1499,7 @@ function TrackerEntryRow({
                 data-tracker-field="description"
                 onPress={() => onActivate("description")}
               >
-                {entry.description || "·"}
+                {entry.description || ""}
               </Button>
               <Tooltip.Content
                 showArrow
@@ -1428,9 +1550,9 @@ function TrackerEntryRow({
             >
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="flex w-full min-w-0 items-center gap-2 truncate font-medium">
-                  <ProjectLabel project={project ?? null} label={projectName} />
+                  {projectName}
                 </span>
-                <span className="block w-full min-w-0 truncate text-xs font-light">
+                <span className="block w-full min-w-0 truncate text-sm font-normal text-muted">
                   {clientName}
                 </span>
               </span>
@@ -1575,6 +1697,9 @@ function TrackerEntryRow({
         )}
       </Table.Cell>
 
+      <Table.Cell className="text-center">
+        <TrackerTaskTeam entries={[entry]} />
+      </Table.Cell>
       {actionCell}
     </Table.Row>
   );

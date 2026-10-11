@@ -1,4 +1,4 @@
-import { IconTooltip } from "@/components/icon-tooltip";
+import { projectIsBillable } from "@/lib/project-billability";
 import { Button } from "@heroui/react/button";
 import { Description } from "@heroui/react/description";
 import { FieldError } from "@heroui/react/field-error";
@@ -8,11 +8,9 @@ import { Label } from "@heroui/react/label";
 import { Modal } from "@heroui/react/modal";
 import { TextArea } from "@heroui/react/textarea";
 import { TextField } from "@heroui/react/textfield";
-import { ToggleButton } from "@heroui/react/toggle-button";
-import { ToggleButtonGroup } from "@heroui/react/toggle-button-group";
 import { toast } from "@heroui/react/toast";
 import { useEffect, useState } from "react";
-import { BillableIndicator } from "@/components/billable-indicator";
+import { CircleDollar } from "@gravity-ui/icons";
 import { FormAlert } from "@/components/form-feedback";
 import { HeroUIDatePicker } from "@/components/hero-ui-date-picker";
 import { ModalLayout } from "@/components/modal-layout";
@@ -69,7 +67,10 @@ export function LogTimeModal({
   const [end, setEnd] = useState("10:00");
   const [duration, setDuration] = useState("1:00");
   const [description, setDescription] = useState("");
-  const [billable, setBillable] = useState(true);
+  const billable =
+    entry && entry.projectId === projectId
+      ? entry.billable
+      : projectIsBillable(projectId, projects, clients);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [pendingEntry, setPendingEntry] = useState<Omit<TimeEntry, "id"> | null>(null);
   const [projectFormOpen, setProjectFormOpen] = useState(false);
@@ -89,7 +90,6 @@ export function LogTimeModal({
     setDuration(formatDurationInput(entry?.seconds ?? 3600));
     setTimeMode(entry && entry.seconds % 60 !== 0 ? "duration" : "range");
     setDescription(entry?.description ?? "");
-    setBillable(entry?.billable ?? false);
     setSaveError(null);
     setPendingEntry(null);
   }, [entry, isOpen, preferences.timezone]);
@@ -189,17 +189,12 @@ export function LogTimeModal({
     save(candidate);
   };
 
-  const selectedProject = projects.find((project) => project.id === projectId);
-  const selectedClient = selectedProject
-    ? clients.find((client) => client.id === selectedProject.clientId)
-    : null;
-
   const formModal = (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
       <ModalTriggerRegistration />
       <Modal.Backdrop>
         <Modal.Container size="sm">
-          <Modal.Dialog className="flex max-h-[calc(100dvh-2rem)] min-h-0 flex-col overflow-hidden">
+          <Modal.Dialog className="manual-entry-modal flex w-full max-w-96 max-h-[calc(100dvh-2rem)] min-h-0 flex-col overflow-hidden rounded-3xl p-6">
             <Modal.CloseTrigger />
             <ModalLayout.Header className="shrink-0">
               {t(entry ? "Edit time entry" : "Log time manually")}
@@ -242,98 +237,73 @@ export function LogTimeModal({
                     <Input variant="secondary" placeholder={t("e.g. Landing page revisions")} />
                     <FieldError />
                   </TextField>
-
-                  <ToggleButtonGroup
-                    aria-label={t("Billable")}
-                    size="sm"
-                    className="shrink-0 gap-0.5"
-                    selectionMode="multiple"
-                  >
-                    <IconTooltip>
-                      <ToggleButton
-                        aria-label={t("Billable")}
-                        className="size-9 min-h-9 min-w-9"
-                        isIconOnly
-                        isSelected={billable}
-                        onChange={(selected: boolean) => setBillable(selected)}
-                      >
-                        <BillableIndicator billable={billable} mode="icon" size="md" />
-                      </ToggleButton>
-                    </IconTooltip>
-                  </ToggleButtonGroup>
                 </div>
 
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <Label>{t("Date")}</Label>
-                    <HeroUIDatePicker
-                      value={date}
-                      label={t("Date")}
-                      variant="secondary"
-                      isInvalid={Boolean(dateError)}
-                      onChange={(next) => {
-                        setDate(next);
-                        setSaveError(null);
-                      }}
-                    />
-                    {dateError ? <FieldError>{dateError}</FieldError> : null}
-                  </div>
-
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <Label>{t("Project")}</Label>
-                    <ProjectSelect
-                      ariaLabel={t("Project")}
-                      value={projectId ?? "none"}
-                      variant="secondary"
-                      listClassName="max-h-60 overflow-y-auto"
-                      allowArchivedId={entry?.projectId ?? null}
-                      {...(can("manage-projects")
-                        ? {
-                            onCreateProject: (initialName: string) => {
-                              setProjectInitialName(initialName);
-                              setProjectFormOpen(true);
-                            },
-                          }
-                        : {})}
-                      onChange={(value) => {
-                        const nextProjectId = value === "none" || value === "all" ? null : value;
-                        setProjectId(nextProjectId);
-                        if (!entry) {
-                          setBillable(
-                            nextProjectId === null
-                              ? false
-                              : (projects.find((project) => project.id === nextProjectId)
-                                  ?.billable ?? false),
-                          );
+                <div className="flex min-w-0 flex-col gap-2">
+                  <Label>{t("Project")}</Label>
+                  <ProjectSelect
+                    ariaLabel={t("Project")}
+                    value={projectId ?? "none"}
+                    variant="secondary"
+                    listClassName="max-h-60 overflow-y-auto"
+                    allowArchivedId={entry?.projectId ?? null}
+                    {...(can("manage-projects")
+                      ? {
+                          onCreateProject: (initialName: string) => {
+                            setProjectInitialName(initialName);
+                            setProjectFormOpen(true);
+                          },
                         }
-                        setSaveError(null);
-                      }}
-                    />
-                    {selectedProject ? (
-                      <Description className="text-xs">
-                        {t("Client: {name}", {
-                          name: selectedClient?.name ?? t("Unknown client"),
-                        })}
-                      </Description>
-                    ) : null}
+                      : {})}
+                    onChange={(value) => {
+                      const nextProjectId = value === "none" || value === "all" ? null : value;
+                      setProjectId(nextProjectId);
+                      setSaveError(null);
+                    }}
+                  />
+                  <div
+                    className="manual-entry-billing"
+                    data-billable={billable}
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <CircleDollar className="size-3.5" aria-hidden="true" />
+                    <span>{t(billable ? "Billable" : "Non-billable")}</span>
                   </div>
+                </div>
+
+                <div className="flex min-w-0 flex-col gap-2">
+                  <Label>{t("Date")}</Label>
+                  <HeroUIDatePicker
+                    value={date}
+                    label={t("Date")}
+                    variant="secondary"
+                    isInvalid={Boolean(dateError)}
+                    onChange={(next) => {
+                      setDate(next);
+                      setSaveError(null);
+                    }}
+                  />
+                  {dateError ? <FieldError>{dateError}</FieldError> : null}
                 </div>
 
                 <div
-                  className="flex flex-wrap items-center gap-2"
+                  className="manual-entry-mode flex w-fit items-center gap-0 rounded-full bg-default p-0.5"
                   role="group"
                   aria-label={t("Time entry mode")}
                 >
                   <Button
                     size="sm"
-                    variant={timeMode === "range" ? "secondary" : "tertiary"}
+                    variant={timeMode === "range" ? "primary" : "ghost"}
+                    aria-pressed={timeMode === "range"}
                     onPress={() => setTimeMode("range")}
                   >
                     {t("Start / End")}
                   </Button>
                   <Button
                     size="sm"
-                    variant={timeMode === "duration" ? "secondary" : "tertiary"}
+                    variant={timeMode === "duration" ? "primary" : "ghost"}
+                    aria-pressed={timeMode === "duration"}
                     onPress={() => setTimeMode("duration")}
                   >
                     {t("Duration")}
@@ -341,7 +311,7 @@ export function LogTimeModal({
                 </div>
 
                 <div className="space-y-2">
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid grid-cols-2 gap-4">
                     <TextField fullWidth name="start" type="time" value={start} onChange={setStart}>
                       <Label>{t("Start")}</Label>
                       <Input variant="secondary" />
@@ -378,15 +348,6 @@ export function LogTimeModal({
                       </TextField>
                     )}
                   </div>
-
-                  <Description className="text-xs">
-                    {t("Duration: {value}", {
-                      value:
-                        entrySeconds > 0
-                          ? formatDuration(entrySeconds, locale)
-                          : t("invalid range"),
-                    })}
-                  </Description>
                 </div>
 
                 <TextField
@@ -431,7 +392,6 @@ export function LogTimeModal({
         onOpenChange={setProjectFormOpen}
         onCreated={(project) => {
           setProjectId(project.id);
-          if (!entry) setBillable(project.billable);
           setSaveError(null);
         }}
       />

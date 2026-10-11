@@ -22,6 +22,51 @@ export const localeOptions: Array<{ id: Locale; label: string }> = [
 ];
 
 const ptBR: Record<string, string> = {
+  Urgent: "Urgente",
+  "Delete {count} entries for “{task}”?": "Excluir os {count} registros de “{task}”?",
+  "Start column": "Início",
+  "Collaboration started": "Colaboração iniciada. Seu contador está em andamento.",
+  "Wait for the task invitation to finish.": "Aguarde a conclusão do aceite do convite.",
+  Later: "Mais tarde",
+  "Unable to save Trello link": "Não foi possível salvar o vínculo com o Trello",
+  "Unable to save urgency": "Não foi possível salvar a urgência",
+  "Unlink card": "Desvincular card",
+  "Link to Trello": "Vincular ao Trello",
+  "Mark urgent": "Marcar como urgente",
+  "Unmark urgent": "Desmarcar urgente",
+  "Task actions": "Ações da tarefa",
+  "Select who participates in the same task.": "Selecione quem participa da mesma tarefa.",
+  "Select a card to link to the task.": "Selecione um card para vincular à tarefa.",
+  "Search by name or email": "Buscar por nome ou e-mail...",
+  "Search cards": "Buscar cards...",
+  "Board cards": "Cards do quadro",
+  "No available members for this project": "Nenhum membro disponível para este projeto",
+  "Invite selected members": "Convidar membros selecionados",
+  "Link selected card": "Vincular card selecionado",
+  "Task invitations sent": "Convites para a tarefa enviados",
+  "Task invitation": "Convite para tarefa",
+  "invited you to the task": "convidou você para a tarefa",
+  Decline: "Recusar",
+  "Stop the active timer before accepting a task invitation.":
+    "Pare o cronômetro ativo antes de aceitar o convite para uma tarefa.",
+  "Unable to complete this action": "Não foi possível concluir esta ação",
+  "Trello is not configured yet.": "A conexão com o Trello ainda não está disponível.",
+  "Connect Trello to select a card.": "Conecte o Trello para selecionar um card.",
+  "Allow popups to connect Trello.": "Permita pop-ups para conectar o Trello.",
+  "Trello authorization was not completed.": "A autorização do Trello não foi concluída.",
+  "Trello authorization timed out.": "O tempo para autorizar o Trello esgotou.",
+  "Connect Trello again.": "Conecte o Trello novamente.",
+  "Could not load Trello data.": "Não foi possível carregar os dados do Trello.",
+  "Loading cards…": "Carregando cards…",
+  "No cards found": "Nenhum card encontrado",
+  "This project is not available to the selected member.":
+    "Este projeto não está disponível para o membro selecionado.",
+  "Choose a task, project and team members.": "Escolha uma tarefa, um projeto e membros da equipe.",
+  "Only the task inviter can invite more members.":
+    "Somente quem criou o convite pode convidar outros membros para a tarefa.",
+  "This task invitation is no longer available.":
+    "Este convite para tarefa não está mais disponível.",
+
   "Saving…": "Salvando…",
   "The recovery link may have expired or already been used. Request a new password reset email.":
     "O link de recuperação pode ter expirado ou já ter sido usado. Solicite um novo e-mail para redefinir sua senha.",

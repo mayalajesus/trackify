@@ -139,7 +139,7 @@ body {
   width: 192px;
   min-width: 192px;
   max-width: calc(100vw - 24px);
-  padding: 5px 16px;
+  padding: 5px 8px;
 }
 .action-menu .action-menu__list {
   padding: 0;
@@ -149,7 +149,7 @@ body {
   display: flex;
   align-items: center;
   min-height: 38px;
-  padding: 9px 0;
+  padding: 9px 8px;
   gap: 12px;
   font-size: 14px;
   font-weight: 400;
@@ -392,4 +392,78 @@ body {
     --radius: 0.5rem;
     --field-radius: 0.75rem;
   }
+}
+
+/* Tracker hierarchy: white summaries, inset secondary rows and compact team avatars. */
+.tracker-entries-table .table__column {
+  font-weight: 400;
+}
+.tracker-entries-table .table__cell {
+  height: 68px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+.tracker-entries-table [data-tracker-group] .table__cell {
+  height: 80px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.tracker-entries-table [data-grouped-child] .table__cell {
+  background: var(--background);
+}
+.tracker-entries-table .tracker-team-avatar .avatar {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+}
+
+.tracker-entries-table .table__cell {
+  border-bottom: 1px solid var(--separator);
+  font-size: 14px;
+  line-height: 20px;
+}
+.tracker-entries-table .table__row:last-child .table__cell {
+  border-bottom: 0;
+}
+
+.manual-entry-modal .modal__heading {
+  font-size: 18px;
+  line-height: 24px;
+}
+.manual-entry-modal .modal__body {
+  gap: 16px;
+}
+.manual-entry-modal .label {
+  font-size: 14px;
+  font-weight: 400;
+}
+.manual-entry-mode .button {
+  height: 32px;
+  min-height: 32px;
+  padding-inline: 16px;
+  border-radius: 999px;
+}
+.manual-entry-billing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 14px;
+  line-height: 20px;
+}
+.manual-entry-billing[data-billable="true"] {
+  background: #ddf5fa;
+  color: #15536b;
+}
+.manual-entry-billing[data-billable="false"] svg {
+  color: var(--muted);
+}
+[data-theme="dark"] .manual-entry-billing[data-billable="true"] {
+  background: #163842;
+  color: #a6dfec;
 }

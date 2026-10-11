@@ -3,11 +3,12 @@ import { Button } from "@heroui/react/button";
 import { Typography } from "@heroui/react/typography";
 import { createFileRoute } from "@tanstack/react-router";
 import { Calendar, ChevronLeft, ChevronRight, Clock } from "@gravity-ui/icons";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { LogTimeModal } from "@/components/log-time-modal";
 import { PageHeader } from "@/components/page-header";
 import { EmptyBlock } from "@/components/states";
-import { TrackerBar } from "@/components/tracker-bar";
+import { TrackerBar, type TrackerBarHandle } from "@/components/tracker-bar";
+import { TrackerFavorites } from "@/components/tracker-favorites";
 import { TrackerEntries } from "@/components/tracker-entries";
 import { TrackerPeriodFilter } from "@/components/tracker-period-filter";
 import {
@@ -42,6 +43,7 @@ export const Route = createFileRoute("/tracker")({
 function TrackerPage() {
   const { entries, today, currentUserId, settings, timer } = useStore();
   const { locale, t } = useI18n();
+  const trackerBarRef = useRef<TrackerBarHandle>(null);
   const [logOpen, setLogOpen] = useState(false);
   const weekStartsOn = settings.weekStart === "sunday" ? 0 : 1;
   const currentWeek = getWeekBounds(today, weekStartsOn);
@@ -82,7 +84,7 @@ function TrackerPage() {
     <div className="space-y-7">
       <PageHeader title={t("Tracker")} description={formatLongDate(today, locale)} />
 
-      <TrackerBar />
+      <TrackerBar ref={trackerBarRef} />
 
       <section className="space-y-4" aria-label={t("Tracking period")}>
         <div className="flex flex-col gap-3 pb-3 sm:flex-row sm:items-center sm:justify-between">
@@ -175,6 +177,8 @@ function TrackerPage() {
           <TrackerEntries days={days} />
         )}
       </section>
+
+      <TrackerFavorites onSelect={(favorite) => trackerBarRef.current?.selectFavorite(favorite)} />
 
       <LogTimeModal isOpen={logOpen} onOpenChange={setLogOpen} />
     </div>
