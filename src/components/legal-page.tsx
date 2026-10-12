@@ -14,23 +14,27 @@ export function LegalPage({
   children: ReactNode;
 }) {
   return (
-    <main className="min-h-screen px-4 py-10 sm:px-6">
-      <article className="mx-auto max-w-3xl space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+    <main className="auth-legal-page">
+      <article className="auth-card auth-legal-card">
+        <div className="auth-legal-header">
           <div>
-            <Typography type="h1" weight="semibold">
+            <Typography type="h1" className="auth-title">
               {title}
             </Typography>
             <Typography type="body-sm" color="muted" className="mt-1">
               Última atualização: {updated}
             </Typography>
           </div>
-          <Button variant="secondary" onPress={() => window.history.back()}>
+          <Button
+            className="auth-outline"
+            variant="secondary"
+            onPress={() => window.history.back()}
+          >
             Voltar
           </Button>
         </div>
-        <Card className="space-y-6 p-5 sm:p-7">{children}</Card>
-        <Typography type="body-xs" color="muted" align="center">
+        <Card className="auth-legal-document">{children}</Card>
+        <Typography type="body-xs" color="muted" align="center" className="auth-legal-links">
           <RouterLink to="/terms">Termos de Uso</RouterLink>
           {" · "}
           <RouterLink to="/privacy">Aviso de Privacidade</RouterLink>
@@ -44,11 +48,11 @@ export function LegalPage({
 
 export function LegalSection({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="space-y-2">
+    <section className="auth-legal-section">
       <Typography type="h2" weight="semibold">
         {title}
       </Typography>
-      <div className="space-y-2 text-sm leading-6 text-muted">{children}</div>
+      <div className="auth-legal-copy">{children}</div>
     </section>
   );
 }

@@ -77,6 +77,7 @@ function ForgotPasswordPage() {
 
   return (
     <AuthPage
+      variant={sentEmail ? "confirmation" : "reset"}
       title={t("Reset your password")}
       description={t("We will send a secure reset link to your email.")}
     >
@@ -87,13 +88,13 @@ function ForgotPasswordPage() {
         />
       ) : null}
       {sentEmail ? (
-        <div className="flex flex-col gap-5">
-          <div className="space-y-3 text-center" role="status">
+        <div className="auth-confirmation">
+          <div className="auth-confirmation-status" role="status">
             <span
               className="mx-auto flex size-12 items-center justify-center rounded-full bg-success/10 text-success"
               aria-hidden="true"
             >
-              <Check className="size-6" />
+              <Check className="size-4" />
             </span>
             <Typography type="body-sm" color="muted" align="center">
               {t("If an account is associated with")}{" "}
@@ -116,7 +117,7 @@ function ForgotPasswordPage() {
                 : t("Resend email")}
           </Button>
           <Button
-            className="w-full"
+            className="auth-outline w-full"
             variant="secondary"
             isDisabled={busy}
             onPress={() => {
@@ -135,7 +136,7 @@ function ForgotPasswordPage() {
           </Button>
         </div>
       ) : (
-        <Form className="flex flex-col gap-5" onSubmit={submit}>
+        <Form className="auth-form auth-reset-form" onSubmit={submit}>
           <AuthField
             id="reset-email"
             label={t("Email")}

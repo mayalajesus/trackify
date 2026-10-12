@@ -242,6 +242,7 @@ export function LogTimeModal({
                 <div className="flex min-w-0 flex-col gap-2">
                   <Label>{t("Project")}</Label>
                   <ProjectSelect
+                    trackerStyle
                     ariaLabel={t("Project")}
                     value={projectId ?? "none"}
                     variant="secondary"

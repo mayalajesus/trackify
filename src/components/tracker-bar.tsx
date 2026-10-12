@@ -217,6 +217,7 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
           <div className="min-w-0">
             <Label className="sr-only">{t("Project")}</Label>
             <ProjectSelect
+              trackerStyle
               required
               triggerRef={projectTriggerRef}
               validationMessage={
@@ -256,7 +257,7 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
             />
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="tracker-task-actions flex items-center gap-3">
             <IconTooltip>
               <Button
                 isIconOnly
@@ -291,6 +292,7 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
               </Button>
             </IconTooltip>
             <ActionDropdown
+              menuClassName="tracker-action-menu"
               ariaLabel={t("Task actions")}
               orientation="vertical"
               items={[
@@ -316,7 +318,7 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
           </div>
           <Separator orientation="vertical" className="hidden h-6 lg:block" />
 
-          <div className="flex items-center gap-1 justify-end">
+          <div className="tracker-time-group flex items-center gap-1.5 justify-end">
             <TimerDurationEditor
               elapsed={elapsed}
               isReadOnly={!active}

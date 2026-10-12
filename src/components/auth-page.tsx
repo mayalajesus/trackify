@@ -19,27 +19,26 @@ export function AuthPage({
   title,
   description,
   children,
+  variant = "default",
 }: {
+  variant?: "default" | "login" | "signup" | "reset" | "confirmation";
   title: string;
   description: string;
   children: ReactNode;
 }) {
   return (
-    <main
-      data-page="auth"
-      className="flex min-h-dvh items-center justify-center bg-background px-4 py-8 sm:px-6 sm:py-10"
-    >
-      <Card className="mx-auto w-full max-w-[508px] gap-0 overflow-visible rounded-[24px] bg-surface p-5 shadow-[0_4px_10px_0_rgba(0,0,0,0.14)] sm:p-[30px]">
-        <div className="mb-8 text-center">
-          <Typography type="h1" weight="semibold" align="center">
+    <main data-page="auth" className={`auth-page auth-page--${variant}`}>
+      <Card className="auth-card">
+        <div className="auth-header">
+          <Typography type="h1" className="auth-title" align="center">
             {title}
           </Typography>
-          <Typography type="body-sm" color="muted" align="center" className="mt-2">
+          <Typography type="body-sm" color="muted" align="center" className="auth-description">
             {description}
           </Typography>
         </div>
-        <div className="space-y-5">{children}</div>
-        <Typography type="body-xs" color="muted" align="center" className="mt-6">
+        <div className="auth-content">{children}</div>
+        <Typography type="body-xs" color="muted" align="center" className="auth-legal-links">
           <RouterLink to="/terms">Termos de Uso</RouterLink>
           {" · "}
           <RouterLink to="/privacy">Aviso de Privacidade</RouterLink>
@@ -81,6 +80,7 @@ export function AuthField({
   const hasPasswordToggle = type === "password" && allowPasswordToggle;
   return (
     <TextField
+      className="auth-field"
       fullWidth
       isRequired={required}
       name={id}
@@ -144,7 +144,7 @@ export function AuthFooter({
   action: string;
 }) {
   return (
-    <Typography type="body-sm" color="muted" align="center">
+    <Typography type="body-sm" color="muted" align="center" className="auth-footer">
       {prompt}{" "}
       <RouterLink to={to} search={{ redirect: getAuthReturnPath() }}>
         {action}
@@ -172,7 +172,7 @@ export function GoogleAuthButton({
   const { t } = useI18n();
   return (
     <Button
-      className="w-full"
+      className="auth-google w-full"
       variant="secondary"
       type="button"
       isDisabled={isDisabled}
@@ -187,7 +187,7 @@ export function GoogleAuthButton({
 export function AuthDivider() {
   const { t } = useI18n();
   return (
-    <div className="flex items-center gap-3" aria-hidden="true">
+    <div className="auth-divider flex items-center gap-3" aria-hidden="true">
       <Separator className="flex-1" />
       <Typography type="body-xs" color="muted">
         {t("or")}

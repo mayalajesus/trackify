@@ -396,7 +396,7 @@ export function TrackerEntries({ days }: { days: TrackerDay[] }) {
         className="tracker-entries-table"
         label={t("Time entries for selected period")}
         scrollHint={t("Scroll horizontally to see all columns")}
-        minWidth="min-w-[1040px]"
+        minWidth="min-w-[880px]"
         contentClassName="table-fixed"
         selectedKeys={selectedRowKeys}
       >
@@ -475,7 +475,7 @@ export function TrackerEntries({ days }: { days: TrackerDay[] }) {
         <ModalTriggerRegistration />
         <Modal.Backdrop>
           <Modal.Container size="sm">
-            <Modal.Dialog>
+            <Modal.Dialog className="tracker-delete-modal">
               <Modal.CloseTrigger />
               <ModalLayout.Header>{t("Delete time entry?")}</ModalLayout.Header>
               <ModalLayout.Body>
@@ -719,6 +719,7 @@ function TrackerGroupSummaryRow({
               </Button>
             </IconTooltip>
             <ActionDropdown
+              menuClassName="tracker-action-menu"
               ariaLabel={t("Actions for {task} group", { task: group.task })}
               items={[
                 {
@@ -1224,6 +1225,7 @@ function TrackerEntryRow({
           </Button>
         </IconTooltip>
         <ActionDropdown
+          menuClassName="tracker-action-menu"
           ariaLabel={t("Actions for {task}", { task: entry.task })}
           items={[
             {

@@ -287,7 +287,7 @@ function ReportFilterDropdown({
           </span>
         </Button>
         <Dropdown.Popover
-          className="w-64 max-w-[calc(100vw-2rem)] min-w-0"
+          className="report-filter-popover w-64 max-w-[calc(100vw-2rem)] min-w-0"
           onOpenChange={(isOpen) => {
             if (!isOpen) setQuery("");
           }}
@@ -498,10 +498,10 @@ function ReportPeriodPicker({
           shouldFlip
           containerPadding={12}
           offset={8}
-          className="overflow-hidden p-2"
+          className="report-period-popover overflow-hidden p-0"
         >
           <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:gap-1">
-            <div className="hidden w-36 shrink-0 flex-col p-1 sm:flex">
+            <div className="report-period-presets hidden shrink-0 flex-col sm:flex">
               <Typography type="body-xs" color="muted" weight="semibold" className="px-2 py-1.5">
                 {t("Date range")}
               </Typography>
@@ -565,7 +565,7 @@ function ReportPeriodPicker({
                 </Dropdown.Popover>
               </GroupedDropdown>
             </div>
-            <div className="min-w-0 flex-1 p-2 pe-4 sm:w-64 sm:flex-none">
+            <div className="report-period-calendar min-w-0 flex-1">
               <RangeCalendar
                 aria-label={t("Choose report date range")}
                 firstDayOfWeek={weekStartsOn === 0 ? "sun" : "mon"}

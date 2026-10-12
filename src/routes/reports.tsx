@@ -1,5 +1,4 @@
 import { Button } from "@heroui/react/button";
-import { Chip } from "@heroui/react/chip";
 import { ProgressBar } from "@heroui/react/progress-bar";
 import { Table } from "@heroui/react/table";
 import { Tabs } from "@heroui/react/tabs";
@@ -7,26 +6,10 @@ import { Tooltip } from "@heroui/react/tooltip";
 import { Typography } from "@heroui/react/typography";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  ArrowDown,
-  ArrowUpFromSquare,
-  ArrowRotateLeft,
-  ArrowUp,
-  CircleInfo,
-  Minus,
-} from "@gravity-ui/icons";
+import { ArrowUpFromSquare, CircleInfo } from "@gravity-ui/icons";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Label as ChartLabel,
-  Pie,
-  PieChart,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Cell, Label as ChartLabel, Pie, PieChart } from "recharts";
+import { ReportDistribution } from "@/components/report-distribution";
 import { ProjectLabel } from "@/components/project-color";
 import { DataTable } from "@/components/data-table";
 import { DetailedReport } from "@/components/detailed-report";
@@ -40,17 +23,13 @@ import { PageHeader } from "@/components/page-header";
 import { ErrorBlock, CardsSkeleton } from "@/components/states";
 import { ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import {
-  ReportChart,
   ReportChartWidget,
   ReportKpi,
   ReportWidget,
-  reportChartAxisProps,
   reportChartColors,
   reportChartTooltipProps,
-  reportVerticalBarProps,
-  shortenReportChartLabel,
 } from "@/components/report-widget";
-import type { Client, Member, Project, TimeEntry } from "@/lib/domain";
+import type { Client, Project, TimeEntry } from "@/lib/domain";
 import { createApiDataSource } from "@/lib/api-data-source";
 import {
   formatDate,
@@ -1230,7 +1209,7 @@ function ReportsPage() {
 
   const description = {
     overview: t("See tracked time, billability, estimated value and activity distribution."),
-    detailed: t("Inspect every entry with its project, client, person and billability."),
+    detailed: t("Inspect each entry by project, client and member."),
   }[search.view];
 
   const clearFilters = () =>
@@ -1255,7 +1234,7 @@ function ReportsPage() {
       : null;
 
   return (
-    <div className={search.view === "overview" ? "space-y-5" : "space-y-6"}>
+    <div className={`reports-page reports-page--${search.view}`}>
       <PageHeader
         title={t("Reports")}
         description={description}
@@ -1323,7 +1302,13 @@ function ReportsPage() {
       ) : (
         <>
           {search.view === "overview" ? (
-            <OverviewDashboard analytics={reportAnalytics} projects={projects} clients={clients} />
+            <OverviewDashboard
+              analytics={reportAnalytics}
+              entries={currencyFilteredEntries}
+              projects={projects}
+              clients={clients}
+              weekStartsOn={weekStartsOn}
+            />
           ) : (
             <DetailedReport
               entries={filteredEntries}
@@ -1353,8 +1338,6 @@ function ReportsPage() {
     </div>
   );
 }
-
-type Translate = ReturnType<typeof useI18n>["t"];
 
 const shiftLabels: Record<ShiftId, string> = {
   overnight: "Overnight",
@@ -1441,60 +1424,12 @@ function isWeekdayDate(date: string): boolean {
   return weekday >= 1 && weekday <= 5;
 }
 
-type ActivityBarBackgroundProps = {
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
-  payload?: { isWeekday?: boolean };
-};
-
-function ActivityBarBackground({
-  x = 0,
-  y = 0,
-  width = 0,
-  height = 0,
-  payload,
-}: ActivityBarBackgroundProps) {
-  const isWeekday = payload?.isWeekday === true;
-  return (
-    <rect
-      x={x}
-      y={y}
-      width={width}
-      height={height}
-      rx={8}
-      ry={8}
-      fill={isWeekday ? reportChartColors.accent : reportChartColors.muted}
-      fillOpacity={isWeekday ? 0.16 : 0.2}
-    />
-  );
-}
-
 function overviewActivityTime(analytics: ReportAnalytics) {
   const periodSeconds =
     (getDayOffset(analytics.period.startDate, analytics.period.endDate) + 1) * 24 * 60 * 60;
   return {
     periodSeconds,
     percentage: periodSeconds > 0 ? (analytics.summary.totalSeconds / periodSeconds) * 100 : 0,
-  };
-}
-
-function formatDurationAxis(seconds: number, locale: Locale): string {
-  if (seconds < 3_600) return formatDuration(seconds, locale);
-  return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(seconds / 3_600)}h`;
-}
-
-function overviewDurationAxis(maximumSeconds: number) {
-  const steps = [900, 1_200, 1_800, 2_700, 3_600, 7_200, 14_400, 21_600, 28_800, 43_200, 86_400];
-  const targetStep = maximumSeconds / 3;
-  const step =
-    steps.find((candidate) => candidate >= targetStep) ??
-    Math.max(86_400, Math.ceil(targetStep / 86_400) * 86_400);
-  const maximum = step * 3;
-  return {
-    maximum,
-    ticks: [0, step, step * 2, maximum],
   };
 }
 
@@ -1523,52 +1458,6 @@ function overviewConsistencyPercentage(analytics: ReportAnalytics): number {
     getDayOffset(analytics.period.startDate, analytics.period.endDate) + 1,
   );
   return (analytics.summary.activeDays / periodDays) * 100;
-}
-
-function comparisonVariation(
-  comparison: ReportAnalytics["comparison"]["metrics"]["totalSeconds"],
-  locale: Locale,
-  t: Translate,
-  colorByDirection = false,
-  showZeroAsPercentage = false,
-) {
-  if (comparison.previous === 0) return null;
-
-  const change = comparison.percentageChange ?? 0;
-  const formatted = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(
-    Math.abs(change),
-  );
-  const label = `${change > 0 ? "+" : change < 0 ? "−" : ""}${formatted}%`;
-  if (change === 0) {
-    return {
-      label: showZeroAsPercentage ? label : t("No change"),
-      accessibleLabel: t("No change from previous period"),
-      direction: "neutral" as const,
-      tone: "neutral" as const,
-    };
-  }
-  return {
-    label,
-    accessibleLabel: `${formatted}% ${t(
-      change > 0 ? "more than previous period" : "less than previous period",
-    )}`,
-    direction: change > 0 ? ("up" as const) : ("down" as const),
-    tone: colorByDirection
-      ? change > 0
-        ? ("positive" as const)
-        : ("negative" as const)
-      : ("neutral" as const),
-  };
-}
-
-function comparisonFromValues(current: number, previous: number) {
-  const delta = current - previous;
-  return {
-    current,
-    previous,
-    delta,
-    percentageChange: previous > 0 ? (delta / previous) * 100 : null,
-  };
 }
 
 function selectTopProjects(analytics: ReportAnalytics, maximum = 5) {
@@ -1712,81 +1601,21 @@ function OverviewAccessibleTooltip({
 }
 
 function OverviewDashboard({
+  entries,
+  weekStartsOn,
   analytics,
   projects,
   clients,
 }: {
   analytics: ReportAnalytics;
+  entries: TimeEntry[];
+  weekStartsOn: 0 | 1;
   projects: Project[];
   clients: Client[];
 }) {
   const { locale, t } = useI18n();
   const { summary } = analytics;
   const percentageFormatter = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
-  const trackedVariation = comparisonVariation(
-    analytics.comparison.metrics.totalSeconds,
-    locale,
-    t,
-    true,
-    true,
-  );
-  const dailyAverageVariation = comparisonVariation(
-    analytics.comparison.metrics.averageSecondsPerActiveDay,
-    locale,
-    t,
-    true,
-    true,
-  );
-  const projectCountVariation = comparisonVariation(
-    comparisonFromValues(summary.projectCount, analytics.comparison.previous.projectCount),
-    locale,
-    t,
-    false,
-    true,
-  );
-  const taskCountVariation = comparisonVariation(
-    comparisonFromValues(summary.taskCount, analytics.comparison.previous.taskCount),
-    locale,
-    t,
-    false,
-    true,
-  );
-  const evolutionData = overviewEvolutionRows(analytics, locale);
-  const activityTime = overviewActivityTime(analytics);
-  const formattedActivityTimePercentage = percentageFormatter.format(activityTime.percentage);
-  const evolutionMetrics = [
-    {
-      key: "activity-time",
-      label: t("Activity time"),
-      value: `${formattedActivityTimePercentage}%`,
-      variation: trackedVariation,
-    },
-    {
-      key: "projects",
-      label: t("Projects"),
-      value: summary.projectCount,
-      variation: projectCountVariation,
-    },
-    {
-      key: "tasks",
-      label: t("Tasks"),
-      value: summary.taskCount,
-      variation: taskCountVariation,
-    },
-  ];
-  const evolutionTicks =
-    analytics.granularity === "day" || evolutionData.length <= 6
-      ? evolutionData.map((item) => item.tooltipLabel)
-      : Array.from({ length: 6 }, (_, index) => {
-          const dataIndex = Math.round((index * (evolutionData.length - 1)) / 5);
-          return evolutionData[dataIndex]?.tooltipLabel;
-        }).filter((label): label is string => Boolean(label));
-  const evolutionAxisLabels = new Map(
-    evolutionData.map((item) => [item.tooltipLabel, item.axisLabel] as const),
-  );
-  const evolutionAxis = overviewDurationAxis(
-    Math.max(0, ...evolutionData.map((item) => item.currentTotal)),
-  );
   const shiftOrder: ShiftId[] = ["morning", "afternoon", "night", "overnight"];
   const shiftData = [...analytics.shifts]
     .sort((a, b) => shiftOrder.indexOf(a.shift) - shiftOrder.indexOf(b.shift))
@@ -1821,30 +1650,11 @@ function OverviewDashboard({
       name: t("Internal"),
       value: summary.internalSeconds,
       color: reportChartColors.accent,
-      opacity: 0.28,
+      opacity: 0.1,
       percentage: internalPercentage,
     },
   ];
   const billingData = billingSegments.filter((item) => item.value > 0);
-  const highestActivityPeriod = evolutionData.reduce<(typeof evolutionData)[number] | null>(
-    (highest, item) => (!highest || item.currentTotal > highest.currentTotal ? item : highest),
-    null,
-  );
-  const evolutionSummary = [
-    `${t("Activity time")}: ${formattedActivityTimePercentage}%`,
-    `${t("Tracked")}: ${formatDuration(summary.totalSeconds, locale)}`,
-    `${t("Period")}: ${formatDuration(activityTime.periodSeconds, locale)}`,
-    `${t("Projects")}: ${summary.projectCount}`,
-    `${t("Tasks")}: ${summary.taskCount}`,
-    ...(highestActivityPeriod && highestActivityPeriod.currentTotal > 0
-      ? [
-          `${t("Highest activity period")}: ${highestActivityPeriod.label}, ${formatDuration(
-            highestActivityPeriod.currentTotal,
-            locale,
-          )}`,
-        ]
-      : []),
-  ].join(". ");
   const shiftSummary = shiftData.map((item) => `${item.shift}: ${item.display}`).join(". ");
   const projectSummary = projectData
     .map(
@@ -1856,7 +1666,7 @@ function OverviewDashboard({
     .join(". ");
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-12">
+    <div className="reports-overview-grid">
       <div className="grid min-w-0 xl:col-span-3">
         <ReportKpi
           title={
@@ -1866,10 +1676,8 @@ function OverviewDashboard({
             />
           }
           value={formatDuration(summary.totalSeconds, locale)}
-          variation={trackedVariation}
           neutralComparisonLabel={t("No comparison")}
           showNeutralComparison={false}
-          comparisonContext={trackedVariation ? t("vs. previous period") : undefined}
           contentDescription={`${t("Tracked")}: ${formatDuration(
             summary.totalSeconds,
             locale,
@@ -1888,6 +1696,7 @@ function OverviewDashboard({
             />
           }
           value={<span className="break-words">{summary.topProject?.label ?? "—"}</span>}
+          contentDescription={t("Project with the most tracked time in the selected period.")}
           showNeutralComparison={false}
         />
       </div>
@@ -1900,6 +1709,7 @@ function OverviewDashboard({
             />
           }
           value={<span className="break-words">{summary.topClient?.label ?? "—"}</span>}
+          contentDescription={t("Client with the most tracked time in the selected period.")}
           showNeutralComparison={false}
         />
       </div>
@@ -1912,125 +1722,23 @@ function OverviewDashboard({
             />
           }
           value={formatDuration(summary.averageSecondsPerActiveDay, locale)}
-          variation={dailyAverageVariation}
           neutralComparisonLabel={t("No comparison")}
           showNeutralComparison={false}
-          comparisonContext={dailyAverageVariation ? t("vs. previous period") : undefined}
           contentDescription={`${t("Average/day")}: ${formatDuration(
             summary.averageSecondsPerActiveDay,
             locale,
           )}. ${t("Active days")}: ${summary.activeDays}.`}
         />
       </div>
-      <div className="grid min-w-0 md:col-span-2 xl:col-span-12">
-        <ReportWidget
-          title={
-            <OverviewTooltipTitle
-              label={t("Activity evolution")}
-              help={t("Bars show tracked time across the selected period.")}
-            />
-          }
-          contentDescription={evolutionSummary}
-          isEmpty={summary.totalSeconds === 0}
-          emptyState={{ title: t("No chart data") }}
-        >
-          <div className="min-w-0 space-y-5">
-            <div className="grid min-w-0 grid-cols-3 gap-6">
-              {evolutionMetrics.map((metric) => {
-                const DirectionIcon =
-                  metric.variation?.direction === "up"
-                    ? ArrowUp
-                    : metric.variation?.direction === "down"
-                      ? ArrowDown
-                      : Minus;
-                const variationColor =
-                  metric.variation?.tone === "positive"
-                    ? "success"
-                    : metric.variation?.tone === "negative"
-                      ? "danger"
-                      : "default";
-                return (
-                  <div key={metric.key} className="min-w-0 space-y-1">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <Typography type="h3" weight="semibold">
-                        {metric.value}
-                      </Typography>
-                      {metric.variation ? (
-                        <Chip
-                          aria-label={metric.variation.accessibleLabel}
-                          color={variationColor}
-                          size="sm"
-                          variant="tertiary"
-                          className="px-0 py-0"
-                        >
-                          <DirectionIcon aria-hidden="true" className="size-3" />
-                          <Chip.Label>{metric.variation.label}</Chip.Label>
-                        </Chip>
-                      ) : null}
-                    </div>
-                    <Typography type="body-xs" color="muted">
-                      {metric.label}
-                    </Typography>
-                  </div>
-                );
-              })}
-            </div>
-            <ReportChart
-              config={{
-                currentTotal: { label: t("Tracked"), color: reportChartColors.accent },
-              }}
-              summary={evolutionSummary}
-              height="tall"
-            >
-              <BarChart
-                accessibilityLayer
-                barCategoryGap="50%"
-                data={evolutionData}
-                margin={{ top: 8, right: 12, bottom: 0, left: 4 }}
-              >
-                <CartesianGrid vertical={false} strokeOpacity={0.16} strokeWidth={1} />
-                <XAxis
-                  {...reportChartAxisProps}
-                  dataKey="tooltipLabel"
-                  ticks={evolutionTicks}
-                  interval={0}
-                  padding={{ left: 8, right: 8 }}
-                  tickMargin={8}
-                  tickFormatter={(value) =>
-                    shortenReportChartLabel(evolutionAxisLabels.get(String(value)) ?? value, 7)
-                  }
-                />
-                <YAxis
-                  {...reportChartAxisProps}
-                  domain={[0, evolutionAxis.maximum]}
-                  ticks={evolutionAxis.ticks}
-                  width={40}
-                  tickMargin={6}
-                  tickFormatter={(value) => formatDurationAxis(Number(value), locale)}
-                />
-                <ChartTooltip
-                  {...reportChartTooltipProps}
-                  content={
-                    <ChartTooltipContent
-                      hideSeriesLabel
-                      valueFormatter={(value) => formatDuration(Number(value ?? 0), locale)}
-                    />
-                  }
-                />
-                <Bar
-                  {...reportVerticalBarProps}
-                  background={ActivityBarBackground}
-                  barSize={evolutionData.length > 24 ? 12 : evolutionData.length > 12 ? 14 : 16}
-                  dataKey="currentTotal"
-                  fill={reportChartColors.accent}
-                  radius={[8, 8, 8, 8]}
-                />
-              </BarChart>
-            </ReportChart>
-          </div>
-        </ReportWidget>
+      <div className="report-distribution-slot">
+        <ReportDistribution
+          analytics={analytics}
+          entries={entries}
+          projects={projects}
+          weekStartsOn={weekStartsOn}
+        />
       </div>
-      <div className="grid min-w-0 md:col-span-2 xl:col-span-8">
+      <div className="report-projects-slot">
         <ReportWidget
           title={t("Top projects")}
           contentDescription={projectSummary || t("No activity")}
@@ -2043,7 +1751,7 @@ function OverviewDashboard({
             scrollHint={t("Scroll horizontally to see all columns")}
           >
             <Table.Header>
-              <Table.Column isRowHeader className="w-full min-w-64">
+              <Table.Column isRowHeader className="w-full min-w-0">
                 {t("Project / client")}
               </Table.Column>
               <Table.Column className="w-36 whitespace-nowrap">{t("Tracked")}</Table.Column>
@@ -2092,7 +1800,7 @@ function OverviewDashboard({
           </DataTable>
         </ReportWidget>
       </div>
-      <div className="grid min-w-0 md:col-span-2 xl:col-span-4">
+      <div className="report-composition-slot">
         <ReportChartWidget
           title={
             <OverviewTooltipTitle
@@ -2178,8 +1886,8 @@ function OverviewDashboard({
               endAngle={-270}
               innerRadius="58%"
               outerRadius="82%"
-              cornerRadius={4}
-              paddingAngle={billingData.length > 1 ? 2 : 0}
+              cornerRadius={0}
+              paddingAngle={0}
               isAnimationActive={false}
             >
               <ChartLabel
@@ -2211,7 +1919,7 @@ function OverviewDashboard({
           </PieChart>
         </ReportChartWidget>
       </div>
-      <div className="grid min-w-0 md:col-span-2 xl:col-span-12">
+      <div className="report-shifts-slot">
         <ReportWidget
           title={<span className="text-sm font-normal">{t("Hours by shift")}</span>}
           contentDescription={shiftSummary}

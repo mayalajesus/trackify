@@ -191,7 +191,11 @@ export function WorkspaceSwitcher({
     <>
       <Card
         variant="secondary"
-        className={collapsed ? "workspace-selector size-10 shrink-0 gap-0 rounded-full p-0 shadow-none" : "workspace-selector w-full rounded-[22px] border p-0"}
+        className={
+          collapsed
+            ? "workspace-selector size-10 shrink-0 gap-0 rounded-full p-0 shadow-none"
+            : "workspace-selector w-full rounded-[22px] border p-0"
+        }
       >
         <Dropdown>
           <Dropdown.Trigger

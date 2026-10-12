@@ -41,7 +41,8 @@ function IntegrationsPage() {
   const { trello, can, currentMember, setTrello } = useStore();
   const { locale, t } = useI18n();
   const canManageIntegrations = can("manage-integrations");
-  const connected = trello.status === "connected" || trello.status === "synced";
+  const connected =
+    trello.status === "connected" || trello.status === "synced" || trello.status === "syncing";
   const toggleSelected = connected || trello.status === "connecting";
 
   const connect = (on: boolean) => {
@@ -75,13 +76,13 @@ function IntegrationsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="integrations-page">
       <PageHeader
         title={t("Integrations")}
         description={t("Bring tasks from the tools you already use.")}
       />
 
-      <DataTable label={t("Integrations")} minWidth="min-w-[760px]">
+      <DataTable className="integrations-table" label={t("Integrations")} minWidth="min-w-[760px]">
         <Table.Header>
           <Table.Column isRowHeader>{t("Integrations")}</Table.Column>
           <Table.Column>{t("Account")}</Table.Column>
@@ -93,12 +94,10 @@ function IntegrationsPage() {
         <Table.Body>
           <Table.Row>
             <Table.Cell>
-              <div className="flex min-w-56 items-center gap-3">
+              <div className="flex items-center gap-3">
                 <TrelloLogo />
                 <div className="min-w-0">
-                  <Typography type="body-sm" weight="semibold">
-                    Trello
-                  </Typography>
+                  <Typography type="body-sm">Trello</Typography>
                 </div>
               </div>
             </Table.Cell>
@@ -107,14 +106,14 @@ function IntegrationsPage() {
             </Table.Cell>
             <Table.Cell className="whitespace-nowrap">{t("Workspace")}</Table.Cell>
             <Table.Cell>
-              <Chip color={connected ? "success" : "default"} size="sm" variant="soft">
+              <span className="integration-status" role="status">
                 {t(trello.status)}
-              </Chip>
+              </span>
             </Table.Cell>
             <Table.Cell className="whitespace-nowrap">{trello.lastSync ?? t("never")}</Table.Cell>
             <Table.Cell>
               {canManageIntegrations ? (
-                <div className="flex justify-end gap-2">
+                <div className="flex items-center justify-end gap-2">
                   {connected ? (
                     <Button
                       aria-label={t("Sync now")}
@@ -130,6 +129,7 @@ function IntegrationsPage() {
                   <Switch
                     aria-label={t("Connect Trello")}
                     isSelected={toggleSelected}
+                    isDisabled={trello.status === "connecting" || trello.status === "syncing"}
                     onChange={connect}
                   >
                     <Switch.Control>

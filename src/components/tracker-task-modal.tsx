@@ -1,4 +1,5 @@
 import { Button } from "@heroui/react/button";
+import { Link } from "@heroui/react/link";
 import { Modal } from "@heroui/react/modal";
 import { SearchField } from "@heroui/react/search-field";
 import { ListBox } from "@heroui/react/list-box";
@@ -6,7 +7,7 @@ import { Label } from "@heroui/react/label";
 import { Tag } from "@heroui/react/tag";
 import { TagGroup } from "@heroui/react/tag-group";
 import { Separator } from "@heroui/react/separator";
-import { Check, Plus } from "@gravity-ui/icons";
+import { Check, Plus, LayoutColumns } from "@gravity-ui/icons";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "@heroui/react/toast";
 import { ProfileAvatar } from "./profile-avatar";
@@ -160,9 +161,12 @@ export function TrackerTaskModal({
       <ModalTriggerRegistration />
       <Modal.Backdrop>
         <Modal.Container size="sm">
-          <Modal.Dialog className="max-w-[360px]">
+          <Modal.Dialog className={`tracker-task-modal tracker-task-modal--${mode}`}>
             <Modal.CloseTrigger isDisabled={busy} />
             <ModalLayout.Header>
+              {mode === "trello" ? (
+                <LayoutColumns aria-hidden="true" className="size-5 text-[#0052CC]" />
+              ) : null}
               {t(mode === "members" ? "Add members" : "Link to Trello")}
             </ModalLayout.Header>
             <ModalLayout.Body className="gap-4">
@@ -178,14 +182,14 @@ export function TrackerTaskModal({
               ) : null}
               {mode === "trello" && details.trelloCard ? (
                 <div className="flex items-center gap-2 text-sm">
-                  <a
+                  <Link
                     className="min-w-0 flex-1 truncate text-accent underline"
                     href={details.trelloCard.url}
                     target="_blank"
                     rel="noreferrer"
                   >
                     {details.trelloCard.name}
-                  </a>
+                  </Link>
                   <Button
                     size="sm"
                     variant="tertiary"
@@ -352,7 +356,7 @@ export function TrackerTaskModal({
                 </>
               )}
             </ModalLayout.Body>
-            <ModalLayout.Footer>
+            <ModalLayout.Footer className="tracker-task-footer">
               <Button
                 isPending={busy}
                 isDisabled={
@@ -437,7 +441,13 @@ export function TaskInvitationInbox() {
       <ModalTriggerRegistration />
       <Modal.Backdrop>
         <Modal.Container size="sm">
-          <Modal.Dialog>
+          <Modal.Dialog className="tracker-invitation-modal">
+            <Modal.CloseTrigger
+              isDisabled={busy}
+              onPress={() => {
+                if (invitation) setDismissed((items) => [...items, invitation.id]);
+              }}
+            />
             <ModalLayout.Header>{t("Task invitation")}</ModalLayout.Header>
             <ModalLayout.Body>
               {failure ? (

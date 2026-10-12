@@ -352,7 +352,7 @@ function SettingsPage() {
 
   if (!currentMember) {
     return (
-      <div className="max-w-2xl space-y-6">
+      <div className="settings-page">
         <PageHeader
           title={t("Settings")}
           description={t("Manage your account and personal preferences.")}
@@ -366,7 +366,7 @@ function SettingsPage() {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="settings-page">
       <PageHeader
         title={t("Settings")}
         description={t("Manage your account and personal preferences.")}
@@ -386,7 +386,7 @@ function SettingsPage() {
           <FormAlert title={t("We couldn't save your account")} description={error(accountError)} />
         ) : null}
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="settings-profile-photo flex flex-wrap items-center gap-3">
           <ProfileAvatar member={currentMember} avatarUrl={preferences.avatarUrl} size="lg" />
           <div className="min-w-0">
             <input
@@ -721,7 +721,7 @@ function SettingsPage() {
         <ModalTriggerRegistration />
         <Modal.Backdrop>
           <Modal.Container size="sm">
-            <Modal.Dialog>
+            <Modal.Dialog className="settings-delete-modal">
               <Modal.CloseTrigger />
               <ModalLayout.Header>Excluir conta?</ModalLayout.Header>
               <ModalLayout.Body>
@@ -733,7 +733,7 @@ function SettingsPage() {
                 ) : null}
                 <Typography type="body-sm" color="muted">
                   O acesso será restrito imediatamente. Você terá 30 dias para cancelar; depois, a
-                  exclusão será definitiva. Para confirmar, digite seu e-mail.
+                  exclusão será definitiva.
                 </Typography>
                 <TextField
                   fullWidth
@@ -744,8 +744,8 @@ function SettingsPage() {
                     setPrivacyError(null);
                   }}
                 >
-                  <Label>{accountEmail}</Label>
-                  <Input variant="secondary" autoComplete="off" />
+                  <Label>Para confirmar, digite seu e-mail:</Label>
+                  <Input variant="secondary" autoComplete="off" placeholder="Digite..." />
                 </TextField>
               </ModalLayout.Body>
               <ModalLayout.Footer>

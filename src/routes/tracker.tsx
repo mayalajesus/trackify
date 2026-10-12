@@ -81,13 +81,13 @@ function TrackerPage() {
   const openLog = () => setLogOpen(true);
 
   return (
-    <div className="space-y-7">
+    <div className="tracker-page">
       <PageHeader title={t("Tracker")} description={formatLongDate(today, locale)} />
 
       <TrackerBar ref={trackerBarRef} />
 
-      <section className="space-y-4" aria-label={t("Tracking period")}>
-        <div className="flex flex-col gap-3 pb-3 sm:flex-row sm:items-center sm:justify-between">
+      <section className="tracker-period-section" aria-label={t("Tracking period")}>
+        <div className="tracker-period-toolbar flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-1">
             <IconTooltip>
               <Button
@@ -146,7 +146,7 @@ function TrackerPage() {
             </Typography>
             <Button
               size="sm"
-              variant="secondary"
+              variant="primary"
               isDisabled={timer.status !== "idle"}
               onPress={openLog}
             >
@@ -164,7 +164,7 @@ function TrackerPage() {
             action={
               <Button
                 size="sm"
-                variant="secondary"
+                variant="primary"
                 isDisabled={timer.status !== "idle"}
                 onPress={openLog}
               >

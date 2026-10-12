@@ -204,8 +204,8 @@ export function CommandMenu({
       <ModalTriggerRegistration />
       <Modal.Backdrop>
         <Modal.Container placement="top" size="sm">
-          <Modal.Dialog>
-            <div className="px-3 py-2">
+          <Modal.Dialog className="tracker-command-menu">
+            <div className="tracker-command-search">
               <TextField fullWidth name="command-search" value={query} onChange={setQuery}>
                 <Label className="sr-only">{t("Command menu search")}</Label>
                 <Input
@@ -215,7 +215,7 @@ export function CommandMenu({
                 />
               </TextField>
             </div>
-            <div className="max-h-[52vh] overflow-y-auto p-2">
+            <div className="tracker-command-list">
               {filtered.length === 0 ? (
                 <Typography type="body-sm" color="muted" align="center" className="px-3 py-8">
                   {t("No results for “{query}”.", { query })}
@@ -257,7 +257,7 @@ export function CommandMenu({
                 </ListBox>
               )}
             </div>
-            <div className="flex items-center justify-between px-4 py-2">
+            <div className="tracker-command-footer">
               <Typography type="body-xs" color="muted">
                 {t("Navigate with arrow keys")}
               </Typography>

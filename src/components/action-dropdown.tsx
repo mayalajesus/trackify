@@ -18,8 +18,10 @@ export function ActionDropdown({
   items,
   onAction,
   orientation = "horizontal",
+  menuClassName = "",
 }: {
   orientation?: "horizontal" | "vertical";
+  menuClassName?: string;
   ariaLabel: string;
   items: readonly ActionDropdownItem[];
   onAction: (id: string) => void;
@@ -31,7 +33,11 @@ export function ActionDropdown({
           <Ellipsis className={orientation === "vertical" ? "size-4 rotate-90" : "size-4"} />
         </Dropdown.Trigger>
       </IconTooltip>
-      <Dropdown.Popover placement="bottom end" className="action-menu" containerPadding={12}>
+      <Dropdown.Popover
+        placement="bottom end"
+        className={`action-menu ${menuClassName}`}
+        containerPadding={12}
+      >
         <Dropdown.Menu
           aria-label={ariaLabel}
           className="action-menu__list"

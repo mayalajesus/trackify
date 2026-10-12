@@ -1,7 +1,7 @@
 import { Button } from "@heroui/react/button";
 import { Table } from "@heroui/react/table";
 import { Tooltip } from "@heroui/react/tooltip";
-import { ArrowRotateLeft, CircleInfo } from "@gravity-ui/icons";
+import { ArrowRotateLeft, CircleInfo, Thunderbolt } from "@gravity-ui/icons";
 import { useMemo } from "react";
 import { DataTable } from "@/components/data-table";
 import { ProfileAvatar } from "@/components/profile-avatar";
@@ -98,7 +98,7 @@ export function DetailedReport({
       <DataTable
         label={t("Detailed report table")}
         className="detailed-report-table"
-        minWidth="min-w-[1000px]"
+        minWidth="min-w-[880px]"
         contentClassName="table-fixed"
         scrollHint={t("Scroll horizontally to see all columns")}
       >
@@ -167,6 +167,17 @@ export function DetailedReport({
                     <span className="shrink-0 whitespace-nowrap text-muted tabular-nums">
                       {formatClock(Math.max(0, entry.seconds))}
                     </span>
+                    {entry.taskDetails?.urgent ? (
+                      <Tooltip delay={0}>
+                        <Tooltip.Trigger
+                          aria-label={t("Urgent")}
+                          className="inline-flex shrink-0 text-warning"
+                        >
+                          <Thunderbolt aria-hidden="true" className="size-3" />
+                        </Tooltip.Trigger>
+                        <Tooltip.Content>{t("Urgent")}</Tooltip.Content>
+                      </Tooltip>
+                    ) : null}
                   </div>
                 </Table.Cell>
                 <Table.Cell>

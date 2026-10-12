@@ -27,6 +27,7 @@ export interface ProjectSelectProps {
   variant?: "primary" | "secondary";
   listClassName?: string;
   showClientName?: boolean;
+  trackerStyle?: boolean;
   onCreateProject?: (initialName: string) => void;
 }
 
@@ -43,6 +44,7 @@ export function ProjectSelect({
   variant = "secondary",
   listClassName = "max-h-72 overflow-y-auto",
   showClientName = false,
+  trackerStyle = false,
   onCreateProject,
 }: ProjectSelectProps) {
   const { projects, clients, canTrackProject } = useStore();
@@ -86,7 +88,7 @@ export function ProjectSelect({
     >
       <Autocomplete.Trigger
         ref={fieldRef}
-        aria-describedby={validationMessage ? validationId : undefined}
+        {...(validationMessage ? { "aria-describedby": validationId } : {})}
         className="h-9 w-full min-w-0 items-center gap-2"
       >
         <Autocomplete.Value className="min-w-0 flex-1">
@@ -119,17 +121,16 @@ export function ProjectSelect({
         }}
       >
         <Tooltip.Content
-          id={validationId}
           triggerRef={fieldRef}
           placement="bottom"
           showArrow
           className="max-w-xs break-words"
         >
-          {validationMessage}
+          <span id={validationId}>{validationMessage}</span>
         </Tooltip.Content>
       </Tooltip>
       <Autocomplete.Popover
-        className="w-64 max-w-[calc(100vw-2rem)] min-w-0"
+        className={`w-64 max-w-[calc(100vw-2rem)] min-w-0 ${trackerStyle ? "tracker-project-menu" : ""}`}
         data-project-select-popover
       >
         <div className="flex flex-col gap-2 p-2">
@@ -194,8 +195,8 @@ export function ProjectSelect({
               <Separator />
               <Button
                 fullWidth
-                variant="tertiary"
-                className="justify-start"
+                variant={trackerStyle ? "primary" : "tertiary"}
+                className={trackerStyle ? "justify-center" : "justify-start"}
                 onPress={() => {
                   const initialName = searchValue.trim();
                   setIsOpen(false);

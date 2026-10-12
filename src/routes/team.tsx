@@ -233,7 +233,7 @@ function TeamPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="team-page">
       <PageHeader
         title={t("Team")}
         description={t("Invite teammates, manage roles and tracked hours.")}
@@ -247,7 +247,7 @@ function TeamPage() {
         }
       />
 
-      <DataTable label={t("Team members")} minWidth="min-w-[680px]">
+      <DataTable className="team-table" label={t("Team members")} minWidth="min-w-[680px]">
         <Table.Header>
           <Table.Column isRowHeader>{t("Member")}</Table.Column>
           <Table.Column>{t("Role")}</Table.Column>
@@ -279,7 +279,7 @@ function TeamPage() {
                     />
                     <div className="flex min-w-0 flex-col">
                       <span className="truncate">{invited ? member.email : member.name}</span>
-                      <span className="truncate">
+                      <span className="team-member-detail truncate">
                         {invited
                           ? t("Invitation pending")
                           : removed
@@ -306,6 +306,7 @@ function TeamPage() {
                   {invited && canManageTarget ? (
                     <div className="flex justify-end">
                       <ActionDropdown
+                        menuClassName="team-action-menu"
                         ariaLabel={t("Actions for invitation to {email}", {
                           email: member.email,
                         })}
@@ -347,6 +348,7 @@ function TeamPage() {
                   ) : removed && canManageTarget ? (
                     <div className="flex justify-end">
                       <ActionDropdown
+                        menuClassName="team-action-menu"
                         ariaLabel={t("Actions for {name}", { name: member.name })}
                         items={[
                           {
@@ -363,6 +365,7 @@ function TeamPage() {
                   ) : member.status === "active" && canManageTarget ? (
                     <div className="flex justify-end">
                       <ActionDropdown
+                        menuClassName="team-action-menu"
                         ariaLabel={t("Actions for {name}", { name: member.name })}
                         items={[
                           ...(canChangeRole
@@ -394,6 +397,7 @@ function TeamPage() {
                   ) : isCurrentMember && member.status === "active" ? (
                     <div className="flex justify-end">
                       <ActionDropdown
+                        menuClassName="team-action-menu"
                         ariaLabel={t("Actions for {name}", { name: member.name })}
                         items={[
                           {
@@ -429,7 +433,7 @@ function TeamPage() {
         <ModalTriggerRegistration />
         <Modal.Backdrop>
           <Modal.Container size="sm">
-            <Modal.Dialog>
+            <Modal.Dialog className="team-modal">
               <Modal.CloseTrigger />
               <ModalLayout.Header>{t("Leave team?")}</ModalLayout.Header>
               <ModalLayout.Body>
@@ -473,7 +477,7 @@ function TeamPage() {
         <ModalTriggerRegistration />
         <Modal.Backdrop>
           <Modal.Container size="sm">
-            <Modal.Dialog>
+            <Modal.Dialog className="team-modal">
               <Modal.CloseTrigger aria-label={t("Close")} />
               <ModalLayout.Header>{t("Invite member")}</ModalLayout.Header>
               <Form
@@ -588,7 +592,7 @@ function TeamPage() {
                         {t("Cancel")}
                       </Button>
                       <Button type="submit" isDisabled={!email.trim()} isPending={inviteBusy}>
-                        {t("Send invitation")}
+                        {t("Create invitation link")}
                       </Button>
                     </>
                   )}
@@ -611,7 +615,7 @@ function TeamPage() {
         <ModalTriggerRegistration />
         <Modal.Backdrop>
           <Modal.Container size="sm">
-            <Modal.Dialog>
+            <Modal.Dialog className="team-modal">
               <Modal.CloseTrigger />
               <ModalLayout.Header>{t("Cancel invitation?")}</ModalLayout.Header>
               <ModalLayout.Body>
@@ -656,7 +660,7 @@ function TeamPage() {
         <ModalTriggerRegistration />
         <Modal.Backdrop>
           <Modal.Container size="sm">
-            <Modal.Dialog>
+            <Modal.Dialog className="team-modal">
               <Modal.CloseTrigger />
               <ModalLayout.Header>{t("Remove member from team?")}</ModalLayout.Header>
               <ModalLayout.Body>

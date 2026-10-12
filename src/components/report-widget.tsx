@@ -81,7 +81,7 @@ export function ReportWidget({
 
   return (
     <Card
-      className={cn("min-w-0 gap-4 p-4", widgetWidthClassNames[width], className)}
+      className={cn("report-widget min-w-0 gap-4 p-4", widgetWidthClassNames[width], className)}
       role="region"
       aria-labelledby={titleId}
       aria-describedby={accessibleDescriptions}
@@ -200,7 +200,11 @@ export function ReportKpi({
   ...widgetProps
 }: ReportKpiProps) {
   return (
-    <ReportWidget {...widgetProps} width={width}>
+    <ReportWidget
+      {...widgetProps}
+      width={width}
+      className={cn("report-kpi", widgetProps.className)}
+    >
       <div className="space-y-3">
         <Typography type="h2" weight="semibold">
           {value}

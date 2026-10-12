@@ -1,7 +1,6 @@
 import { Button } from "@heroui/react/button";
 import { ArrowLeft, Check } from "@gravity-ui/icons";
 import { Form } from "@heroui/react/form";
-import { Typography } from "@heroui/react/typography";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -126,6 +125,7 @@ function SignupPage() {
 
   return (
     <AuthPage
+      variant={created ? "confirmation" : "signup"}
       title={t("Create your account")}
       description={t("Create an account to join your company or start a new workspace.")}
     >
@@ -135,6 +135,7 @@ function SignupPage() {
           <ConfirmationEmail initialEmail={submittedEmail} justRequested />
           <Button
             className="w-full"
+            variant="ghost"
             onPress={() =>
               window.location.assign(`/login?redirect=${encodeURIComponent(getAuthReturnPath())}`)
             }
@@ -147,8 +148,8 @@ function SignupPage() {
         <>
           <GoogleAuthButton onPress={continueWithGoogle} isDisabled={busy} />
           <AuthDivider />
-          <Form className="flex flex-col gap-5" onSubmit={submit}>
-            <div className="flex flex-col gap-5 sm:flex-row sm:gap-4">
+          <Form className="auth-form auth-signup-form" onSubmit={submit}>
+            <div className="auth-name-fields">
               <AuthField
                 id="signup-first-name"
                 label={t("First name")}
@@ -207,7 +208,7 @@ function SignupPage() {
               minLength={8}
               description={
                 <span
-                  className="mt-1 block space-y-1.5"
+                  className="auth-password-requirements"
                   role="list"
                   aria-label={t("Password requirements")}
                 >

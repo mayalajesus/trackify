@@ -85,7 +85,11 @@ function LoginPage() {
   };
 
   return (
-    <AuthPage title={t("Sign in")} description={t("Access your time tracking workspace.")}>
+    <AuthPage
+      variant="login"
+      title={t("Sign in")}
+      description={t("Access your time tracking workspace.")}
+    >
       <AuthError message={error} />
       {showConfirmation ? (
         <>
@@ -99,7 +103,7 @@ function LoginPage() {
         <>
           <GoogleAuthButton onPress={continueWithGoogle} isDisabled={busy} />
           <AuthDivider />
-          <Form className="flex flex-col gap-5" onSubmit={submit}>
+          <Form className="auth-form auth-login-form" onSubmit={submit}>
             <AuthField
               id="login-email"
               label={t("Email")}
@@ -132,7 +136,7 @@ function LoginPage() {
               placeholder={t("Enter your password")}
               validate={(value) => (value ? null : t("Password is required"))}
             />
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="auth-login-options flex flex-wrap items-center justify-between gap-3">
               <Checkbox
                 name="remember-me"
                 isSelected={rememberMe}
@@ -159,17 +163,19 @@ function LoginPage() {
               {busy ? t("Signing in…") : t("Sign in")}
             </Button>
           </Form>
-          <Button
-            variant="ghost"
-            className="w-full"
-            isDisabled={busy}
-            onPress={() => {
-              setError(null);
-              setShowConfirmation(true);
-            }}
-          >
-            {t("Didn't receive the confirmation email?")}
-          </Button>
+          {error ? (
+            <Button
+              variant="ghost"
+              className="w-full"
+              isDisabled={busy}
+              onPress={() => {
+                setError(null);
+                setShowConfirmation(true);
+              }}
+            >
+              {t("Didn't receive the confirmation email?")}
+            </Button>
+          ) : null}
         </>
       )}
       <AuthFooter prompt={t("Don't have an account?")} to="/signup" action={t("Create account")} />

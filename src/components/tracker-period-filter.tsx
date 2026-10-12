@@ -105,7 +105,7 @@ export function TrackerPeriodFilter({
           variant="secondary"
           size="sm"
           aria-label={t("Open period calendar: {label}", { label: translatedLabel })}
-          className="flex h-9 w-fit min-w-0 max-w-full shrink-0 items-center justify-center gap-2 px-3 text-center"
+          className="tracker-period-trigger flex h-9 w-fit min-w-0 max-w-full shrink-0 items-center justify-center gap-2 px-3 text-center"
         >
           <Calendar aria-hidden="true" className="size-4 shrink-0" />
           <span className="min-w-0 max-w-full truncate whitespace-nowrap">{displayLabel}</span>
@@ -116,7 +116,7 @@ export function TrackerPeriodFilter({
         shouldFlip
         containerPadding={12}
         offset={8}
-        className="w-[min(16rem,calc(100vw-1rem))] max-w-[calc(100vw-1rem)] overflow-visible p-0"
+        className="tracker-calendar-popover w-[min(16rem,calc(100vw-1rem))] max-w-[calc(100vw-1rem)] overflow-visible p-0"
       >
         <Popover.Dialog>
           <I18nProvider locale={locale}>

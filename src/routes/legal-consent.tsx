@@ -1,4 +1,4 @@
-import { ChevronRight, FileText, ShieldCheck } from "@gravity-ui/icons";
+import { ChevronRight, CircleInfo, FileText, ShieldCheck } from "@gravity-ui/icons";
 import { Button } from "@heroui/react/button";
 import { Card } from "@heroui/react/card";
 import { Checkbox } from "@heroui/react/checkbox";
@@ -34,19 +34,16 @@ function LegalConsentPage() {
   };
 
   return (
-    <main
-      data-page="legal-consent"
-      className="flex min-h-screen items-center justify-center px-4 py-8 sm:px-6 sm:py-10"
-    >
-      <section aria-labelledby="legal-consent-title" className="mx-auto w-full max-w-md">
-        <div className="mb-7 text-center">
-          <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-surface text-accent shadow-sm">
+    <main data-page="legal-consent" className="auth-page auth-page--consent">
+      <section aria-labelledby="legal-consent-title" className="auth-card auth-consent-card">
+        <div className="auth-consent-header">
+          <div className="auth-consent-symbol">
             <ShieldCheck aria-hidden="true" className="size-6" />
           </div>
-          <Typography id="legal-consent-title" type="h1" weight="semibold" align="center">
+          <Typography id="legal-consent-title" type="h1" className="auth-title" align="center">
             Revise os termos para continuar
           </Typography>
-          <Typography type="body-sm" color="muted" align="center" className="mx-auto mt-2 max-w-sm">
+          <Typography type="body-sm" color="muted" align="center" className="auth-description">
             Confirme que você leu os documentos vigentes para continuar no Trackify.
           </Typography>
         </div>
@@ -57,7 +54,7 @@ function LegalConsentPage() {
           </div>
         ) : null}
 
-        <Card className="space-y-5 p-5 sm:p-6">
+        <Card className="auth-consent-documents">
           <div>
             <Typography type="body-sm" weight="semibold">
               Documentos vigentes
@@ -81,7 +78,7 @@ function LegalConsentPage() {
           </div>
 
           <Checkbox isSelected={accepted} onChange={setAccepted} className="w-full">
-            <Checkbox.Content className="w-full items-start gap-3 rounded-xl border border-default bg-surface-secondary p-4">
+            <Checkbox.Content className="auth-consent-checkbox">
               <Checkbox.Control className="mt-0.5 shrink-0">
                 <Checkbox.Indicator />
               </Checkbox.Control>
@@ -91,7 +88,7 @@ function LegalConsentPage() {
             </Checkbox.Content>
           </Checkbox>
 
-          <div className="space-y-3">
+          <div className="auth-consent-actions">
             <Button
               className="w-full"
               isDisabled={!accepted}
@@ -100,7 +97,8 @@ function LegalConsentPage() {
             >
               Aceitar e continuar
             </Button>
-            <Typography type="body-xs" color="muted" align="center">
+            <Typography type="body-xs" color="muted" align="center" className="auth-consent-note">
+              <CircleInfo aria-hidden="true" className="size-3 shrink-0" />
               Seu aceite será registrado com as versões exibidas acima.
             </Typography>
           </div>
@@ -120,11 +118,8 @@ function LegalDocumentLink({
   version: string | undefined;
 }) {
   return (
-    <RouterLink
-      to={to}
-      className="group flex w-full items-center gap-3 rounded-xl bg-surface-secondary px-3.5 py-3 no-underline transition-colors hover:bg-surface-tertiary"
-    >
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface text-muted">
+    <RouterLink to={to} className="auth-document-link group">
+      <span className="auth-document-icon">
         <FileText aria-hidden="true" className="size-4" />
       </span>
       <span className="min-w-0 flex-1">
