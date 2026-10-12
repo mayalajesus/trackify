@@ -2,6 +2,7 @@ import { Pagination } from "@heroui/react/pagination";
 import { Table } from "@heroui/react/table";
 import { Typography } from "@heroui/react/typography";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useI18n } from "@/lib/i18n";
 
 export type DataTablePagination = {
   page: number;
@@ -94,6 +95,8 @@ export function DataTable({
   scrollHint?: string;
   selectedKeys?: ReadonlySet<string>;
 }) {
+  const { t } = useI18n();
+  const resolvedScrollHint = scrollHint ?? t("Scroll horizontally to see all columns");
   const descriptionId = useId();
   const regionRef = useRef<HTMLElement>(null);
   const [isScrollable, setIsScrollable] = useState(false);
@@ -113,6 +116,8 @@ export function DataTable({
     const observer =
       typeof ResizeObserver === "undefined" ? null : new ResizeObserver(updateScrollableState);
     observer?.observe(scrollContainer);
+    const table = scrollContainer.querySelector("table");
+    if (table) observer?.observe(table);
     window.addEventListener("resize", updateScrollableState);
 
     return () => {
@@ -123,21 +128,21 @@ export function DataTable({
 
   return (
     <section ref={regionRef} className="min-w-0 max-w-full" aria-label={label}>
-      {scrollHint ? (
+      {resolvedScrollHint ? (
         <Typography
           type="body-xs"
           color="muted"
           id={descriptionId}
-          className={isScrollable ? "" : "sr-only"}
+          className={isScrollable ? "mb-2" : "sr-only"}
         >
-          {scrollHint}
+          {resolvedScrollHint}
         </Typography>
       ) : null}
       <Table className={className ?? ""}>
         <Table.ScrollContainer
           className={`min-w-0 max-w-full ${scrollContainerClassName ?? ""}`.trim()}
           tabIndex={isScrollable ? 0 : undefined}
-          aria-describedby={scrollHint ? descriptionId : undefined}
+          aria-describedby={resolvedScrollHint ? descriptionId : undefined}
         >
           <Table.Content
             aria-label={label}
