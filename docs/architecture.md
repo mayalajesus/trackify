@@ -30,6 +30,16 @@ workspace access.
   contracts.
 - `src/lib/store.tsx`: client-side orchestration, optimistic state and timer
   coordination.
+- `src/lib/store`: snapshot validation/migrations, reference sharing and domain
+  action factories. Factories receive explicit state, setters and refs; the
+  provider retains state ownership, effect ordering and synchronization.
+- `src/components/tracker-entries`: grouping, stable row keys, time editors,
+  group summaries and entry rows. The existing table entry point owns selection,
+  expansion and deletion confirmation.
+- `src/lib/reports`: URL/filter conversion, the reports controller, overview
+  presentation models and export preparation. Pure analytics remain in the
+  existing reporting modules.
+- `src/components/reports`: overview charts and report navigation controls.
 - `src/lib/account-data-source.ts`: persistence interface.
 - `src/lib/api-data-source.ts`: authenticated HTTP implementation.
 - `src/lib/report-groups.ts`, `report-analytics.ts` and `report-query.ts`: pure
@@ -39,11 +49,19 @@ workspace access.
 Routes are code-split by TanStack Router. HeroUI components are imported from
 their package subpaths so shared dependencies remain independently chunkable.
 The root route is the sole owner of the global stylesheet.
+`src/styles.css` imports reviewed CSS sections in their original cascade order.
+Keep authentication, shared controls, navigation, theme and page rules in that
+order; moving a rule between sections can change its precedence. The UI audit
+uses an explicit allowlist of these stylesheets.
 
 ## Server boundaries
 
 - `api/data.mjs`: Vercel entry point.
-- `server/data-api.mjs`: request validation, authorization and data operations.
+- `server/data-api.mjs`: HTTP validation, authentication, operation dispatch,
+  transaction orchestration and the backwards-compatible public exports.
+- `server/data`: connection caches, shared validators/access guards and data
+  operations grouped by account, workspace, entries, invitations and preferences.
+  `sync-account.mjs` keeps the existing account-wide synchronization unit intact.
 - `server/authentication.mjs`: Neon/Supabase token verification.
 - `server/data-api-error.mjs`: expected HTTP errors.
 - `server/auth-profile.mjs`: normalized OAuth identity and trusted avatar data.
@@ -52,6 +70,11 @@ The root route is the sole owner of the global stylesheet.
 verified against Neon Auth and Supabase tokens against Supabase Auth. All SQL
 uses the same tables created from `db/migrations`; Supabase-specific RLS, Auth
 synchronization and Storage policies are added by `db/providers/supabase`.
+
+Internal modules must not import the `store.tsx` or `data-api.mjs` facade at
+runtime. Keep shared dependencies below the facades to prevent circular imports.
+Public data-source interfaces, account versioning, API response shapes and SQL
+transaction boundaries are unchanged by the modularization.
 
 ## Data ownership
 
