@@ -22,15 +22,11 @@
   width: 16px;
   height: 16px;
 }
-.workspaces-table {
-  border-radius: 24px;
-}
 .workspaces-table .table__column {
   height: 36px;
   padding: 8px 16px;
   font-size: 12px;
   font-weight: 400;
-  background: var(--default);
 }
 .workspaces-table .table__column::after {
   content: none;

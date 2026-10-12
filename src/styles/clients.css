@@ -18,14 +18,10 @@
   min-height: 36px;
   font-weight: 400;
 }
-.clients-table {
-  border-radius: 24px;
-}
 .clients-table .table__column {
   height: 36px;
   font-size: 12px;
   font-weight: 400;
-  background: var(--default);
   padding: 8px 16px;
 }
 .clients-table .table__column::after {

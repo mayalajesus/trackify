@@ -50,8 +50,21 @@ body {
   height: 14px;
 }
 
-.detailed-report-table {
-  border-radius: 24px;
+/* DEV tables share one continuous header/shell surface. */
+.app-data-table {
+  border-radius: 20px;
+  background: #eaebec;
+}
+.app-data-table .table__header,
+.app-data-table .table__column {
+  background: transparent;
+}
+.app-data-table .table__column {
+  color: var(--foreground);
+}
+.dark .app-data-table,
+[data-theme="dark"] .app-data-table {
+  background: var(--surface-secondary);
 }
 .detailed-report-table .table__column {
   height: 36px;

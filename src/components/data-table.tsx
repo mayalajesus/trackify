@@ -138,7 +138,7 @@ export function DataTable({
           {resolvedScrollHint}
         </Typography>
       ) : null}
-      <Table className={className ?? ""}>
+      <Table className={`app-data-table ${className ?? ""}`.trim()}>
         <Table.ScrollContainer
           className={`min-w-0 max-w-full ${scrollContainerClassName ?? ""}`.trim()}
           tabIndex={isScrollable ? 0 : undefined}

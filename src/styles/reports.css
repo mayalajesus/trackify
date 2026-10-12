@@ -92,7 +92,6 @@
   min-width: 90px;
 }
 .reports-page .report-projects-slot .table__column {
-  background: var(--default);
   height: 36px;
   padding: 8px 12px;
   font-weight: 400;
@@ -210,9 +209,6 @@
 }
 .reports-page--detailed .report-widget {
   gap: 12px;
-}
-.reports-page .detailed-report-table .table__column {
-  background: var(--default);
 }
 @container (max-width:1000px) {
   .report-distribution-actions > span {
