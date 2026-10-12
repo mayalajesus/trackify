@@ -77,7 +77,8 @@ export function ProjectSelect({
       isInvalid={Boolean(validationMessage)}
       fullWidth
       variant={variant}
-      value={value}
+      value={required && value === "none" ? null : value}
+      placeholder={t("Select a project")}
       onChange={(key) => onChange(key === null ? "none" : String(key))}
       isOpen={isOpen}
       onOpenChange={(nextIsOpen) => {
@@ -131,9 +132,11 @@ export function ProjectSelect({
       </Tooltip>
       <Autocomplete.Popover
         className={`w-64 max-w-[calc(100vw-2rem)] min-w-0 ${trackerStyle ? "tracker-project-menu" : ""}`}
+        containerPadding={12}
+        shouldFlip
         data-project-select-popover
       >
-        <div className="flex flex-col gap-2 p-2">
+        <div className="project-select-content flex flex-col gap-2 p-2">
           <Autocomplete.Filter
             filter={contains}
             inputValue={searchValue}
@@ -162,14 +165,12 @@ export function ProjectSelect({
                   <ListBox.ItemIndicator />
                 </ListBox.Item>
               ) : null}
-              <ListBox.Item
-                id="none"
-                isDisabled={required}
-                textValue={t(required ? "Select a project" : "No project")}
-              >
-                {t(required ? "Select a project" : "No project")}
-                <ListBox.ItemIndicator />
-              </ListBox.Item>
+              {!required ? (
+                <ListBox.Item id="none" textValue={t("No project")}>
+                  {t("No project")}
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+              ) : null}
 
               {availableProjects.map((project) => (
                 <ListBox.Item

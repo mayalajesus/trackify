@@ -84,11 +84,16 @@ function TrackerPage() {
     <div className="tracker-page">
       <PageHeader title={t("Tracker")} description={formatLongDate(today, locale)} />
 
-      <TrackerBar ref={trackerBarRef} />
+      <div className="flex min-w-0 flex-col gap-3">
+        <TrackerBar ref={trackerBarRef} />
+        <TrackerFavorites
+          onSelect={(favorite) => trackerBarRef.current?.selectFavorite(favorite)}
+        />
+      </div>
 
       <section className="tracker-period-section" aria-label={t("Tracking period")}>
         <div className="tracker-period-toolbar flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex min-w-0 items-center gap-1">
+          <div className="tracker-period-navigation flex min-w-0 items-center gap-1">
             <IconTooltip>
               <Button
                 isIconOnly
@@ -102,7 +107,7 @@ function TrackerPage() {
                 <ChevronLeft className="size-4" />
               </Button>
             </IconTooltip>
-            <div className="min-w-0 px-1">
+            <div className="tracker-period-filter min-w-0 px-1">
               <TrackerPeriodFilter
                 period={period}
                 today={today}
@@ -127,7 +132,7 @@ function TrackerPage() {
               <Button
                 size="sm"
                 variant="tertiary"
-                className="shrink-0 px-2"
+                className="tracker-period-reset shrink-0 px-2"
                 onPress={() =>
                   setPeriod({
                     unit: "week",
@@ -140,7 +145,7 @@ function TrackerPage() {
               </Button>
             )}
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-2 sm:justify-end">
+          <div className="tracker-period-summary flex flex-wrap items-center justify-between gap-2 sm:justify-end">
             <Typography type="body-sm" color="muted">
               {formatDuration(periodTotal, locale)} {t("tracked")}
             </Typography>
@@ -177,8 +182,6 @@ function TrackerPage() {
           <TrackerEntries days={days} />
         )}
       </section>
-
-      <TrackerFavorites onSelect={(favorite) => trackerBarRef.current?.selectFavorite(favorite)} />
 
       <LogTimeModal isOpen={logOpen} onOpenChange={setLogOpen} />
     </div>

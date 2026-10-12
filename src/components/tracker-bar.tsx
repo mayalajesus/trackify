@@ -150,7 +150,7 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
   useImperativeHandle(ref, () => ({ selectFavorite }));
 
   return (
-    <div className="space-y-3" data-tracker-bar>
+    <div className="flex min-w-0 flex-col gap-3" data-tracker-bar>
       <Card
         className="tracker-timer w-full gap-0 rounded-3xl p-1.5 lg:rounded-full"
         variant="default"
@@ -214,7 +214,7 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
 
           <Separator orientation="vertical" className="hidden h-6 lg:block" />
 
-          <div className="min-w-0">
+          <div className="tracker-project-field min-w-0">
             <Label className="sr-only">{t("Project")}</Label>
             <ProjectSelect
               trackerStyle

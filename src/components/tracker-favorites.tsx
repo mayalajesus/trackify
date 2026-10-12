@@ -14,7 +14,7 @@ export function TrackerFavorites({ onSelect }: { onSelect: (favorite: FavoriteTa
 
   return favorites.length > 0 ? (
     <div
-      className="flex flex-wrap items-center gap-2"
+      className="flex min-w-0 max-w-full snap-x snap-proximity flex-nowrap items-center gap-2 overflow-x-auto overscroll-x-contain md:flex-wrap md:overflow-visible"
       role="group"
       aria-label={t("Favorite tasks")}
     >
@@ -24,12 +24,12 @@ export function TrackerFavorites({ onSelect }: { onSelect: (favorite: FavoriteTa
         return (
           <div
             key={favoriteTaskKey(favorite)}
-            className="inline-flex max-w-full items-center rounded-full bg-default"
+            className="inline-flex h-7 max-w-full shrink-0 snap-start items-center rounded-full bg-default pr-1"
           >
             <Button
               size="sm"
               variant="ghost"
-              className="h-6 min-h-6 min-w-0 rounded-full px-2 text-xs"
+              className="h-7 min-h-7 min-w-0 shrink gap-1.5 rounded-full px-2 text-xs"
               isDisabled={active || unavailable}
               aria-label={t("Use favorite {task}, {project}", {
                 task: favorite.task,
