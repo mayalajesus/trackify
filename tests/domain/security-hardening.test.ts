@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import {
   handleDataRequest,
@@ -7,7 +7,13 @@ import {
   upsertOwnEntry,
 } from "../../server/data-api.mjs";
 
-const dataApi = readFileSync(new URL("../../server/data-api.mjs", import.meta.url), "utf8");
+const dataApi = [
+  readFileSync(new URL("../../server/data-api.mjs", import.meta.url), "utf8"),
+  ...readdirSync(new URL("../../server/data/", import.meta.url))
+    .filter((name) => name.endsWith(".mjs"))
+    .sort()
+    .map((name) => readFileSync(new URL(`../../server/data/${name}`, import.meta.url), "utf8")),
+].join("\n");
 const vercel = JSON.parse(readFileSync(new URL("../../vercel.json", import.meta.url), "utf8")) as {
   headers: Array<{ source: string; headers: Array<{ key: string; value: string }> }>;
 };
