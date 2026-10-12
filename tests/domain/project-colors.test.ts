@@ -8,7 +8,7 @@ import {
 describe("project colors", () => {
   it("provides a stable selectable palette with sky as the default", () => {
     expect(projectColorOptions).toHaveLength(8);
-    expect(defaultProjectColor).toBe("#9ddcf3");
+    expect(defaultProjectColor).toBe("#019ed4");
   });
 
   it("normalizes stored colors and legacy project tokens", () => {

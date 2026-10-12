@@ -160,8 +160,8 @@ describe("starting a timer from an earlier entry", () => {
         { timerStatus: "idle", projects: [], canUseProject: () => false },
       ),
     ).toEqual({
-      success: true,
-      preset: { task: "Planning", projectId: null, billable: false },
+      success: false,
+      error: "Select a project before starting the timer.",
     });
   });
 });
