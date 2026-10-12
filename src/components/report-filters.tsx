@@ -418,7 +418,8 @@ function ReportPeriodPicker({
   return (
     <I18nProvider locale={locale}>
       <DateRangePicker
-        className={weeklyNavigation ? "w-fit min-w-0 shrink-0" : "w-60 min-w-60 shrink-0"}
+        data-custom-period={preset === "custom" || undefined}
+        className={`report-period-picker ${weeklyNavigation ? "w-fit min-w-0 shrink-0" : "w-60 min-w-60 shrink-0"}`}
         aria-label={t("Date range: {range}", { range: formatReportPeriod(range, locale) })}
         value={calendarValue}
         isOpen={isOpen}
@@ -433,7 +434,7 @@ function ReportPeriodPicker({
         }}
       >
         <Label className="sr-only">{t("Report period")}</Label>
-        <div className="flex min-w-0 items-center">
+        <div className="report-period-control flex min-w-0 items-center">
           <DateField.Group
             className={`h-9 min-w-0 cursor-pointer gap-0 overflow-hidden p-1 ${
               weeklyNavigation
@@ -722,7 +723,7 @@ export function ReportFiltersBar({
       aria-label={t("Report filters")}
       className="w-full max-w-full min-w-0 flex flex-wrap items-center justify-between gap-3 overflow-visible"
     >
-      <div className="ms-auto flex w-full min-w-0 max-w-full flex-1 flex-nowrap items-center justify-end gap-2 overflow-hidden">
+      <div className="report-filter-controls ms-auto flex w-full min-w-0 max-w-full flex-1 flex-nowrap items-center justify-end gap-2 overflow-hidden">
         <ReportPeriodPicker
           preset={preset}
           range={range}

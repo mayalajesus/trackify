@@ -1664,6 +1664,46 @@ body {
   padding: 8px;
   border-radius: 24px;
 }
+@media (max-width: 767px) {
+  .report-filter-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 36px;
+    gap: 8px;
+    overflow: visible;
+  }
+  .report-filter-controls > * {
+    grid-column: 1 / -1;
+  }
+  .report-filter-controls > :nth-last-child(2):not(.report-period-picker) {
+    grid-column: 1;
+  }
+  .report-filter-controls > .report-period-picker {
+    width: 100%;
+    min-width: 0;
+  }
+  .report-period-control {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    row-gap: 8px;
+    column-gap: 0;
+  }
+  .report-period-control > .date-input-group {
+    flex: 1 1 160px;
+    max-width: 100%;
+    border-radius: 18px;
+  }
+  .report-period-control:has(> .button-group) > .date-input-group {
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+  }
+  .report-period-picker[data-custom-period] .date-input-group {
+    flex-basis: 240px;
+  }
+  .report-filter-controls > .button {
+    grid-column: 2;
+    justify-self: end;
+  }
+}
 .report-filter-popover .dropdown__item {
   border-radius: 12px;
   min-height: 36px;
