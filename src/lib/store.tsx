@@ -1,3 +1,9 @@
+import { createClientActions } from "@/lib/store/client-actions";
+import { createEntryActions } from "@/lib/store/entry-actions";
+import { createMemberActions } from "@/lib/store/member-actions";
+import { createProjectActions } from "@/lib/store/project-actions";
+import { createTimerActions } from "@/lib/store/timer-actions";
+import { createWorkspaceActions } from "@/lib/store/workspace-actions";
 import { projectIsBillable } from "./project-billability";
 
 import {
@@ -16,7 +22,7 @@ import type { ReactNode } from "react";
 
 import { useAuth } from "./auth-context";
 
-import { createApiDataSource, request } from "./api-data-source";
+import { createApiDataSource } from "./api-data-source";
 
 import type {
   PersistedAccount,
@@ -27,17 +33,9 @@ import type {
   WorkspaceSummary,
 } from "./account-types";
 
-import type { Client, Member, Project, Role, TimeEntry, TrelloState } from "./domain";
+import type { Client, Member, Project, TimeEntry, TrelloState } from "./domain";
 
-import {
-  addSecondsToDateTime,
-  dateTimeToTimestamp,
-  getElapsedSeconds,
-  getEndDateForEntry,
-  getLocalToday,
-  isValidDateOnly,
-  nowTime,
-} from "./format";
+import { getElapsedSeconds, getEndDateForEntry, getLocalToday, isValidDateOnly } from "./format";
 
 import {
   canTrackProject as canTrackProjectForRole,
@@ -47,32 +45,21 @@ import {
 
 import { resetSessionDefaultAvatar } from "./default-avatar";
 
-import {
-  clientCurrencyOptions,
-  defaultCurrencyForLocale,
-  isCurrencyCode,
-  type BillingPreference,
-  type CurrencyCode,
-} from "./billing";
+import { defaultCurrencyForLocale, type BillingPreference, type CurrencyCode } from "./billing";
 
 import { findTimeEntryConflict, type ScopedTimeIntervalEntry } from "./time-entry-overlap";
 
 import { entriesForReportWindow, reportEntriesQueryName } from "./report-query";
 
 import {
-  createRunningTimer,
   recentTimerTasksFromEntries,
   rememberRecentTimerTask,
   validateTimerDetails,
-  validateTimerTaskStart,
-  type TimerTaskPreset,
 } from "./timer-start";
 
 import type { TimerState } from "./store/types";
 
 import type { StoreResult } from "./store/types";
-
-import type { AddEntryOptions } from "./store/types";
 
 import { initialTimer } from "./store/defaults";
 
@@ -82,27 +69,17 @@ import { initialPreferences } from "./store/defaults";
 
 import { initialTrello } from "./store/defaults";
 
-import { isFiniteNumber } from "./store/validation";
-
 import { getInitialTimeZone } from "./store/preferences";
 
 import { getDevicePreferences } from "./store/preferences";
 
-import { isValidLogoUrl } from "./store/validation";
-
 import { isValidPreferences } from "./store/validation";
-
-import { normalizedProjectName } from "./store/validation";
 
 import { membershipToMember } from "./store/membership";
 
 import { membersToMemberships } from "./store/membership";
 
-import { createIdentity } from "./store/membership";
-
 import { elapsedForTimer } from "./store/timer";
-
-import { pauseTimerAt } from "./store/timer";
 
 import { initialsFromName } from "./store/membership";
 
@@ -111,6 +88,8 @@ import type { StoreValue } from "./store/types";
 import { reuseIfEqual } from "./store/references";
 
 import { shareAccountReferences } from "./store/references";
+
+import { inviteEmailPattern } from "./store/ids";
 
 export { findTimeEntryConflict, timeEntriesOverlap } from "./time-entry-overlap";
 
@@ -129,6 +108,7 @@ export type {
 } from "./account-types";
 
 export type { Permission } from "./permissions";
+
 export type { TimerStatus } from "./store/types";
 
 export type { TimerState } from "./store/types";
@@ -152,16 +132,6 @@ export { isValidAccount } from "./store/validation";
 export { elapsedForTimer } from "./store/timer";
 
 export { pauseTimerAt } from "./store/timer";
-
-let idCounter = 100;
-
-const nextId = (_prefix: string, _existingIds: Iterable<string> = []) => {
-  if (typeof globalThis.crypto?.randomUUID === "function") return globalThis.crypto.randomUUID();
-  const suffix = (++idCounter).toString(16).padStart(12, "0");
-  return `00000000-0000-4000-8000-${suffix}`;
-};
-
-const inviteEmailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const StoreContext = createContext<StoreValue | null>(null);
 
@@ -816,723 +786,93 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     const billableForProject = (projectId: string | null) =>
       projectIsBillable(projectId, projects, clients);
+    const {
+      acceptTaskInvitation,
+      startTimer,
+      startTimerFromTask,
+      updateTimer,
+      setTimerElapsed,
+      pauseTimer,
+      resumeTimer,
+      stopTimer,
+    } = createTimerActions({
+      acceptingTaskRef,
+      timerRef,
+      timerSyncPromiseRef,
+      accountScopeRef,
+      accountScope,
+      timerWorkspaceRef,
+      activeWorkspaceId,
+      timerRevisionRef,
+      persistedTimerRef,
+      setTimer,
+      setElapsed,
+      workspaceCreationRef,
+      can,
+      validateProjectId,
+      billableForProject,
+      preferences,
+      workspaceBilling,
+      currencyForProject,
+      projects,
+      canTrackProject,
+      activeMemberId,
+      findEntryConflict,
+      setEntries,
+    });
+    const { addEntry, updateEntry, deleteEntry, restoreEntry } = createEntryActions({
+      can,
+      activeMemberId,
+      timerRef,
+      billableForProject,
+      workspaceBilling,
+      currencyForProject,
+      validateEntry,
+      findEntryConflict,
+      setEntries,
+      entries,
+      preferences,
+    });
 
-    const acceptTaskInvitation = async (invitationId: string): Promise<StoreResult> => {
-      if (acceptingTaskRef.current || timerRef.current.status !== "idle")
-        return {
-          success: false,
-          error: "Stop the active timer before accepting a task invitation.",
-        };
-      acceptingTaskRef.current = true;
-      try {
-        await timerSyncPromiseRef.current;
-        if (
-          accountScopeRef.current !== accountScope ||
-          timerWorkspaceRef.current !== activeWorkspaceId ||
-          timerRef.current.status !== "idle"
-        )
-          return {
-            success: false,
-            error: "Stop the active timer before accepting a task invitation.",
-          };
-        const result = await request<{ timer: TimerState }>("respondTaskInvitation", {
-          workspaceId: activeWorkspaceId,
-          invitationId,
-          response: "accepted",
-        });
-        if (!result.success) return result;
-        if (
-          accountScopeRef.current !== accountScope ||
-          timerWorkspaceRef.current !== activeWorkspaceId
-        )
-          return { success: true };
-        timerRevisionRef.current += 1;
-        timerRef.current = result.data.timer;
-        persistedTimerRef.current = {
-          scope: accountScope,
-          workspaceId: activeWorkspaceId,
-          value: JSON.stringify(result.data.timer),
-        };
-        setTimer(result.data.timer);
-        setElapsed(elapsedForTimer(result.data.timer));
-        return { success: true };
-      } finally {
-        acceptingTaskRef.current = false;
-      }
-    };
-
-    const startTimer = (
-      task: string,
-      projectId: string | null,
-      _billable?: boolean,
-      taskDetails?: import("./domain").TaskDetails,
-    ): StoreResult => {
-      if (workspaceCreationRef.current?.scope === accountScope)
-        return { success: false, error: "Wait for workspace creation to finish." };
-      if (!can("track-own-time"))
-        return { success: false, error: "Your account cannot track time." };
-      if (timerRef.current.status !== "idle")
-        return { success: false, error: "Stop the active timer before starting another one." };
-      const details = validateTimerDetails(task, projectId);
-      if (!details.success) return details;
-      const projectValidation = validateProjectId(projectId);
-      if (!projectValidation.success) return projectValidation;
-      if (acceptingTaskRef.current)
-        return { success: false, error: "Wait for the task invitation to finish." };
-      const projectDefault = billableForProject(projectId);
-      const now = Date.now();
-      const next = createRunningTimer(
-        { task, projectId, billable: projectDefault },
-        {
-          workspaceId: activeWorkspaceId,
-          now,
-          startedDate: getLocalToday(new Date(now), preferences.timezone),
-          startClock: nowTime(preferences.timezone, new Date(now)),
-          hourlyRate: workspaceBilling.hourlyRate,
-          currency: currencyForProject(projectId),
-        },
-      );
-      timerRevisionRef.current += 1;
-
-      if (taskDetails) next.taskDetails = taskDetails;
-      timerRef.current = next;
-      setElapsed(0);
-      setTimer(next);
-      return { success: true };
-    };
-
-    const startTimerFromTask = (task: TimerTaskPreset): StoreResult => {
-      const validation = validateTimerTaskStart(task, {
-        timerStatus: timerRef.current.status,
-        projects,
-        canUseProject: canTrackProject,
-      });
-      if (!validation.success) return validation;
-      return startTimer(
-        validation.preset.task,
-        validation.preset.projectId,
-        validation.preset.billable,
-        task.taskDetails,
-      );
-    };
-
-    const updateTimer = (patch: {
-      taskDetails?: import("./domain").TaskDetails;
-      task?: string;
-      projectId?: string | null;
-      billable?: boolean;
-    }): StoreResult => {
-      if (!can("track-own-time"))
-        return { success: false, error: "Your account cannot update the active timer." };
-      const current = timerRef.current;
-      if (current.status === "idle")
-        return { success: false, error: "There is no active timer to update." };
-      if (patch.projectId === null)
-        return { success: false, error: "Select a project before starting the timer." };
-      if (patch.projectId !== undefined) {
-        const projectValidation = validateProjectId(patch.projectId);
-        if (!projectValidation.success) return projectValidation;
-      }
-      if (patch.task !== undefined && !patch.task.trim())
-        return { success: false, error: "A task is required." };
-      const next = {
-        ...current,
-        ...patch,
-        billable: billableForProject(patch.projectId ?? current.projectId),
-        ...(patch.task !== undefined ? { task: patch.task.trim() } : {}),
-        ...(patch.projectId !== undefined && patch.projectId !== current.projectId
-          ? { currency: currencyForProject(patch.projectId) }
-          : {}),
-      };
-      if (
-        next.task === current.task &&
-        next.projectId === current.projectId &&
-        next.billable === current.billable &&
-        next.taskDetails === current.taskDetails
-      )
-        return { success: true };
-      timerRevisionRef.current += 1;
-
-      timerRef.current = next;
-      setTimer(next);
-      return { success: true };
-    };
-
-    const setTimerElapsed = (seconds: number): StoreResult => {
-      if (!can("track-own-time"))
-        return { success: false, error: "Your account cannot update the active timer." };
-      const current = timerRef.current;
-      if (current.status === "idle")
-        return { success: false, error: "There is no active timer to update." };
-      if (!Number.isFinite(seconds) || seconds < 0)
-        return { success: false, error: "Enter a valid timer duration." };
-
-      const nextElapsed = Math.floor(seconds);
-      const next = {
-        ...current,
-        accumulated: nextElapsed,
-        startedAt: current.status === "running" ? Date.now() : null,
-      };
-      timerRevisionRef.current += 1;
-
-      timerRef.current = next;
-      setElapsed(nextElapsed);
-      setTimer(next);
-      return { success: true };
-    };
-
-    const pauseTimer = (effectiveAt?: number) => {
-      const current = timerRef.current;
-      if (current.status !== "running") return;
-      const next = pauseTimerAt(current, effectiveAt);
-      timerRevisionRef.current += 1;
-
-      timerRef.current = next;
-      setElapsed(next.accumulated);
-      setTimer(next);
-    };
-
-    const resumeTimer = (): StoreResult => {
-      const current = timerRef.current;
-      if (current.status !== "paused" || current.workspaceId !== activeWorkspaceId)
-        return { success: false, error: "There is no paused timer to resume." };
-      const details = validateTimerDetails(current.task, current.projectId);
-      if (!details.success) return details;
-      const projectValidation = validateProjectId(current.projectId);
-      if (!projectValidation.success) return projectValidation;
-      const next = { ...current, status: "running" as const, startedAt: Date.now() };
-      timerRevisionRef.current += 1;
-
-      timerRef.current = next;
-      setTimer(next);
-      return { success: true };
-    };
-
-    const stopTimer = (): StoreResult => {
-      const current = timerRef.current;
-      if (current.status === "idle" || current.workspaceId !== activeWorkspaceId)
-        return { success: false, error: "There is no active timer to stop." };
-      const details = validateTimerDetails(current.task, current.projectId);
-      if (!details.success) return details;
-      const total = elapsedForTimer(current);
-      const startedDate = current.startedDate ?? getLocalToday(new Date(), preferences.timezone);
-      const finish = addSecondsToDateTime(startedDate, current.startClock, total);
-      let warning: string | undefined;
-      let conflict: TimeEntry | undefined;
-      if (total > 0) {
-        const startTimestamp = dateTimeToTimestamp(
-          startedDate,
-          current.startClock,
-          0,
-          preferences.timezone,
-        );
-        const endTimestamp = startTimestamp === null ? null : startTimestamp + total * 1000;
-        const stoppedEntry: Omit<TimeEntry, "id"> = {
-          date: startedDate,
-          start: current.startClock,
-          end: finish.end,
-          ...(finish.endDate !== startedDate ? { endDate: finish.endDate } : {}),
-          ...(startTimestamp !== null ? { startTimestamp } : {}),
-          ...(endTimestamp !== null ? { endTimestamp } : {}),
-          seconds: total,
-          userId: activeMemberId,
-          projectId: current.projectId,
-          task: current.task,
-          billable: billableForProject(current.projectId),
-          ...(current.taskDetails ? { taskDetails: current.taskDetails } : {}),
-          hourlyRate: current.hourlyRate ?? workspaceBilling.hourlyRate,
-          currency: current.currency ?? workspaceBilling.currency,
-        };
-        conflict = findEntryConflict(stoppedEntry);
-        warning = conflict ? "This time overlaps another entry. It was saved anyway." : undefined;
-        setEntries((list) => [
-          {
-            ...stoppedEntry,
-            id: nextId(
-              "t",
-              list.map((entry) => entry.id),
-            ),
-          },
-          ...list,
-        ]);
-      }
-      timerRevisionRef.current += 1;
-
-      timerRef.current = initialTimer;
-      setTimer(initialTimer);
-      setElapsed(0);
-      return {
-        success: true,
-        ...(warning && conflict ? { warning, conflict } : {}),
-      };
-    };
-
-    const addEntry = (entry: Omit<TimeEntry, "id">, options: AddEntryOptions = {}): StoreResult => {
-      if (!can("manage-own-entries") || entry.userId !== activeMemberId)
-        return { success: false, error: "You can only create your own time entries." };
-      if (!options.allowWhileTimerActive && timerRef.current.status !== "idle")
-        return { success: false, error: "Stop the active timer before adding time manually." };
-      const billedEntry = {
-        ...entry,
-        billable: billableForProject(entry.projectId),
-        hourlyRate:
-          options.refreshBilling || entry.hourlyRate === undefined
-            ? workspaceBilling.hourlyRate
-            : entry.hourlyRate,
-        currency:
-          options.refreshBilling || entry.currency === undefined
-            ? currencyForProject(entry.projectId)
-            : entry.currency,
-      } satisfies Omit<TimeEntry, "id">;
-      const validation = validateEntry(billedEntry);
-      if (!validation.success) return validation;
-      const conflict = findEntryConflict(billedEntry);
-      const warning = conflict
-        ? "This time overlaps another entry. It was saved anyway."
-        : undefined;
-      setEntries((list) => [
-        {
-          ...billedEntry,
-          id: nextId(
-            "t",
-            list.map((current) => current.id),
-          ),
-        },
-        ...list,
-      ]);
-      return {
-        success: true,
-        ...(warning && conflict ? { warning, conflict } : {}),
-      };
-    };
-
-    const updateEntry = (id: string, patch: Partial<Omit<TimeEntry, "id">>): StoreResult => {
-      const current = entries.find((entry) => entry.id === id);
-      if (!current) return { success: false, error: "This time entry no longer exists." };
-      if (!can("manage-own-entries") || current.userId !== activeMemberId)
-        return { success: false, error: "You can only edit your own time entries." };
-      if (patch.userId !== undefined && patch.userId !== current.userId)
-        return { success: false, error: "A time entry owner cannot be changed." };
-      const next = {
-        ...current,
-        ...patch,
-        billable:
-          patch.projectId !== undefined && patch.projectId !== current.projectId
-            ? billableForProject(patch.projectId)
-            : current.billable,
-        ...(patch.projectId !== undefined && patch.projectId !== current.projectId
-          ? { currency: currencyForProject(patch.projectId) }
-          : {}),
-      };
-      const timeChanged = ["date", "start", "end", "endDate", "seconds"].some(
-        (field) => field in patch,
-      );
-      if (timeChanged && !("startTimestamp" in patch) && !("endTimestamp" in patch)) {
-        const onlyDateChanged =
-          "date" in patch &&
-          !["start", "end", "endDate", "seconds"].some((field) => field in patch);
-        const startTimestamp =
-          onlyDateChanged && typeof current.startTimestamp === "number"
-            ? dateTimeToTimestamp(next.date, next.start, 0, preferences.timezone)
-            : null;
-        if (startTimestamp !== null) {
-          next.startTimestamp = startTimestamp;
-          next.endTimestamp = startTimestamp + next.seconds * 1000;
-        } else {
-          delete next.startTimestamp;
-          delete next.endTimestamp;
-        }
-      }
-      const validation = validateEntry(next, current.projectId);
-      if (!validation.success) return validation;
-      const conflict = timeChanged ? findEntryConflict(next, id) : undefined;
-      const warning = conflict
-        ? "This time overlaps another entry. It was saved anyway."
-        : undefined;
-      setEntries((list) => list.map((entry) => (entry.id === id ? next : entry)));
-      return {
-        success: true,
-        ...(warning && conflict ? { warning, conflict } : {}),
-      };
-    };
-
-    const deleteEntry = (id: string): StoreResult => {
-      const entry = entries.find((candidate) => candidate.id === id);
-      if (!entry) return { success: false, error: "This time entry no longer exists." };
-      if (!can("manage-own-entries") || entry.userId !== activeMemberId)
-        return { success: false, error: "You can only delete your own time entries." };
-      setEntries((list) => list.filter((candidate) => candidate.id !== id));
-      return { success: true };
-    };
-
-    const restoreEntry = (entry: TimeEntry): StoreResult => {
-      if (!can("manage-own-entries") || entry.userId !== activeMemberId)
-        return { success: false, error: "You can only restore your own time entries." };
-      if (entries.some((candidate) => candidate.id === entry.id))
-        return { success: false, error: "This time entry already exists." };
-      const validation = validateEntry(entry);
-      if (!validation.success) return validation;
-      const conflict = findEntryConflict(entry);
-      const warning = conflict
-        ? "This time overlaps another entry. It was saved anyway."
-        : undefined;
-      setEntries((list) => [entry, ...list]);
-      return {
-        success: true,
-        ...(warning && conflict ? { warning, conflict } : {}),
-      };
-    };
-
-    const addProject = (project: Omit<Project, "id">): StoreResult => {
-      if (!can("manage-projects"))
-        return { success: false, error: "Only Admins and the Owner can manage projects." };
-      const projectName = project.name.trim().replace(/\s+/g, " ");
-      if (!projectName) return { success: false, error: "A project name is required." };
-      if (!clients.some((client) => client.id === project.clientId))
-        return { success: false, error: "Choose an existing client for this project." };
-      if (
-        projects.some(
-          (current) =>
-            current.clientId === project.clientId &&
-            normalizedProjectName(current.name) === normalizedProjectName(projectName),
-        )
-      )
-        return {
-          success: false,
-          error: "A project with this name already exists for this client.",
-        };
-      if (typeof project.billable !== "boolean")
-        return { success: false, error: "Choose whether this project is billable." };
-      if (!can("manage-project-members"))
-        return { success: false, error: "You cannot assign members to projects." };
-      if (
-        project.memberIds.some(
-          (memberId) =>
-            !members.some((member) => member.id === memberId && member.status === "active"),
-        )
-      )
-        return { success: false, error: "Only active members can be assigned to a project." };
-      const createdProject: Project = {
-        ...project,
-        name: projectName,
-        memberIds: [...new Set([...project.memberIds, activeMemberId])],
-        id: nextId(
-          "p",
-          projects.map((current) => current.id),
-        ),
-      };
-      setProjects((list) => [createdProject, ...list]);
-      setAccount((current) => ({
-        ...current,
-        workspaces: current.workspaces.map((data) =>
-          data.workspace.id === activeWorkspaceId
-            ? { ...data, projects: [createdProject, ...data.projects] }
-            : data,
-        ),
-      }));
-      return { success: true, id: createdProject.id };
-    };
-
-    const updateProject = (id: string, patch: Partial<Omit<Project, "id">>): StoreResult => {
-      if (!can("manage-projects"))
-        return { success: false, error: "Only Admins and the Owner can manage projects." };
-      const current = projects.find((project) => project.id === id);
-      if (!current) return { success: false, error: "This project no longer exists." };
-      const next = {
-        ...current,
-        ...patch,
-        name: (patch.name ?? current.name).trim().replace(/\s+/g, " "),
-      };
-      if (!next.name) return { success: false, error: "A project name is required." };
-      if (!clients.some((client) => client.id === next.clientId))
-        return { success: false, error: "A project must keep a valid client." };
-      if (
-        projects.some(
-          (candidate) =>
-            candidate.id !== id &&
-            candidate.clientId === next.clientId &&
-            normalizedProjectName(candidate.name) === normalizedProjectName(next.name),
-        )
-      )
-        return {
-          success: false,
-          error: "A project with this name already exists for this client.",
-        };
-      if (typeof next.billable !== "boolean")
-        return { success: false, error: "Choose whether this project is billable." };
-      if ("memberIds" in patch && !can("manage-project-members"))
-        return { success: false, error: "You cannot assign members to projects." };
-      if (
-        next.memberIds.some(
-          (memberId) =>
-            !members.some((member) => member.id === memberId && member.status === "active"),
-        )
-      )
-        return { success: false, error: "Only active members can be assigned to a project." };
-      setProjects((list) => list.map((project) => (project.id === id ? next : project)));
-      return { success: true };
-    };
-
-    const deleteProject = (id: string): StoreResult => {
-      if (!can("manage-projects"))
-        return { success: false, error: "Only Admins and the Owner can manage projects." };
-      const current = projects.find((project) => project.id === id);
-      if (!current) return { success: false, error: "This project no longer exists." };
-      if (current.status !== "archived")
-        return { success: false, error: "Archive the project before deleting it." };
-      if (entries.some((entry) => entry.projectId === id))
-        return {
-          success: false,
-          error: "This project has tracked time. Keep it archived to preserve reports and history.",
-        };
-      if (timerRef.current.status !== "idle")
-        return { success: false, error: "Stop the active timer before deleting a project." };
-      setProjects((list) => list.filter((project) => project.id !== id));
-      return { success: true };
-    };
-
-    const addClient = (client: Omit<Client, "id">): StoreResult => {
-      if (!can("manage-clients"))
-        return { success: false, error: "Only Admins and the Owner can manage clients." };
-      if (!client.name.trim()) return { success: false, error: "A client name is required." };
-      if (client.status !== undefined && !["active", "on-hold", "archived"].includes(client.status))
-        return { success: false, error: "Choose a valid client status." };
-      if (
-        client.memberIds?.some(
-          (id) => !members.some((member) => member.id === id && member.status !== "removed"),
-        )
-      )
-        return { success: false, error: "Only workspace members can be assigned to a client." };
-      if (client.currency !== undefined && !clientCurrencyOptions.includes(client.currency))
-        return { success: false, error: "Choose a valid currency." };
-      if (
-        client.contractedHours != null &&
-        (typeof client.contractedHours !== "number" ||
-          !Number.isFinite(client.contractedHours) ||
-          client.contractedHours <= 0)
-      )
-        return { success: false, error: "Enter a positive number of contracted hours." };
-      setClients((list) => [
-        {
-          id: nextId(
-            "c",
-            list.map((current) => current.id),
-          ),
-          name: client.name.trim(),
-          contact: client.contact.trim(),
-          billable: client.billable ?? false,
-          contractedHours: client.contractedHours ?? null,
-          status: client.status ?? "active",
-          memberIds: [...new Set(client.memberIds ?? [])],
-          currency:
-            client.currency ??
-            (clientCurrencyOptions.includes(workspaceBilling.currency)
-              ? workspaceBilling.currency
-              : defaultCurrencyForLocale(preferences.language)),
-        },
-        ...list,
-      ]);
-      return { success: true };
-    };
-
-    const updateClient = (id: string, patch: Partial<Client>): StoreResult => {
-      if (!can("manage-clients"))
-        return { success: false, error: "Only Admins and the Owner can manage clients." };
-      if (patch.status !== undefined && !["active", "on-hold", "archived"].includes(patch.status))
-        return { success: false, error: "Choose a valid client status." };
-      if (
-        patch.memberIds !== undefined &&
-        patch.memberIds.some(
-          (id) => !members.some((member) => member.id === id && member.status !== "removed"),
-        )
-      )
-        return { success: false, error: "Only workspace members can be assigned to a client." };
-      if (patch.currency !== undefined && !clientCurrencyOptions.includes(patch.currency))
-        return { success: false, error: "Choose a valid currency." };
-      if (
-        patch.contractedHours != null &&
-        (typeof patch.contractedHours !== "number" ||
-          !Number.isFinite(patch.contractedHours) ||
-          patch.contractedHours <= 0)
-      )
-        return { success: false, error: "Enter a positive number of contracted hours." };
-      const current = clients.find((client) => client.id === id);
-      if (!current) return { success: false, error: "This client no longer exists." };
-      const next = {
-        ...current,
-        ...patch,
-        name: (patch.name ?? current.name).trim(),
-        contact: (patch.contact ?? current.contact).trim(),
-      };
-      if (!next.name) return { success: false, error: "A client name is required." };
-      setClients((list) => list.map((client) => (client.id === id ? next : client)));
-      return { success: true };
-    };
-
-    const deleteClient = (id: string): StoreResult => {
-      if (!can("manage-clients"))
-        return { success: false, error: "Only Admins and the Owner can manage clients." };
-      const current = clients.find((client) => client.id === id);
-      if (!current) return { success: false, error: "This client no longer exists." };
-      const linkedProjects = projects.filter((project) => project.clientId === id);
-      if (linkedProjects.length > 0)
-        return {
-          success: false,
-          error: `This client is used by ${linkedProjects.length} project${linkedProjects.length === 1 ? "" : "s"}. Remove or reassign those projects first.`,
-        };
-      setClients((list) => list.filter((client) => client.id !== id));
-      return { success: true };
-    };
-
-    const inviteMember = async (
-      email: string,
-      role: Exclude<Role, "Owner">,
-    ): Promise<StoreResult> => {
-      if (!can("manage-members"))
-        return { success: false, error: "Only Admins and the Owner can invite members." };
-      const normalizedEmail = email.trim().toLowerCase();
-      if (!inviteEmailPattern.test(normalizedEmail))
-        return { success: false, error: "Enter a valid email address." };
-      if (role !== "Admin" && role !== "Member")
-        return { success: false, error: "Choose a valid role for this invitation." };
-      if (role === "Admin" && !can("manage-admins"))
-        return { success: false, error: "Only the Owner can invite Admins." };
-      if (members.filter((member) => member.status !== "removed").length >= 50)
-        return {
-          success: false,
-          error: "This workspace has reached its limit of 50 members and invitations.",
-        };
-      if (members.some((member) => member.email.toLowerCase() === normalizedEmail))
-        return {
-          success: false,
-          error: "This email is already part of the team or has a pending invitation.",
-        };
-      const response = await dataSource.inviteMember(activeWorkspaceId, normalizedEmail, role);
-      if (!response.success) return response;
-      const { member: invitation, invitationUrl } = response.data;
-      setMembers((list) => [invitation, ...list]);
-      setAccount((current) => ({
-        ...current,
-        identities: current.identities.some((identity) => identity.id === invitation.id)
-          ? current.identities
-          : [...current.identities, createIdentity(invitation)],
-      }));
-      return {
-        success: true,
-        id: invitation.id,
-        invitationUrl,
-        emailStatus: response.data.emailStatus,
-      };
-    };
-
-    const resendInvite = async (memberId: string): Promise<StoreResult> => {
-      if (!can("manage-members"))
-        return { success: false, error: "Only Admins and the Owner can manage invitations." };
-      const member = members.find((candidate) => candidate.id === memberId);
-      if (!member || member.status !== "invited")
-        return { success: false, error: "Only pending invitations can be resent." };
-      if (member.role === "Admin" && !can("manage-admins"))
-        return { success: false, error: "Only the Owner can manage Admin invitations." };
-      const response = await dataSource.resendInvitation(activeWorkspaceId, memberId);
-      if (!response.success) return response;
-      setMembers((list) =>
-        list.map((candidate) => (candidate.id === memberId ? response.data.member : candidate)),
-      );
-      return {
-        success: true,
-        invitationUrl: response.data.invitationUrl,
-        emailStatus: response.data.emailStatus,
-      };
-    };
-
-    const cancelInvite = async (memberId: string): Promise<StoreResult> => {
-      if (!can("manage-members"))
-        return { success: false, error: "Only Admins and the Owner can manage invitations." };
-      const member = members.find((candidate) => candidate.id === memberId);
-      if (!member || member.status !== "invited")
-        return { success: false, error: "Only pending invitations can be canceled." };
-      if (member.role === "Admin" && !can("manage-admins"))
-        return { success: false, error: "Only the Owner can manage Admin invitations." };
-      const response = await dataSource.cancelInvitation(activeWorkspaceId, memberId);
-      if (!response.success) return response;
-      setMembers((list) => list.filter((candidate) => candidate.id !== memberId));
-      setAccount((current) => ({
-        ...current,
-        identities: current.identities.filter((identity) => identity.id !== memberId),
-      }));
-      return { success: true };
-    };
-
-    const removeMember = (memberId: string): StoreResult => {
-      if (!can("manage-members"))
-        return { success: false, error: "Only Admins and the Owner can remove members." };
-      const member = members.find((candidate) => candidate.id === memberId);
-      if (!member) return { success: false, error: "This team member no longer exists." };
-      if (memberId === activeMemberId && currentMember?.role === "Owner")
-        return { success: false, error: "The Owner cannot remove their own account." };
-      if (member.status !== "active")
-        return { success: false, error: "Only active members can be removed." };
-      if (member.role === "Owner")
-        return { success: false, error: "The workspace owner cannot be removed." };
-      if (member.role === "Admin" && !can("manage-admins"))
-        return { success: false, error: "Only the Owner can remove Admins." };
-      const activeAdmins = members.filter(
-        (candidate) => candidate.status === "active" && candidate.role === "Admin",
-      );
-      if (member.role === "Admin" && activeAdmins.length <= 1)
-        return { success: false, error: "The last admin cannot be removed." };
-      setMembers((list) =>
-        list.map((candidate) =>
-          candidate.id === memberId ? { ...candidate, status: "removed" } : candidate,
-        ),
-      );
-      setProjects((list) =>
-        list.map((project) => ({
-          ...project,
-          memberIds: project.memberIds.filter((id) => id !== memberId),
-        })),
-      );
-      return { success: true };
-    };
-
-    const restoreMember = (memberId: string): StoreResult => {
-      if (!can("manage-members"))
-        return { success: false, error: "Only Admins and the Owner can restore members." };
-      const member = members.find((candidate) => candidate.id === memberId);
-      if (!member || member.status !== "removed")
-        return { success: false, error: "Only removed members can be restored." };
-      if (member.role === "Admin" && !can("manage-admins"))
-        return { success: false, error: "Only the Owner can restore Admins." };
-      setMembers((list) =>
-        list.map((candidate) =>
-          candidate.id === memberId ? { ...candidate, status: "active" } : candidate,
-        ),
-      );
-      return { success: true };
-    };
-
-    const updateMemberRole = (memberId: string, role: Exclude<Role, "Owner">): StoreResult => {
-      const member = members.find((candidate) => candidate.id === memberId);
-      if (!member) return { success: false, error: "This team member no longer exists." };
-      if (memberId === activeMemberId && currentMember?.role === "Owner")
-        return { success: false, error: "The Owner cannot change their own role." };
-      if (member.role === "Owner")
-        return { success: false, error: "The workspace owner role cannot be changed." };
-      if (role !== "Admin" && role !== "Member")
-        return { success: false, error: "Choose a valid team role." };
-      if (currentMember?.role === "Admin" && member.role !== "Member")
-        return { success: false, error: "Admins can only manage Members." };
-      if (!can("manage-members"))
-        return { success: false, error: "Only Admins and the Owner can change roles." };
-      if (member.role === "Admin" && role === "Member") {
-        if (!can("manage-admins"))
-          return { success: false, error: "Only the Owner can reassign Admin roles." };
-      }
-      setMembers((list) =>
-        list.map((candidate) => (candidate.id === memberId ? { ...candidate, role } : candidate)),
-      );
-      return { success: true };
-    };
+    const { addProject, updateProject, deleteProject } = createProjectActions({
+      can,
+      clients,
+      projects,
+      members,
+      activeMemberId,
+      setProjects,
+      setAccount,
+      activeWorkspaceId,
+      entries,
+      timerRef,
+    });
+    const { addClient, updateClient, deleteClient } = createClientActions({
+      can,
+      members,
+      setClients,
+      workspaceBilling,
+      preferences,
+      clients,
+      projects,
+    });
+    const {
+      inviteMember,
+      resendInvite,
+      cancelInvite,
+      removeMember,
+      restoreMember,
+      updateMemberRole,
+    } = createMemberActions({
+      can,
+      members,
+      dataSource,
+      activeWorkspaceId,
+      setMembers,
+      setAccount,
+      activeMemberId,
+      currentMember,
+      setProjects,
+    });
 
     const setTrello = (patch: Partial<TrelloState>): StoreResult => {
       if (!can("manage-integrations"))
@@ -1662,426 +1002,50 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       );
       return { success: true };
     };
-
-    const switchWorkspace = (workspaceId: string): StoreResult => {
-      if (workspaceCreationRef.current?.scope === accountScope)
-        return { success: false, error: "Wait for workspace creation to finish." };
-      if (workspaceId === activeWorkspaceId) return { success: true };
-      const target = account.workspaces.find((data) => data.workspace.id === workspaceId);
-      if (!target) return { success: false, error: "This workspace could not be found." };
-      if (target.workspace.status === "archived")
-        return { success: false, error: "Archived workspaces are read-only. Restore it first." };
-      const membership = target.memberships.find(
-        (candidate) => candidate.userId === activeMemberId,
-      );
-      if (!membership || membership.status !== "active")
-        return { success: false, error: "You do not have access to this workspace." };
-      if (timerRef.current.status === "running")
-        return { success: false, error: "Pause the active timer before switching workspaces." };
-      const current = account.workspaces.find((data) => data.workspace.id === activeWorkspaceId);
-      if (current) {
-        const currentSnapshot: WorkspaceData = {
-          ...current,
-          entries,
-          projects,
-          clients,
-          memberships: membersToMemberships(activeWorkspaceId, members, current.memberships),
-          settings,
-          trello,
-        };
-        setAccount((previous) => ({
-          ...previous,
-          workspaces: previous.workspaces.map((data) =>
-            data.workspace.id === activeWorkspaceId ? currentSnapshot : data,
-          ),
-        }));
-      }
-      setActiveWorkspaceId(workspaceId);
-      setAccount((currentAccount) => ({
-        ...currentAccount,
-        preferencesByUserId: {
-          ...currentAccount.preferencesByUserId,
-          [activeMemberId]: {
-            ...(currentAccount.preferencesByUserId[activeMemberId] ?? initialPreferences),
-            activeWorkspaceId: workspaceId,
-          },
-        },
-      }));
-      setEntries(target.entries);
-      setProjects(target.projects);
-      setClients(target.clients);
-      setMembers(
-        target.memberships
-          .map((item) => membershipToMember(item, account.identities))
-          .filter((member): member is Member => member !== null),
-      );
-      setSettingsState(target.settings);
-      setTrelloState(target.trello);
-      const nextTimer = initialTimer;
-      timerRevisionRef.current += 1;
-
-      timerRef.current = nextTimer;
-      setTimer(nextTimer);
-      setElapsed(elapsedForTimer(nextTimer));
-      return { success: true };
-    };
-
-    const createWorkspace = async (
-      name: string,
-      billing: BillingPreference,
-      logoDataUrl?: string | null,
-    ): Promise<StoreResult> => {
-      if (sessionStatus !== "active" || !authenticatedUserId)
-        return { success: false, error: "Choose an active account." };
-      if (workspaceCreationRef.current?.scope === accountScope)
-        return workspaceCreationRef.current.promise;
-      if (timerRef.current.status !== "idle")
-        return {
-          success: false,
-          error: "Pause or stop the active timer before creating a workspace.",
-        };
-      if (
-        account.workspaces.filter((data) => data.workspace.ownerId === activeMemberId).length >= 5
-      )
-        return { success: false, error: "You can create up to 5 workspaces." };
-      const trimmedName = name.trim();
-      if (!trimmedName) return { success: false, error: "A workspace name is required." };
-      if (!isFiniteNumber(billing.hourlyRate) || billing.hourlyRate < 0) {
-        return { success: false, error: "Choose a valid hourly rate." };
-      }
-      if (!isCurrencyCode(billing.currency)) {
-        return { success: false, error: "Choose a valid currency." };
-      }
-      if (logoDataUrl !== undefined && !isValidLogoUrl(logoDataUrl)) {
-        return { success: false, error: "Choose a PNG, JPG or WebP logo smaller than 500 KB." };
-      }
-      if (
-        account.workspaces.some(
-          (data) => data.workspace.name.toLowerCase() === trimmedName.toLowerCase(),
-        )
-      )
-        return { success: false, error: "A workspace with this name already exists." };
-      // Creation shares the account write queue. Older snapshots must finish
-      // before the server selects the new workspace; later saves use its ID.
-      const request = persistAccount().then(async (saved): Promise<StoreResult> => {
-        if (!saved || accountScopeRef.current !== accountScope)
-          return { success: false, error: "Could not save your pending changes." };
-        const result = await dataSource.createWorkspace({
-          name: trimmedName,
-          hourlyRate: billing.hourlyRate,
-          currency: billing.currency,
-          ...(logoDataUrl !== undefined ? { logoDataUrl } : {}),
-        });
-        if (accountScopeRef.current !== accountScope)
-          return { success: false, error: "Choose an active account." };
-        if (!result.success) return { success: false, error: result.error };
-        const created = result.data.account.workspaces.find(
-          (data) => data.workspace.id === result.data.workspaceId,
-        );
-        if (!created) return { success: false, error: "This workspace could not be found." };
-        const mergeCreated = (snapshot: PersistedAccount): PersistedAccount => ({
-          ...snapshot,
-          workspaces: [
-            ...snapshot.workspaces.filter((data) => data.workspace.id !== created.workspace.id),
-            created,
-          ],
-          preferencesByUserId: {
-            ...snapshot.preferencesByUserId,
-            [authenticatedUserId]: {
-              ...(snapshot.preferencesByUserId[authenticatedUserId] ?? initialPreferences),
-              activeWorkspaceId: created.workspace.id,
-            },
-          },
-        });
-        // Keep edits made in the previous workspace while the request was pending.
-        const next = mergeCreated(accountForSyncRef.current);
-        syncedAccountRef.current = mergeCreated(
-          syncedAccountRef.current ?? accountForSyncRef.current,
-        );
-        accountForSyncRef.current = next;
-        accountRef.current = next;
-        setAccount(next);
-        setActiveWorkspaceId(created.workspace.id);
-        setEntries(created.entries);
-        setProjects(created.projects);
-        setClients(created.clients);
-        setMembers(
-          created.memberships
-            .map((membership) => membershipToMember(membership, next.identities))
-            .filter((member): member is Member => member !== null),
-        );
-        setSettingsState(created.settings);
-        setTrelloState(created.trello);
-        timerRevisionRef.current += 1;
-        timerRef.current = initialTimer;
-        setTimer(initialTimer);
-        setTimerHydrated(false);
-        setAccountError(null);
-        return { success: true, id: created.workspace.id };
-      });
-      const tracked = request
-        .then(() => undefined)
-        .finally(() => {
-          if (accountSyncPromiseRef.current === tracked) accountSyncPromiseRef.current = null;
-          if (workspaceCreationRef.current?.promise === request)
-            workspaceCreationRef.current = null;
-        });
-      accountSyncPromiseRef.current = tracked;
-      workspaceCreationRef.current = { scope: accountScope, promise: request };
-      return request;
-    };
-
-    const updateWorkspace = (
-      workspaceId: string,
-      patch: { name?: string; logoDataUrl?: string | null },
-    ): StoreResult => {
-      const target = account.workspaces.find((data) => data.workspace.id === workspaceId);
-      if (!target) return { success: false, error: "This workspace could not be found." };
-      const membership = target.memberships.find((item) => item.userId === activeMemberId);
-      if (!membership || membership.role !== "Owner" || membership.status !== "active")
-        return { success: false, error: "Only the workspace Owner can edit it." };
-      if (target.workspace.status === "archived")
-        return { success: false, error: "Archived workspaces are read-only. Restore it first." };
-      const name = patch.name === undefined ? target.workspace.name : patch.name.trim();
-      if (!name) return { success: false, error: "A workspace name is required." };
-      if (patch.logoDataUrl !== undefined && !isValidLogoUrl(patch.logoDataUrl))
-        return { success: false, error: "Choose a PNG, JPG or WebP logo smaller than 500 KB." };
-      setAccount((current) => ({
-        ...current,
-        workspaces: current.workspaces.map((data) =>
-          data.workspace.id === workspaceId
-            ? {
-                ...data,
-                workspace: {
-                  ...data.workspace,
-                  name,
-                  ...(patch.logoDataUrl !== undefined ? { logoDataUrl: patch.logoDataUrl } : {}),
-                },
-              }
-            : data,
-        ),
-      }));
-      return { success: true };
-    };
-
-    const setWorkspaceBilling = (workspaceId: string, billing: BillingPreference): StoreResult => {
-      const target = account.workspaces.find((data) => data.workspace.id === workspaceId);
-      if (!target) return { success: false, error: "This workspace could not be found." };
-      const membership = target.memberships.find((item) => item.userId === activeMemberId);
-      if (!membership || membership.status !== "active") {
-        return { success: false, error: "You do not have access to this workspace." };
-      }
-      if (target.workspace.status === "archived") {
-        return { success: false, error: "Archived workspaces are read-only. Restore it first." };
-      }
-      if (!isFiniteNumber(billing.hourlyRate) || billing.hourlyRate < 0) {
-        return { success: false, error: "Choose a valid hourly rate." };
-      }
-      if (!isCurrencyCode(billing.currency)) {
-        return { success: false, error: "Choose a valid currency." };
-      }
-      setAccount((current) => ({
-        ...current,
-        workspaces: current.workspaces.map((data) =>
-          data.workspace.id === workspaceId
-            ? {
-                ...data,
-                memberships: data.memberships.map((item) =>
-                  item.userId === activeMemberId ? { ...item, ...billing } : item,
-                ),
-              }
-            : data,
-        ),
-      }));
-      return { success: true };
-    };
-
-    const archiveWorkspace = (workspaceId: string): StoreResult => {
-      const target = account.workspaces.find((data) => data.workspace.id === workspaceId);
-      if (!target) return { success: false, error: "This workspace could not be found." };
-      const membership = target.memberships.find((item) => item.userId === activeMemberId);
-      if (!membership || membership.role !== "Owner" || membership.status !== "active")
-        return { success: false, error: "Only the workspace Owner can archive it." };
-      if (target.workspace.status === "archived")
-        return { success: false, error: "This workspace is already archived." };
-      if (timerRef.current.status !== "idle")
-        return {
-          success: false,
-          error: "Pause or stop the active timer before archiving a workspace.",
-        };
-
-      const isCurrentWorkspace = workspaceId === activeWorkspaceId;
-      const nextWorkspace = isCurrentWorkspace
-        ? (account.workspaces.find(
-            (data) =>
-              data.workspace.id !== workspaceId &&
-              data.workspace.status === "active" &&
-              data.memberships.some(
-                (item) => item.userId === activeMemberId && item.status === "active",
-              ),
-          ) ?? null)
-        : null;
-      if (isCurrentWorkspace && !nextWorkspace)
-        return {
-          success: false,
-          error: "Keep at least one active workspace before archiving the current one.",
-        };
-
-      const currentSnapshot: WorkspaceData | null = isCurrentWorkspace
-        ? {
-            ...target,
-            entries,
-            projects,
-            clients,
-            memberships: membersToMemberships(activeWorkspaceId, members, target.memberships),
-            settings,
-            trello,
-          }
-        : null;
-      const archivedAt = new Date().toISOString();
-      setAccount((current) => ({
-        ...current,
-        workspaces: current.workspaces.map((data) => {
-          if (data.workspace.id !== workspaceId) return data;
-          const source = currentSnapshot ?? data;
-          return {
-            ...source,
-            workspace: {
-              ...source.workspace,
-              status: "archived",
-              archivedAt,
-            },
-          };
-        }),
-      }));
-
-      if (nextWorkspace) {
-        setActiveWorkspaceId(nextWorkspace.workspace.id);
-        setAccount((currentAccount) => ({
-          ...currentAccount,
-          preferencesByUserId: {
-            ...currentAccount.preferencesByUserId,
-            [activeMemberId]: {
-              ...(currentAccount.preferencesByUserId[activeMemberId] ?? initialPreferences),
-              activeWorkspaceId: nextWorkspace.workspace.id,
-            },
-          },
-        }));
-        setEntries(nextWorkspace.entries);
-        setProjects(nextWorkspace.projects);
-        setClients(nextWorkspace.clients);
-        setMembers(
-          nextWorkspace.memberships
-            .map((item) => membershipToMember(item, account.identities))
-            .filter((member): member is Member => member !== null),
-        );
-        setSettingsState(nextWorkspace.settings);
-        setTrelloState(nextWorkspace.trello);
-        const nextTimer = initialTimer;
-        timerRevisionRef.current += 1;
-
-        timerRef.current = nextTimer;
-        setTimer(nextTimer);
-        setElapsed(elapsedForTimer(nextTimer));
-      }
-      return { success: true };
-    };
-
-    const restoreWorkspace = (workspaceId: string): StoreResult => {
-      const target = account.workspaces.find((data) => data.workspace.id === workspaceId);
-      if (!target) return { success: false, error: "This workspace could not be found." };
-      const membership = target.memberships.find((item) => item.userId === activeMemberId);
-      if (!membership || membership.role !== "Owner")
-        return { success: false, error: "Only the workspace Owner can restore it." };
-      setAccount((current) => ({
-        ...current,
-        workspaces: current.workspaces.map((data) =>
-          data.workspace.id === workspaceId
-            ? (() => {
-                const { archivedAt: _archivedAt, ...workspace } = data.workspace;
-                return { ...data, workspace: { ...workspace, status: "active" as const } };
-              })()
-            : data,
-        ),
-      }));
-      return { success: true };
-    };
-
-    const leaveWorkspace = (workspaceId: string): StoreResult => {
-      const target = account.workspaces.find((data) => data.workspace.id === workspaceId);
-      const membership = target?.memberships.find((item) => item.userId === activeMemberId);
-      if (!target || !membership || membership.status !== "active")
-        return { success: false, error: "You are not an active member of this workspace." };
-      if (membership.role === "Owner")
-        return {
-          success: false,
-          error: "The Owner must archive the workspace instead of leaving it.",
-        };
-      if (timerRef.current.status !== "idle")
-        return {
-          success: false,
-          error: "Pause or stop the active timer before leaving a workspace.",
-        };
-      const accessible = account.workspaces.filter(
-        (data) =>
-          data.workspace.id !== workspaceId &&
-          data.memberships.some(
-            (item) => item.userId === activeMemberId && item.status === "active",
-          ),
-      );
-      if (accessible.length === 0)
-        return {
-          success: false,
-          error: "Keep at least one workspace available before leaving this one.",
-        };
-      const nextWorkspace = accessible[0];
-      if (!nextWorkspace) return { success: false, error: "No other workspace is available." };
-      setAccount((current) => ({
-        ...current,
-        workspaces: current.workspaces.map((data) =>
-          data.workspace.id === workspaceId
-            ? {
-                ...data,
-                memberships: data.memberships.map((item) =>
-                  item.userId === activeMemberId ? { ...item, status: "removed" } : item,
-                ),
-                projects: data.projects.map((project) => ({
-                  ...project,
-                  memberIds: project.memberIds.filter((id) => id !== activeMemberId),
-                })),
-              }
-            : data,
-        ),
-      }));
-      setActiveWorkspaceId(nextWorkspace.workspace.id);
-      setAccount((currentAccount) => ({
-        ...currentAccount,
-        preferencesByUserId: {
-          ...currentAccount.preferencesByUserId,
-          [activeMemberId]: {
-            ...(currentAccount.preferencesByUserId[activeMemberId] ?? initialPreferences),
-            activeWorkspaceId: nextWorkspace.workspace.id,
-          },
-        },
-      }));
-      setEntries(nextWorkspace.entries);
-      setProjects(nextWorkspace.projects);
-      setClients(nextWorkspace.clients);
-      setMembers(
-        nextWorkspace.memberships
-          .map((item) => membershipToMember(item, account.identities))
-          .filter((member): member is Member => member !== null),
-      );
-      setSettingsState(nextWorkspace.settings);
-      setTrelloState(nextWorkspace.trello);
-      const nextTimer = initialTimer;
-      timerRevisionRef.current += 1;
-
-      timerRef.current = nextTimer;
-      setTimer(nextTimer);
-      setElapsed(elapsedForTimer(nextTimer));
-      return { success: true };
-    };
+    const {
+      switchWorkspace,
+      createWorkspace,
+      updateWorkspace,
+      setWorkspaceBilling,
+      archiveWorkspace,
+      restoreWorkspace,
+      leaveWorkspace,
+    } = createWorkspaceActions({
+      entries,
+      projects,
+      clients,
+      settings,
+      trello,
+      workspaceCreationRef,
+      accountScope,
+      activeWorkspaceId,
+      account,
+      activeMemberId,
+      timerRef,
+      members,
+      setAccount,
+      setActiveWorkspaceId,
+      setEntries,
+      setProjects,
+      setClients,
+      setMembers,
+      setSettingsState,
+      setTrelloState,
+      timerRevisionRef,
+      setTimer,
+      setElapsed,
+      sessionStatus,
+      authenticatedUserId,
+      persistAccount,
+      accountScopeRef,
+      dataSource,
+      accountForSyncRef,
+      syncedAccountRef,
+      accountRef,
+      setTimerHydrated,
+      setAccountError,
+      accountSyncPromiseRef,
+    });
 
     const setActiveMember = (memberId: string): StoreResult => {
       const member = members.find(
