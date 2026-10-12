@@ -30,6 +30,7 @@ import { SidebarNavigation } from "@/components/layout/sidebar-navigation";
 import { DrawerTriggerRegistration } from "@/components/overlay-trigger-registration";
 import { AppI18nProvider, useI18n } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
+import { useTimerFavicon } from "@/lib/use-timer-favicon";
 import { useAuth } from "@/lib/auth-context";
 import { getAuthReturnPath } from "@/lib/auth-redirect";
 import { useAccountLifecycle } from "@/lib/account-lifecycle-context";
@@ -48,7 +49,8 @@ const accountFlowPaths = new Set(["/legal-consent", "/account-deletion"]);
 const legalDocumentPaths = new Set(["/terms", "/privacy"]);
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { preferences } = useStore();
+  const { preferences, timer } = useStore();
+  useTimerFavicon(timer.status);
   const { configured, loading: authLoading, session } = useAuth();
   const lifecycle = useAccountLifecycle();
   const currentLocation = useLocation();
