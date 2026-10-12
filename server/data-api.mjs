@@ -562,7 +562,7 @@ export async function loadAccount(client, user, config) {
     [workspaceIds],
   );
   const clients = await client.query(
-    `select id::text, workspace_id::text, name, contact, billable, currency, contracted_hours from public.clients where workspace_id = any($1::uuid[])`,
+    `select id::text, workspace_id::text, name, contact, billable, currency, contracted_hours, status, member_ids from public.clients where workspace_id = any($1::uuid[])`,
     [workspaceIds],
   );
   const projects = await client.query(
@@ -651,6 +651,8 @@ export async function loadAccount(client, user, config) {
       contact: row.contact,
       billable: row.billable ?? false,
       contractedHours: row.contracted_hours == null ? null : Number(row.contracted_hours),
+      status: row.status,
+      memberIds: row.member_ids ?? [],
       ...(row.currency ? { currency: row.currency } : {}),
     });
     clientsByWorkspace.set(row.workspace_id, list);
@@ -1266,6 +1268,15 @@ async function syncAccount(client, user, config, account) {
       if (!item || typeof item !== "object") {
         throw new DataApiError(400, "Invalid client payload.");
       }
+      if (item.status !== undefined && !["active", "on-hold", "archived"].includes(item.status)) {
+        throw new DataApiError(400, "Choose a valid client status.");
+      }
+      if (
+        item.memberIds !== undefined &&
+        (!Array.isArray(item.memberIds) || item.memberIds.some((id) => !membershipByUserId.has(id)))
+      ) {
+        throw new DataApiError(400, "Only workspace members can be assigned to a client.");
+      }
       if (item.billable !== undefined && typeof item.billable !== "boolean") {
         throw new DataApiError(400, "Invalid client billable value.");
       }
@@ -1281,12 +1292,14 @@ async function syncAccount(client, user, config, account) {
         throw new DataApiError(400, "Enter a positive number of contracted hours.");
       }
       const result = await client.query(
-        `insert into public.clients (id, workspace_id, name, contact, billable, currency, contracted_hours)
-         values ($1, $2, $3, $4, coalesce($5::boolean, false), $6, $7)
+        `insert into public.clients (id, workspace_id, name, contact, billable, currency, contracted_hours, status, member_ids)
+         values ($1, $2, $3, $4, coalesce($5::boolean, false), $6, $7, coalesce($9::text, 'active'), coalesce($10::uuid[], '{}'))
          on conflict (id) do update set name = excluded.name, contact = excluded.contact,
            billable = coalesce($5::boolean, clients.billable),
            currency = coalesce(excluded.currency, clients.currency),
-           contracted_hours = case when $8::boolean then excluded.contracted_hours else clients.contracted_hours end
+           contracted_hours = case when $8::boolean then excluded.contracted_hours else clients.contracted_hours end,
+           status = coalesce($9::text, clients.status),
+           member_ids = coalesce($10::uuid[], clients.member_ids)
          where clients.workspace_id = excluded.workspace_id
          returning id::text`,
         [
@@ -1298,6 +1311,8 @@ async function syncAccount(client, user, config, account) {
           optionalCurrency(item.currency),
           item.contractedHours ?? null,
           Object.hasOwn(item, "contractedHours"),
+          item.status ?? null,
+          item.memberIds === undefined ? null : [...new Set(item.memberIds)].map(uuid),
         ],
       );
       if (!result.rowCount) {
@@ -1913,8 +1928,19 @@ async function operation(request, user, config, body) {
         throw error;
       }
     }
-    if (["inviteToTask", "listTaskInvitations", "respondTaskInvitation", "listTaskParticipants"].includes(body.operation))
-      return await handleTaskAction(client, user, body, { requireWorkspaceAccess, uuid, timerFromRow });
+    if (
+      [
+        "inviteToTask",
+        "listTaskInvitations",
+        "respondTaskInvitation",
+        "listTaskParticipants",
+      ].includes(body.operation)
+    )
+      return await handleTaskAction(client, user, body, {
+        requireWorkspaceAccess,
+        uuid,
+        timerFromRow,
+      });
     if (body.operation === "loadAccount") {
       const account = await loadAccount(client, user, config);
       await welcomeOnAccess(client, user, config);

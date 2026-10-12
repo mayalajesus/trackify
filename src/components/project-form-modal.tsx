@@ -215,12 +215,17 @@ export function ProjectFormModal({
                   </Select.Trigger>
                   <Select.Popover>
                     <ListBox aria-label={t("Clients")}>
-                      {clients.map((client) => (
-                        <ListBox.Item key={client.id} id={client.id} textValue={client.name}>
-                          <Label>{client.name}</Label>
-                          <ListBox.ItemIndicator />
-                        </ListBox.Item>
-                      ))}
+                      {clients
+                        .filter(
+                          (client) =>
+                            (client.status ?? "active") === "active" || client.id === clientId,
+                        )
+                        .map((client) => (
+                          <ListBox.Item key={client.id} id={client.id} textValue={client.name}>
+                            <Label>{client.name}</Label>
+                            <ListBox.ItemIndicator />
+                          </ListBox.Item>
+                        ))}
                     </ListBox>
                   </Select.Popover>
                   <FieldError>{t("Choose an existing client for this project.")}</FieldError>

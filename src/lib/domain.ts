@@ -4,6 +4,8 @@ export type Role = "Owner" | "Admin" | "Member";
 export type ProjectStatus = "active" | "on-hold" | "archived";
 
 export interface Client {
+  status?: ProjectStatus;
+  memberIds?: string[];
   id: string;
   name: string;
   contact: string;

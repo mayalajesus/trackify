@@ -253,6 +253,10 @@ function isValidClient(value: unknown): value is Client {
     typeof client.name === "string" &&
     Boolean(client.name.trim()) &&
     typeof client.contact === "string" &&
+    (client.status === undefined || ["active", "on-hold", "archived"].includes(client.status)) &&
+    (client.memberIds === undefined ||
+      (Array.isArray(client.memberIds) &&
+        client.memberIds.every((id) => typeof id === "string"))) &&
     (client.billable === undefined || typeof client.billable === "boolean") &&
     (client.currency === undefined || clientCurrencyOptions.includes(client.currency)) &&
     (client.contractedHours == null ||
@@ -794,7 +798,7 @@ interface StoreValue {
   restoreMember: (memberId: string) => StoreResult;
   updateMemberRole: (memberId: string, role: Exclude<Role, "Owner">) => StoreResult;
   setTrello: (patch: Partial<TrelloState>) => StoreResult;
-  setWorkspaceSettings: (patch: Partial<WorkspaceSettings>) => StoreResult;
+  setWorkspaceSettings: (patch: Partial<WorkspaceSettings>, workspaceId?: string) => StoreResult;
   setUserPreferences: (patch: Partial<UserPreferences>) => StoreResult;
   saveUserPreferences: (patch: Partial<UserPreferences>) => Promise<StoreResult>;
   updateCurrentMemberName: (name: string) => StoreResult;
@@ -1553,20 +1557,40 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     const acceptTaskInvitation = async (invitationId: string): Promise<StoreResult> => {
       if (acceptingTaskRef.current || timerRef.current.status !== "idle")
-        return { success: false, error: "Stop the active timer before accepting a task invitation." };
+        return {
+          success: false,
+          error: "Stop the active timer before accepting a task invitation.",
+        };
       acceptingTaskRef.current = true;
       try {
         await timerSyncPromiseRef.current;
-        if (accountScopeRef.current !== accountScope || timerWorkspaceRef.current !== activeWorkspaceId || timerRef.current.status !== "idle")
-          return { success: false, error: "Stop the active timer before accepting a task invitation." };
+        if (
+          accountScopeRef.current !== accountScope ||
+          timerWorkspaceRef.current !== activeWorkspaceId ||
+          timerRef.current.status !== "idle"
+        )
+          return {
+            success: false,
+            error: "Stop the active timer before accepting a task invitation.",
+          };
         const result = await request<{ timer: TimerState }>("respondTaskInvitation", {
-          workspaceId: activeWorkspaceId, invitationId, response: "accepted",
+          workspaceId: activeWorkspaceId,
+          invitationId,
+          response: "accepted",
         });
         if (!result.success) return result;
-        if (accountScopeRef.current !== accountScope || timerWorkspaceRef.current !== activeWorkspaceId) return { success: true };
+        if (
+          accountScopeRef.current !== accountScope ||
+          timerWorkspaceRef.current !== activeWorkspaceId
+        )
+          return { success: true };
         timerRevisionRef.current += 1;
         timerRef.current = result.data.timer;
-        persistedTimerRef.current = { scope: accountScope, workspaceId: activeWorkspaceId, value: JSON.stringify(result.data.timer) };
+        persistedTimerRef.current = {
+          scope: accountScope,
+          workspaceId: activeWorkspaceId,
+          value: JSON.stringify(result.data.timer),
+        };
         setTimer(result.data.timer);
         setElapsed(elapsedForTimer(result.data.timer));
         return { success: true };
@@ -1830,9 +1854,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const next = {
         ...current,
         ...patch,
-        billable: patch.projectId !== undefined && patch.projectId !== current.projectId
-          ? billableForProject(patch.projectId)
-          : current.billable,
+        billable:
+          patch.projectId !== undefined && patch.projectId !== current.projectId
+            ? billableForProject(patch.projectId)
+            : current.billable,
         ...(patch.projectId !== undefined && patch.projectId !== current.projectId
           ? { currency: currencyForProject(patch.projectId) }
           : {}),
@@ -2008,6 +2033,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (!can("manage-clients"))
         return { success: false, error: "Only Admins and the Owner can manage clients." };
       if (!client.name.trim()) return { success: false, error: "A client name is required." };
+      if (client.status !== undefined && !["active", "on-hold", "archived"].includes(client.status))
+        return { success: false, error: "Choose a valid client status." };
+      if (
+        client.memberIds?.some(
+          (id) => !members.some((member) => member.id === id && member.status !== "removed"),
+        )
+      )
+        return { success: false, error: "Only workspace members can be assigned to a client." };
       if (client.currency !== undefined && !clientCurrencyOptions.includes(client.currency))
         return { success: false, error: "Choose a valid currency." };
       if (
@@ -2027,6 +2060,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           contact: client.contact.trim(),
           billable: client.billable ?? false,
           contractedHours: client.contractedHours ?? null,
+          status: client.status ?? "active",
+          memberIds: [...new Set(client.memberIds ?? [])],
           currency:
             client.currency ??
             (clientCurrencyOptions.includes(workspaceBilling.currency)
@@ -2041,6 +2076,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const updateClient = (id: string, patch: Partial<Client>): StoreResult => {
       if (!can("manage-clients"))
         return { success: false, error: "Only Admins and the Owner can manage clients." };
+      if (patch.status !== undefined && !["active", "on-hold", "archived"].includes(patch.status))
+        return { success: false, error: "Choose a valid client status." };
+      if (
+        patch.memberIds !== undefined &&
+        patch.memberIds.some(
+          (id) => !members.some((member) => member.id === id && member.status !== "removed"),
+        )
+      )
+        return { success: false, error: "Only workspace members can be assigned to a client." };
       if (patch.currency !== undefined && !clientCurrencyOptions.includes(patch.currency))
         return { success: false, error: "Choose a valid currency." };
       if (
@@ -2235,16 +2279,38 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return { success: true };
     };
 
-    const setWorkspaceSettings = (patch: Partial<WorkspaceSettings>): StoreResult => {
-      if (!can("manage-workspace-settings"))
+    const setWorkspaceSettings = (
+      patch: Partial<WorkspaceSettings>,
+      workspaceId = activeWorkspaceId,
+    ): StoreResult => {
+      const target = account.workspaces.find((data) => data.workspace.id === workspaceId);
+      if (!target) return { success: false, error: "This workspace could not be found." };
+      const membership = target.memberships.find((item) => item.userId === activeMemberId);
+      if (
+        !membership ||
+        membership.status !== "active" ||
+        !["Owner", "Admin"].includes(membership.role)
+      )
         return {
           success: false,
           error: "Only Admins and the Owner can change workspace settings.",
         };
-      const next = { ...settings, ...patch };
+      if (target.workspace.status === "archived")
+        return { success: false, error: "Archived workspaces are read-only. Restore it first." };
+      const next = {
+        ...(workspaceId === activeWorkspaceId ? settings : target.settings),
+        ...patch,
+      };
       if (next.weekStart !== "monday" && next.weekStart !== "sunday")
         return { success: false, error: "Choose a valid week start." };
-      setSettingsState(next);
+      if (workspaceId === activeWorkspaceId) setSettingsState(next);
+      else
+        setAccount((current) => ({
+          ...current,
+          workspaces: current.workspaces.map((data) =>
+            data.workspace.id === workspaceId ? { ...data, settings: next } : data,
+          ),
+        }));
       return { success: true };
     };
 
@@ -2810,6 +2876,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return {
           ...data.workspace,
           ownerName: owner?.name ?? "Unknown owner",
+          weekStart:
+            data.workspace.id === activeWorkspaceId ? settings.weekStart : data.settings.weekStart,
           role: membership.role,
           membershipStatus: membership.status,
           isOwned: data.workspace.ownerId === activeMemberId,

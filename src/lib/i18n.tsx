@@ -256,6 +256,16 @@ const ptBR: Record<string, string> = {
   "Change the status filter or create a new project to get started.":
     "Altere o filtro de status ou crie um novo projeto para começar.",
   "Manage members": "Gerenciar membros",
+  "Duplicate client": "Duplicar cliente",
+  "Client duplicated": "Cliente duplicado",
+  "Archive client": "Arquivar cliente",
+  "Client archived": "Cliente arquivado",
+  "Restore client": "Restaurar cliente",
+  "Client restored": "Cliente restaurado",
+  Copy: "Cópia",
+  "Choose a valid client status.": "Escolha um status válido para o cliente.",
+  "Only workspace members can be assigned to a client.":
+    "Somente membros deste workspace podem ser vinculados ao cliente.",
   "Make internal": "Tornar interno",
   "Make billable": "Tornar faturável",
   "Restore project": "Restaurar projeto",
@@ -433,6 +443,11 @@ const ptBR: Record<string, string> = {
   "All currencies": "Todas as moedas",
   "Active days": "Dias ativos",
   "Activity evolution": "Evolução da atividade",
+  "Inspect each entry by project, client and member.":
+    "Consulte cada registro com projeto, cliente e membro.",
+  "Hours distribution": "Distribuição de horas",
+  General: "Geral",
+  "By project": "Por projeto",
   "Billable and internal time over the selected period.":
     "Tempo faturável e interno ao longo do período selecionado.",
   "Hours by shift": "Horas por turno",
@@ -1282,7 +1297,6 @@ const ptBR: Record<string, string> = {
   "We couldn't delete this client": "Não conseguimos excluir este cliente.",
   "Project is ready": "O projeto está pronto.",
   "Project is on hold": "O projeto está pausado.",
-  "Project deactivated": "Projeto desativado.",
   "Project is active again": "O projeto está ativo novamente.",
   "Project is internal now": "O projeto agora é interno.",
   "Project is billable now": "O projeto agora é faturável.",

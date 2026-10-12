@@ -6,5 +6,7 @@ export function projectIsBillable(
   clients: readonly Pick<Client, "id" | "billable">[],
 ): boolean {
   const project = projects.find((item) => item.id === projectId);
-  return Boolean(project && (project.billable || clients.find((item) => item.id === project.clientId)?.billable));
+  return Boolean(
+    project && (project.billable || clients.find((item) => item.id === project.clientId)?.billable),
+  );
 }

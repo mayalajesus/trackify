@@ -153,7 +153,7 @@ function WorkspacesPage() {
     if (editWorkspace) {
       setName(editWorkspace.name);
       setLogoDataUrl(editWorkspace.logoDataUrl);
-      setWeekStart(settings.weekStart);
+      setWeekStart(editWorkspace.weekStart);
       setHourlyRate(editWorkspace.hourlyRate.toFixed(2));
       setCurrency(editWorkspace.currency);
     }
@@ -230,7 +230,7 @@ function WorkspacesPage() {
       return;
     }
     if (editWorkspace.isOwned) {
-      const settingsResult = setWorkspaceSettings({ weekStart });
+      const settingsResult = setWorkspaceSettings({ weekStart }, editWorkspace.id);
       if (!settingsResult.success) {
         setFormError(error(settingsResult.error));
         return;
@@ -360,6 +360,7 @@ function WorkspacesPage() {
               isIconOnly
               size="sm"
               variant="ghost"
+              isDisabled={workspace.status === "archived"}
               aria-label={t("Open {name}", { name: workspace.name })}
               onPress={() => openWorkspace(workspace.id)}
             >
@@ -418,7 +419,7 @@ function WorkspacesPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="workspaces-page">
       <PageHeader
         title={t("Workspaces")}
         description={t("Create company workspaces or open one shared with you.")}
@@ -439,7 +440,7 @@ function WorkspacesPage() {
 
       {workspaces.length > 0 ? (
         <section aria-label={t("Workspace list")}>
-          <DataTable label={t("Workspaces")} minWidth="min-w-[760px]">
+          <DataTable className="workspaces-table" label={t("Workspaces")} minWidth="min-w-[760px]">
             <Table.Header>
               <Table.Column isRowHeader>{t("Workspace")}</Table.Column>
               <Table.Column>{t("Owner")}</Table.Column>
@@ -516,7 +517,7 @@ function WorkspacesPage() {
         <ModalTriggerRegistration />
         <Modal.Backdrop>
           <Modal.Container size="sm">
-            <Modal.Dialog>
+            <Modal.Dialog className="workspace-modal">
               <Modal.CloseTrigger />
               <ModalLayout.Header>
                 {confirmation?.kind === "archive"
@@ -543,10 +544,11 @@ function WorkspacesPage() {
                 </Typography>
               </ModalLayout.Body>
               <ModalLayout.Footer>
-                <Button variant="tertiary" onPress={() => setConfirmation(null)}>
+                <Button variant="secondary" onPress={() => setConfirmation(null)}>
                   {t("Cancel")}
                 </Button>
                 <Button
+                  className={confirmation?.kind === "archive" ? "workspace-archive-button" : ""}
                   variant={
                     confirmation?.kind === "leave"
                       ? "danger"
@@ -557,14 +559,12 @@ function WorkspacesPage() {
                   isDisabled={isArchivingCurrent && !hasAnotherActiveWorkspace}
                   onPress={confirmWorkspaceAction}
                 >
-                  {confirmation?.kind === "archive" ? (
-                    <Chip color="warning" size="sm" variant="tertiary" className="px-0 py-0">
-                      {t("Archive")}
-                    </Chip>
-                  ) : confirmation?.kind === "restore" ? (
-                    t("Restore")
-                  ) : (
-                    t("Leave")
+                  {t(
+                    confirmation?.kind === "archive"
+                      ? "Archive"
+                      : confirmation?.kind === "restore"
+                        ? "Restore"
+                        : "Leave",
                   )}
                 </Button>
               </ModalLayout.Footer>
@@ -577,7 +577,7 @@ function WorkspacesPage() {
         <ModalTriggerRegistration />
         <Modal.Backdrop>
           <Modal.Container size="sm">
-            <Modal.Dialog>
+            <Modal.Dialog className="workspace-modal">
               <Modal.CloseTrigger />
               <ModalLayout.Header>{t("Pause timer before switching?")}</ModalLayout.Header>
               <ModalLayout.Body>
@@ -588,7 +588,7 @@ function WorkspacesPage() {
                 </Typography>
               </ModalLayout.Body>
               <ModalLayout.Footer>
-                <Button variant="tertiary" onPress={() => setSwitchOpen(false)}>
+                <Button variant="secondary" onPress={() => setSwitchOpen(false)}>
                   {t("Cancel")}
                 </Button>
                 <Button onPress={confirmSwitch}>{t("Pause and switch")}</Button>
@@ -654,7 +654,7 @@ function WorkspaceFormModal({
       <ModalTriggerRegistration />
       <Modal.Backdrop>
         <Modal.Container size="sm">
-          <Modal.Dialog>
+          <Modal.Dialog className="workspace-modal">
             <Modal.CloseTrigger />
             <ModalLayout.Header>{title}</ModalLayout.Header>
             <Form
@@ -687,7 +687,7 @@ function WorkspaceFormModal({
                     </TextField>
                     <div className="flex flex-col gap-2">
                       <Label>{t("Workspace logo")}</Label>
-                      <div className="flex flex-wrap items-center gap-3">
+                      <div className="workspace-logo-upload flex flex-wrap items-center gap-3">
                         <Avatar size="lg" aria-label={t("Workspace logo preview")}>
                           {logoDataUrl ? <Avatar.Image alt="" src={logoDataUrl} /> : null}
                           <Avatar.Fallback>
@@ -743,7 +743,7 @@ function WorkspaceFormModal({
                       {t("Billing rate")}
                     </Typography>
                   </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="workspace-billing-fields grid grid-cols-2 gap-3">
                     <ModalSelect
                       label={t("Currency")}
                       buttonAriaLabel={t("Choose currency")}
@@ -778,8 +778,8 @@ function WorkspaceFormModal({
                   />
                 ) : null}
               </ModalLayout.Body>
-              <ModalLayout.Footer>
-                <Button type="button" variant="tertiary" onPress={() => onOpenChange(false)}>
+              <ModalLayout.Footer className={!workspaceSettings ? "workspace-create-footer" : ""}>
+                <Button type="button" variant="secondary" onPress={() => onOpenChange(false)}>
                   {t("Cancel")}
                 </Button>
                 <Button

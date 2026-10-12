@@ -9,11 +9,23 @@ import { Modal } from "@heroui/react/modal";
 import { Table } from "@heroui/react/table";
 import { Switch } from "@heroui/react/switch";
 import { TextField } from "@heroui/react/textfield";
-import { Typography } from "@heroui/react/typography";
 import { toast } from "@heroui/react/toast";
 import { createFileRoute } from "@tanstack/react-router";
-import { Pencil, Person, Plus, TrashBin } from "@gravity-ui/icons";
+import {
+  Archive,
+  ArrowRotateLeft,
+  Copy,
+  CircleDollar,
+  Persons,
+  Power,
+  Pencil,
+  Person,
+  Plus,
+  TrashBin,
+} from "@gravity-ui/icons";
 import { useState } from "react";
+import { ClientMembersModal } from "@/components/client-members-modal";
+import { Tabs } from "@heroui/react/tabs";
 import { ActionDropdown } from "@/components/action-dropdown";
 import { BillableIndicator } from "@/components/billable-indicator";
 import { DataTable } from "@/components/data-table";
@@ -56,6 +68,8 @@ function ClientsPage() {
     workspaceBilling,
   } = useStore();
   const { locale, t, error } = useI18n();
+  const [memberClient, setMemberClient] = useState<Client | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editingClientId, setEditingClientId] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -148,7 +162,7 @@ function ClientsPage() {
   const pendingProjectCount = pendingDelete ? projectCountFor(pendingDelete.id) : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="clients-page">
       <PageHeader
         title={t("Clients")}
         description={t("Manage the people and companies connected to your projects.")}
@@ -167,7 +181,26 @@ function ClientsPage() {
         }
       />
 
-      {clients.length === 0 ? (
+      {clients.some((client) => client.status === "archived") ? (
+        <Tabs
+          selectedKey={showArchived ? "archived" : "current"}
+          onSelectionChange={(key) => setShowArchived(key === "archived")}
+        >
+          <Tabs.ListContainer>
+            <Tabs.List aria-label={t("Clients")}>
+              <Tabs.Tab id="current">
+                {t("Clients")}
+                <Tabs.Indicator />
+              </Tabs.Tab>
+              <Tabs.Tab id="archived">
+                {t("Archived")}
+                <Tabs.Indicator />
+              </Tabs.Tab>
+            </Tabs.List>
+          </Tabs.ListContainer>
+        </Tabs>
+      ) : null}
+      {clients.filter((client) => (client.status === "archived") === showArchived).length === 0 ? (
         <EmptyBlock
           icon={<Person className="size-5" />}
           title={t("No clients yet")}
@@ -188,7 +221,7 @@ function ClientsPage() {
           }
         />
       ) : (
-        <DataTable label={t("Clients")} minWidth="min-w-[640px]">
+        <DataTable className="clients-table" label={t("Clients")} minWidth="min-w-[640px]">
           <Table.Header>
             <Table.Column isRowHeader>{t("Client")}</Table.Column>
             <Table.Column>{t("Contact")}</Table.Column>
@@ -199,58 +232,171 @@ function ClientsPage() {
             <Table.Column aria-label={t("Actions")}>{""}</Table.Column>
           </Table.Header>
           <Table.Body>
-            {clients.map((client) => (
-              <Table.Row key={client.id}>
-                <Table.Cell>{client.name}</Table.Cell>
-                <Table.Cell>{client.contact || "—"}</Table.Cell>
-                <Table.Cell>
-                  <BillableIndicator billable={client.billable ?? false} />
-                </Table.Cell>
-                <Table.Cell>{client.currency ?? workspaceBilling.currency}</Table.Cell>
-                <Table.Cell>{projectCountFor(client.id)}</Table.Cell>
-                <Table.Cell>{formatDuration(secondsFor(client.id), locale)}</Table.Cell>
-                <Table.Cell>
-                  {can("manage-clients") ? (
-                    <div className="flex justify-end">
-                      <ActionDropdown
-                        ariaLabel={t("Actions for {name}", { name: client.name })}
-                        items={[
-                          {
-                            id: "edit",
-                            label: t("Edit client"),
-                            icon: <Pencil className="size-4" />,
-                          },
-                          {
-                            id: "delete",
-                            label: t("Delete client"),
-                            icon: <TrashBin className="size-4" />,
-                            tone: "danger",
-                          },
-                        ]}
-                        onAction={(key) => {
-                          if (key === "edit") {
-                            setEditingClientId(client.id);
-                            setName(client.name);
-                            setContact(client.contact);
-                            setBillable(client.billable ?? false);
-                            setContractedHours(
-                              client.contractedHours == null ? "" : String(client.contractedHours),
-                            );
-                            setCurrency(client.currency ?? defaultCurrency);
-                            setFormError(null);
-                            setFormOpen(true);
-                          }
-                          if (key === "delete") {
-                            setDeleteError(null);
-                            setPendingDelete(client);
-                          }
-                        }}
-                      />
-                    </div>
-                  ) : null}
-                </Table.Cell>
-              </Table.Row>
-            ))}
+            {clients
+              .filter((client) => (client.status === "archived") === showArchived)
+              .map((client) => (
+                <Table.Row key={client.id}>
+                  <Table.Cell>
+                    <span>{client.name}</span>
+                    {client.status === "on-hold" ? (
+                      <span className="ml-2 text-xs text-muted">{t("Inactive")}</span>
+                    ) : null}
+                  </Table.Cell>
+                  <Table.Cell>{client.contact || "—"}</Table.Cell>
+                  <Table.Cell>
+                    <BillableIndicator billable={client.billable ?? false} />
+                  </Table.Cell>
+                  <Table.Cell>{client.currency ?? workspaceBilling.currency}</Table.Cell>
+                  <Table.Cell>{projectCountFor(client.id)}</Table.Cell>
+                  <Table.Cell>{formatDuration(secondsFor(client.id), locale)}</Table.Cell>
+                  <Table.Cell>
+                    {can("manage-clients") ? (
+                      <div className="flex justify-end">
+                        <ActionDropdown
+                          ariaLabel={t("Actions for {name}", { name: client.name })}
+                          menuClassName="client-action-menu"
+                          items={[
+                            {
+                              id: "members",
+                              label: t("Manage members"),
+                              icon: <Persons className="size-4" />,
+                            },
+                            {
+                              id: "edit",
+                              label: t("Edit client"),
+                              icon: <Pencil className="size-4" />,
+                            },
+                            {
+                              id: "duplicate",
+                              label: t("Duplicate client"),
+                              icon: <Copy className="size-4" />,
+                            },
+                            {
+                              id: "active",
+                              label: t(client.status === "on-hold" ? "Inactive" : "Active"),
+                              icon: <Power className="size-4" />,
+                              isSelected: (client.status ?? "active") === "active",
+                              isDisabled: client.status === "archived",
+                            },
+                            {
+                              id: "billing",
+                              label: t(client.billable ? "Make internal" : "Make billable"),
+                              icon: <CircleDollar className="size-4" />,
+                            },
+                            {
+                              id: "archive",
+                              label: t(
+                                client.status === "archived" ? "Restore client" : "Archive client",
+                              ),
+                              icon:
+                                client.status === "archived" ? (
+                                  <ArrowRotateLeft className="size-4" />
+                                ) : (
+                                  <Archive className="size-4" />
+                                ),
+                              tone: "warning",
+                            },
+                            ...(client.status === "archived"
+                              ? [
+                                  {
+                                    id: "delete",
+                                    label: t("Delete client"),
+                                    icon: <TrashBin className="size-4" />,
+                                    tone: "danger" as const,
+                                  },
+                                ]
+                              : []),
+                          ]}
+                          onAction={(key) => {
+                            if (key === "members") {
+                              setMemberClient(client);
+                              return;
+                            }
+                            if (["duplicate", "active", "billing", "archive"].includes(key)) {
+                              const result =
+                                key === "duplicate"
+                                  ? addClient({
+                                      ...client,
+                                      name: `${client.name} (${t("Copy")})`,
+                                      status: "active",
+                                      memberIds: client.memberIds ?? [],
+                                    })
+                                  : updateClient(
+                                      client.id,
+                                      key === "billing"
+                                        ? { billable: !client.billable }
+                                        : {
+                                            status:
+                                              key === "archive"
+                                                ? client.status === "archived"
+                                                  ? "active"
+                                                  : "archived"
+                                                : client.status === "on-hold"
+                                                  ? "active"
+                                                  : "on-hold",
+                                          },
+                                    );
+                              if (!result.success) {
+                                toast.danger(error(result.error));
+                                return;
+                              }
+                              if (
+                                key === "duplicate" ||
+                                (key === "archive" && client.status === "archived")
+                              ) {
+                                setShowArchived(false);
+                              }
+                              toast.success(
+                                t(
+                                  key === "duplicate"
+                                    ? "Client duplicated"
+                                    : key === "archive"
+                                      ? client.status === "archived"
+                                        ? "Client restored"
+                                        : "Client archived"
+                                      : "Client updated",
+                                ),
+                              );
+                              return;
+                            }
+                            if (key === "edit") {
+                              setEditingClientId(client.id);
+                              setName(client.name);
+                              setContact(client.contact);
+                              setBillable(client.billable ?? false);
+                              setContractedHours(
+                                client.contractedHours == null
+                                  ? ""
+                                  : String(client.contractedHours),
+                              );
+                              setCurrency(client.currency ?? defaultCurrency);
+                              setFormError(null);
+                              setFormOpen(true);
+                            }
+                            if (key === "delete") {
+                              if (projectCountFor(client.id) > 0) {
+                                toast.warning(t("This client still has projects"), {
+                                  description: t(
+                                    "{name} is connected to {count} project{suffix}. Remove or reassign those projects first.",
+                                    {
+                                      name: client.name,
+                                      count: projectCountFor(client.id),
+                                      suffix: projectCountFor(client.id) === 1 ? "" : "s",
+                                    },
+                                  ),
+                                });
+                                return;
+                              }
+                              setDeleteError(null);
+                              setPendingDelete(client);
+                            }
+                          }}
+                        />
+                      </div>
+                    ) : null}
+                  </Table.Cell>
+                </Table.Row>
+              ))}
           </Table.Body>
         </DataTable>
       )}
@@ -265,7 +411,7 @@ function ClientsPage() {
         <ModalTriggerRegistration />
         <Modal.Backdrop>
           <Modal.Container size="sm">
-            <Modal.Dialog>
+            <Modal.Dialog className="client-form-modal">
               <Modal.CloseTrigger />
               <ModalLayout.Header>
                 {t(editingClientId ? "Edit client" : "New client")}
@@ -415,7 +561,7 @@ function ClientsPage() {
         <ModalTriggerRegistration />
         <Modal.Backdrop>
           <Modal.Container size="sm">
-            <Modal.Dialog>
+            <Modal.Dialog className="client-delete-modal">
               <Modal.CloseTrigger />
               <ModalLayout.Header>{t("Delete client?")}</ModalLayout.Header>
               <ModalLayout.Body>
@@ -438,16 +584,7 @@ function ClientsPage() {
                       },
                     )}
                   />
-                ) : (
-                  <Typography type="body-sm" color="muted">
-                    {t(
-                      "This permanently removes {name}. Tracked time entries without a direct client relationship remain unchanged.",
-                      {
-                        name: pendingDelete?.name ?? t("this client"),
-                      },
-                    )}
-                  </Typography>
-                )}
+                ) : null}
               </ModalLayout.Body>
               <ModalLayout.Footer>
                 <Button slot="close" variant="secondary">
@@ -465,6 +602,13 @@ function ClientsPage() {
           </Modal.Container>
         </Modal.Backdrop>
       </Modal>
+      {memberClient ? (
+        <ClientMembersModal
+          key={memberClient.id}
+          client={memberClient}
+          onClose={() => setMemberClient(null)}
+        />
+      ) : null}
     </div>
   );
 }

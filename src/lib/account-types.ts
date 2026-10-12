@@ -34,6 +34,7 @@ export interface WorkspaceMembership {
 }
 
 export interface WorkspaceSummary extends Workspace {
+  weekStart: WorkspaceSettings["weekStart"];
   ownerName: string;
   role: Role;
   membershipStatus: Member["status"];
