@@ -22,7 +22,7 @@ export function ProjectColorPicker({
   );
 
   return (
-    <div className="space-y-2">
+    <div className="project-color-picker space-y-2">
       <Label>{t("Project color")}</Label>
       <div className="flex flex-wrap items-center gap-2.5">
         <ColorSwatchPicker

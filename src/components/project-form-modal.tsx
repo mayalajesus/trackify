@@ -147,8 +147,8 @@ export function ProjectFormModal({
     <Modal isOpen={isOpen} onOpenChange={setOpen}>
       <ModalTriggerRegistration />
       <Modal.Backdrop>
-        <Modal.Container size="sm">
-          <Modal.Dialog>
+        <Modal.Container size="sm" scroll="outside">
+          <Modal.Dialog className="project-form-modal">
             <Modal.CloseTrigger />
             <ModalLayout.Header>{t(project ? "Edit project" : "New project")}</ModalLayout.Header>
             <Form
@@ -231,14 +231,14 @@ export function ProjectFormModal({
                   <FieldError>{t("Choose an existing client for this project.")}</FieldError>
                 </Select>
 
-                <div className="space-y-2">
+                <div className="project-form-members space-y-2">
                   <Label>{t("Project members")}</Label>
                   <Dropdown>
                     <Button
                       type="button"
                       variant="secondary"
                       aria-label={t("Add project members")}
-                      className="h-9 w-full justify-between gap-2 px-3"
+                      className="project-form-members-trigger h-9 w-full justify-between gap-2 px-3"
                     >
                       <span className="truncate text-sm">{t("Add members")}</span>
                       <ChevronDown aria-hidden="true" className="size-4 shrink-0" />
@@ -294,49 +294,51 @@ export function ProjectFormModal({
                       </div>
                     </Dropdown.Popover>
                   </Dropdown>
-                  <div className="pt-3">
-                    <TagGroup
-                      aria-label={t("Selected members")}
-                      className="project-members"
-                      size="sm"
-                      onRemove={(keys) => {
-                        const removedIds = new Set(Array.from(keys, String));
-                        removedIds.delete(currentUserId);
-                        setAssignedMemberIds((current) =>
-                          current.filter((id) => !removedIds.has(id)),
-                        );
-                      }}
-                    >
-                      <Label>{t("Selected members")}</Label>
-                      <TagGroup.List
-                        items={assignedMembers}
-                        renderEmptyState={() => (
-                          <EmptyState className="p-1">{t("No members selected")}</EmptyState>
-                        )}
+                  {assignedMembers.length > 0 ? (
+                    <div className="pt-3">
+                      <TagGroup
+                        aria-label={t("Selected members")}
+                        className="project-members"
+                        size="sm"
+                        onRemove={(keys) => {
+                          const removedIds = new Set(Array.from(keys, String));
+                          removedIds.delete(currentUserId);
+                          setAssignedMemberIds((current) =>
+                            current.filter((id) => !removedIds.has(id)),
+                          );
+                        }}
                       >
-                        {(member) => (
-                          <Tag key={member.id} id={member.id} textValue={member.name}>
-                            <Avatar className="size-5 shrink-0" size="sm">
-                              <Avatar.Image
-                                alt={member.name}
-                                src={
-                                  preferencesByUserId[member.id]?.avatarUrl ??
-                                  getSessionDefaultAvatarUrl(member.id)
-                                }
+                        <Label>{t("Selected members")}</Label>
+                        <TagGroup.List
+                          items={assignedMembers}
+                          renderEmptyState={() => (
+                            <EmptyState className="p-1">{t("No members selected")}</EmptyState>
+                          )}
+                        >
+                          {(member) => (
+                            <Tag key={member.id} id={member.id} textValue={member.name}>
+                              <Avatar className="size-5 shrink-0" size="sm">
+                                <Avatar.Image
+                                  alt={member.name}
+                                  src={
+                                    preferencesByUserId[member.id]?.avatarUrl ??
+                                    getSessionDefaultAvatarUrl(member.id)
+                                  }
+                                />
+                                <Avatar.Fallback>{member.initials}</Avatar.Fallback>
+                              </Avatar>
+                              <span className="max-w-40 truncate">{member.name}</span>
+                              <Tag.RemoveButton
+                                aria-label={t("Remove {name}", { name: member.name })}
+                                {...(member.id === currentUserId ? { className: "hidden" } : {})}
+                                isDisabled={member.id === currentUserId}
                               />
-                              <Avatar.Fallback>{member.initials}</Avatar.Fallback>
-                            </Avatar>
-                            <span className="max-w-40 truncate">{member.name}</span>
-                            <Tag.RemoveButton
-                              aria-label={t("Remove {name}", { name: member.name })}
-                              {...(member.id === currentUserId ? { className: "hidden" } : {})}
-                              isDisabled={member.id === currentUserId}
-                            />
-                          </Tag>
-                        )}
-                      </TagGroup.List>
-                    </TagGroup>
-                  </div>
+                            </Tag>
+                          )}
+                        </TagGroup.List>
+                      </TagGroup>
+                    </div>
+                  ) : null}
                 </div>
               </ModalLayout.Body>
               <ModalLayout.Footer>

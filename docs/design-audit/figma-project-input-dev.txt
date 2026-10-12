@@ -1,0 +1,45 @@
+M
+Share
+Comments
+Comments
+Properties
+Properties
+95%
+Get coding, faster
+Dev Mode simplifies handoff, speeds up inspection, and integrates with tools like VS Code and Storybook.
+Request access
+Input Box
+Parent component
+Nome
+Layout
+Flow
+Horizontal
+Width
+Fill (336px)
+Height
+Fill (36px)
+Radius
+12px
+Border
+1px
+Justify
+space-between
+Padding
+Right
+12px
+Left
+12px
+Colors
+Color format
+Hex
+Neutras/BG Gray
+#F8F8F8
+Borders
+Color format
+Hex
+1px
+All sides
+Neutras/Secondary Gray
+#C7CCD1
+Inner alignment
+Export

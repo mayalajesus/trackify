@@ -137,3 +137,7 @@ não é evidência de que a paleta não exista.
 Ainda falta concluir a matriz de estados, temas, breakpoints, modais e todos os
 m�dulos. Nenhum m�dulo completo foi marcado como aprovado por amostragem.
 O tema escuro permanece inalterado enquanto suas refer�ncias s�o investigadas.
+
+## Modal Novo projeto
+
+Conferencia e evidencias em [project-modal.md](project-modal.md). A variante do DEV substitui o switch generico apenas neste formulario. Sem publicacao.

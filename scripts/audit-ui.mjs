@@ -14,6 +14,7 @@ const reviewedStylesheets = new Set([
   "src/styles/tracker.css",
   "src/styles/reports.css",
   "src/styles/clients.css",
+  "src/styles/projects.css",
   "src/styles/teams.css",
   "src/styles/integrations.css",
   "src/styles/workspaces.css",

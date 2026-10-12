@@ -1,0 +1,36 @@
+M
+Share
+Comments
+Comments
+Properties
+Properties
+95%
+Get coding, faster
+Dev Mode simplifies handoff, speeds up inspection, and integrates with tools like VS Code and Storybook.
+Request access
+Criar projeto desativado
+Parent component
+Modal / Projeto
+Component properties
+Type
+Disabled
+Layout
+Flow
+Horizontal
+Width
+Fill (164px)
+Height
+Fixed (36px)
+Radius
+18px
+Padding
+Right
+16px
+Left
+16px
+Colors
+Color format
+Hex
+Marca/Purple
+#7E3BED
+Export

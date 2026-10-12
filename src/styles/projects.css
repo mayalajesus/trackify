@@ -1,0 +1,128 @@
+/* DEV 629:2984. The project frame overrides the smaller UI Kit switch. */
+.project-form-modal {
+  width: 384px;
+  max-width: 100%;
+  padding: 28px 24px 24px;
+  border-radius: 24px;
+  box-shadow: none;
+}
+.project-form-modal .modal__header {
+  padding: 0;
+  flex-shrink: 0;
+}
+.project-form-modal .modal__heading {
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 600;
+  letter-spacing: normal;
+}
+.project-form-modal .modal__body {
+  gap: 16px;
+  margin: 0;
+  padding: 16px 0 0;
+  flex: none;
+}
+.project-form-modal .label {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+}
+.project-form-modal .textfield,
+.project-form-modal .select {
+  gap: 4px;
+}
+.project-form-modal .textfield > .label,
+.project-form-modal .select > .label {
+  line-height: 16px;
+}
+.project-form-modal .input,
+.project-form-modal .select__trigger,
+.project-form-modal .project-form-members-trigger {
+  height: 36px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--background);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  box-shadow: none;
+}
+.project-form-modal .project-form-members > .label {
+  display: block;
+}
+.project-form-modal .project-form-members-trigger {
+  height: 28px;
+  min-height: 28px;
+}
+.project-form-modal .project-color-picker > .label {
+  display: block;
+  margin-bottom: 8px;
+}
+.project-form-modal .project-color-picker > .flex,
+.project-form-modal .color-swatch-picker {
+  gap: 6px;
+}
+.project-form-modal .color-swatch-picker {
+  display: contents;
+}
+.project-form-modal .color-swatch-picker__item,
+.project-form-modal .project-color-picker .color-picker__trigger {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+}
+.project-form-modal .switch__content {
+  gap: 12px;
+}
+.project-form-modal .switch .switch__control {
+  width: 40px;
+  height: 20px;
+}
+.project-form-modal .switch .switch__thumb {
+  width: 12px;
+  height: 12px;
+  margin-inline-start: 4px;
+  background: var(--surface);
+}
+.project-form-modal .switch:is([data-selected="true"], [aria-checked="true"]) .switch__thumb {
+  margin-inline-start: 24px;
+}
+.project-form-modal .switch:not([data-selected="true"]) .switch__control {
+  background: var(--surface-secondary);
+}
+.project-form-modal .modal__footer {
+  flex: none;
+  margin: 0;
+  padding: 28px 0 0;
+}
+.project-form-modal .modal__footer > .button {
+  height: 36px;
+  font-weight: 400;
+}
+.project-form-modal .modal__footer > .button[data-disabled="true"] {
+  opacity: 1;
+}
+.project-form-modal .modal__footer > .button--secondary {
+  color: var(--foreground);
+}
+:where(.light, [data-theme="light"])
+  .project-form-modal
+  .switch:not([data-selected="true"])
+  .switch__control {
+  background: #eaebec;
+}
+.project-form-modal .modal__close-trigger {
+  top: 16px;
+  right: 16px;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+}
+:where(.light, [data-theme="light"]) .project-form-modal .input::placeholder,
+:where(.light, [data-theme="light"]) .project-form-modal .select__value[data-placeholder],
+:where(.light, [data-theme="light"]) .project-form-modal .select__indicator,
+:where(.light, [data-theme="light"]) .project-form-modal .project-form-members-trigger {
+  color: #9ca3af;
+}
