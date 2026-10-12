@@ -1470,6 +1470,10 @@ body {
   #main-content:has(.tracker-page) {
     padding: 24px 16px;
   }
+  .tracker-timer [data-timer-task-input] {
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
+  }
   .tracker-page > header h1 {
     font-size: 30px;
     line-height: 38px;
