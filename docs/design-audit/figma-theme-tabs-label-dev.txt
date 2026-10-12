@@ -1,0 +1,43 @@
+https://www.figma.com/design/OxQD1gNLY8qPflf4RuSVI8/Timetracker?node-id=629-3336&t=VEezjV2uhi9MwoKr-0
+M
+Share
+Comments
+Comments
+Properties
+Properties
+80%
+Get coding, faster
+Dev Mode simplifies handoff, speeds up inspection, and integrates with tools like VS Code and Storybook.
+Request access
+Text  
+Sistema
+Parent component
+Menu de abas / Tema
+Layout
+Width
+43px
+Height
+13px
+Content
+Sistema
+Typography
+Name
+Label/Medium/Label pequeno M
+Font
+Inter
+Weight
+500
+Style
+Medium
+Size
+11px
+Line height
+100%
+Letter spacing
+0%
+Colors
+Color format
+Hex
+Marca/Black
+#1B1B1B
+Export

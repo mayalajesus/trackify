@@ -60,6 +60,28 @@ a etapa de Projetos, sem modificar a seleção automática de membros.
 
 ## Limites atuais
 
+### Conflito confirmado: abas de tema
+
+O UI Kit usa Inter 11px/100%, peso 400 e sombra `0 2px 5px #1118270C`.
+A instância DEV de Configurações usa peso 500 e sombra `0 2px 5px #1B1B1B0C`.
+O app já mantém os valores do DEV; nenhuma correção foi aplicada nesses pontos.
+Ambos especificam container 448 × 30px, padding 2px, seleção 148 × 26px,
+raio 999px, fundo `#EAEBEC` e seleção branca.
+
+Referências: UI Kit `92:283`, seleção `92:271`, texto `92:272`;
+DEV Configurações `629:3305`, seleção `629:3336` (texto filho inspecionado).
+Propriedades nos arquivos `figma-theme-tabs-*.txt`.
+
+### Paleta e aplicação
+
+O guia [Cores de sistema — Status](https://www.figma.com/design/OxQD1gNLY8qPflf4RuSVI8/Timetracker?node-id=649-8032)
+confirma oito estilos semânticos: tons suaves para preenchimento; intensos para
+texto, ícones, bordas e ações. Roxo continua sendo a ação padrão. O próprio guia
+explicita que os exemplos foram aplicados à página de teste. A paleta global
+completa foi registrada, mas ainda não foi confirmada uma associação de cada
+cor a fundos, superfícies e estados no tema escuro. Isso permanece pendente;
+não é evidência de que a paleta não exista.
+
 ### Switch compartilhado
 
 - Referências: Toggle desligado `96:285`, indicador `96:283`; ligado `96:284`,
