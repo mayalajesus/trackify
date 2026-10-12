@@ -179,14 +179,14 @@ function ProjectsPage() {
         title={t("Projects")}
         description={t("Time tracked per project across the workspace.")}
         actions={
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex w-full min-w-0 flex-nowrap items-center gap-1 sm:flex-wrap sm:gap-2">
             <Dropdown>
               <Button
                 type="button"
                 variant="tertiary"
                 size="sm"
                 aria-label={t("Filter projects")}
-                className="h-9 min-w-28 justify-between gap-2 px-3"
+                className="h-9 min-w-0 shrink-0 justify-between gap-1 px-2 text-xs sm:min-w-28 sm:gap-2 sm:px-3 sm:text-sm"
               >
                 {projectFilterOptions.find((option) => option.id === filter)?.label}
                 <ChevronDown aria-hidden="true" className="size-4 shrink-0" />
@@ -213,9 +213,9 @@ function ProjectsPage() {
                 variant="tertiary"
                 size="sm"
                 aria-label={t("Filter by client")}
-                className="h-9 max-w-56 min-w-28 justify-between gap-2 px-3"
+                className="h-9 max-w-56 min-w-0 shrink justify-between gap-1 px-2 text-xs sm:min-w-28 sm:gap-2 sm:px-3 sm:text-sm"
               >
-                <span className="truncate">
+                <span className="min-w-0 truncate">
                   {clientFilter === "all" ? t("All clients") : clientName(clientFilter)}
                 </span>
                 <ChevronDown aria-hidden="true" className="size-4 shrink-0" />
@@ -242,7 +242,10 @@ function ProjectsPage() {
               </Dropdown.Popover>
             </Dropdown>
             {can("manage-projects") ? (
-              <Button onPress={() => openProjectForm()}>
+              <Button
+                className="h-9 min-w-0 shrink-0 gap-1 px-2 text-xs sm:h-10 sm:gap-2 sm:px-4 sm:text-sm"
+                onPress={() => openProjectForm()}
+              >
                 <Plus className="size-4" />
                 {t("New project")}
               </Button>
