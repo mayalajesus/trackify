@@ -1,0 +1,230 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-width: 320px;
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.project-members,
+.project-members .tag-group__list {
+  gap: 8px;
+}
+.project-members .tag {
+  height: 32px;
+  max-width: 100%;
+  gap: 6px;
+  padding: 5px 8px 5px 6px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--foreground);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+}
+.project-members .avatar {
+  width: 20px;
+  height: 20px;
+}
+.project-members .label {
+  font-size: 14px;
+  font-weight: 400;
+}
+.project-members .tag__remove-button {
+  width: 14px;
+  height: 14px;
+  color: var(--muted);
+}
+.project-members .tag__remove-button svg {
+  width: 14px;
+  height: 14px;
+}
+
+.detailed-report-table {
+  border-radius: 24px;
+}
+.detailed-report-table .table__column {
+  height: 36px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+}
+.detailed-report-table .table__cell {
+  height: 81px;
+  padding: 12px;
+  font-size: 12px;
+  line-height: 16px;
+  border-bottom: 1px solid var(--separator);
+}
+.detailed-report-table .table__row:last-child .table__cell {
+  border-bottom: 0;
+}
+.detailed-report-avatar .avatar {
+  width: 36px;
+  height: 36px;
+}
+
+.theme-tabs {
+  width: 100%;
+  --theme-track: #eaebec;
+  --theme-selection: #fff;
+}
+.theme-tabs--text {
+  max-width: 448px;
+}
+.theme-tabs--icons {
+  max-width: 225px;
+}
+.theme-tabs .tabs__list-container {
+  background: var(--theme-track);
+  border-radius: 999px;
+}
+.theme-tabs .tabs__list {
+  width: 100%;
+  gap: 0;
+  padding: 2px;
+  height: 30px;
+}
+.theme-tabs .tabs__tab {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 26px;
+  padding: 0;
+  border-radius: 999px;
+  color: var(--foreground);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+}
+.theme-tabs .tabs__indicator {
+  background: var(--theme-selection);
+  border-radius: 999px;
+  box-shadow: none;
+}
+.theme-tabs--icons .tabs__list {
+  height: 40px;
+  padding: 3px;
+}
+.theme-tabs--icons .tabs__tab {
+  height: 34px;
+}
+.dark .theme-tabs {
+  --theme-track: var(--default);
+  --theme-selection: var(--surface);
+}
+.action-menu,
+.profile-menu {
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: 0 4px 12px #0000001f;
+}
+.action-menu {
+  width: 192px;
+  min-width: 192px;
+  max-width: calc(100vw - 24px);
+  padding: 5px 8px;
+}
+.action-menu .action-menu__list {
+  padding: 0;
+  gap: 0;
+}
+.action-menu .action-menu__item {
+  display: flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 9px 8px;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--foreground);
+  border-radius: 999px;
+}
+.action-menu__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  color: inherit;
+}
+.action-menu__label {
+  min-width: 0;
+  flex: 1;
+  color: inherit;
+}
+.action-menu__trailing {
+  display: flex;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.action-menu__switch {
+  display: flex;
+  align-items: center;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 16px;
+  padding: 2px;
+  border-radius: 999px;
+  background: var(--default);
+  pointer-events: none;
+}
+.action-menu__switch > span {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+}
+.action-menu__switch[data-selected="true"] {
+  background: var(--accent);
+}
+.action-menu__switch[data-selected="true"] > span {
+  transform: translateX(12px);
+}
+.action-menu [role="menuitem"][data-hovered],
+.action-menu [role="menuitem"][data-focused] {
+  background: var(--default);
+}
+.action-menu [role="menuitem"][data-disabled] {
+  opacity: 0.5;
+}
+.action-menu [role="menuitem"][data-tone="warning"] {
+  color: #9c5d0f;
+}
+.action-menu [role="menuitem"][data-tone="danger"] {
+  color: var(--danger);
+}
+
+.modal__footer,
+.alert-dialog__footer {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  width: 100%;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.modal__footer > button,
+.alert-dialog__footer > button {
+  width: 100%;
+  min-width: 0;
+  min-height: 36px;
+  height: auto;
+  padding-block: 8px;
+  font-size: 14px;
+  line-height: 20px;
+  white-space: normal;
+}

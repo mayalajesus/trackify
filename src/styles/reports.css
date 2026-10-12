@@ -1,0 +1,271 @@
+/* DEV / Reports */
+#main-content:has(.reports-page) {
+  padding: 27px 27px 44px;
+}
+.reports-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  container-type: inline-size;
+}
+.reports-page--detailed {
+  gap: 20px;
+}
+.reports-page > header h1 {
+  font-size: 36px;
+  line-height: 44px;
+  font-weight: 500;
+  letter-spacing: -1.2px;
+}
+.reports-page > header .button {
+  height: 36px;
+  min-height: 36px;
+  font-weight: 400;
+}
+.reports-page .tabs__tab {
+  height: 28px;
+  min-height: 28px;
+  font-size: 12px;
+  font-weight: 400;
+}
+.reports-page .toolbar {
+  gap: 8px;
+}
+.reports-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 16px;
+}
+.reports-overview-grid > div {
+  min-width: 0;
+  grid-column: span 3;
+}
+.reports-overview-grid > .report-distribution-slot,
+.reports-overview-grid > .report-shifts-slot {
+  grid-column: 1 / -1;
+}
+.reports-overview-grid > .report-projects-slot {
+  grid-column: span 8;
+}
+.reports-overview-grid > .report-composition-slot {
+  grid-column: span 4;
+}
+.reports-page .report-widget {
+  padding: 16px;
+  border-radius: 24px;
+  gap: 16px;
+  box-shadow: 0 1px 2px #00000012;
+  height: 100%;
+}
+.reports-page .report-widget .card__title {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+}
+.reports-page .report-kpi {
+  min-height: 106px;
+  gap: 8px;
+}
+.reports-page .report-kpi h2 {
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+.reports-page .report-kpi .space-y-3 > div:empty {
+  display: none;
+}
+.reports-page .report-distribution {
+  min-height: 326px;
+}
+.report-distribution-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.report-distribution-actions > span {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--muted);
+}
+.report-distribution-actions .tabs__tab {
+  min-width: 90px;
+}
+.reports-page .report-projects-slot .table__column {
+  background: var(--default);
+  height: 36px;
+  padding: 8px 12px;
+  font-weight: 400;
+}
+.reports-page .report-projects-slot .table__cell {
+  height: 68px;
+  padding: 12px;
+}
+.reports-page .table__column::after {
+  content: none;
+}
+.reports-page .report-projects-slot .progress-bar__track {
+  height: 4px;
+}
+.reports-page .report-composition-slot .card__content > div {
+  min-width: 0;
+}
+.reports-page .report-composition-slot [aria-label] .typography {
+  font-size: 12px;
+  font-weight: 400;
+}
+.reports-page .report-composition-slot [aria-label] > div {
+  gap: 8px;
+}
+.report-period-popover {
+  width: 480px;
+  max-width: calc(100vw - 24px);
+  border-radius: 16px;
+  box-shadow:
+    0 4px 24px #1b1b1b1a,
+    0 1px 4px #1b1b1b08;
+}
+.report-period-presets {
+  width: 200px;
+  padding: 16px;
+  border-right: 1px solid var(--separator);
+  gap: 0;
+}
+.report-period-presets .button {
+  justify-content: flex-start;
+  min-height: 36px;
+  height: 36px;
+  padding-inline: 8px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 400;
+}
+.report-period-presets .button:last-child {
+  color: var(--accent);
+}
+.report-period-calendar {
+  padding: 16px;
+}
+.report-period-calendar .range-calendar {
+  padding: 0;
+  gap: 16px;
+}
+.report-period-calendar .range-calendar__heading {
+  font-size: 14px;
+  font-weight: 600;
+}
+.report-period-calendar .range-calendar__cell {
+  padding-block: 4px;
+}
+.report-period-calendar .range-calendar__cell-button {
+  font-size: 14px;
+}
+.report-filter-popover {
+  padding: 8px;
+  border-radius: 24px;
+}
+@media (max-width: 767px) {
+  .report-filter-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 36px;
+    gap: 8px;
+    overflow: visible;
+  }
+  .report-filter-controls > * {
+    grid-column: 1 / -1;
+  }
+  .report-filter-controls > :nth-last-child(2):not(.report-period-picker) {
+    grid-column: 1;
+  }
+  .report-filter-controls > .report-period-picker {
+    width: 100%;
+    min-width: 0;
+  }
+  .report-period-control {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    row-gap: 8px;
+    column-gap: 0;
+  }
+  .report-period-control > .date-input-group {
+    flex: 1 1 160px;
+    max-width: 100%;
+    border-radius: 18px;
+  }
+  .report-period-control:has(> .button-group) > .date-input-group {
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+  }
+  .report-period-picker[data-custom-period] .date-input-group {
+    flex-basis: 240px;
+  }
+  .report-filter-controls > .button {
+    grid-column: 2;
+    justify-self: end;
+  }
+}
+.report-filter-popover .dropdown__item {
+  border-radius: 12px;
+  min-height: 36px;
+}
+.reports-page--detailed .report-widget {
+  gap: 12px;
+}
+.reports-page .detailed-report-table .table__column {
+  background: var(--default);
+}
+@container (max-width:1000px) {
+  .report-distribution-actions > span {
+    display: none;
+  }
+}
+@container (max-width:650px) {
+  .reports-overview-grid > div {
+    grid-column: span 1;
+  }
+  .reports-overview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .reports-overview-grid > .report-projects-slot,
+  .reports-overview-grid > .report-composition-slot {
+    grid-column: 1 / -1;
+  }
+  .report-distribution-actions .tabs__tab {
+    min-width: 64px;
+  }
+  .reports-page .report-distribution .card__header {
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 639px) {
+  #main-content:has(.reports-page) {
+    padding: 24px 16px;
+  }
+  .reports-page > header h1 {
+    font-size: 30px;
+    line-height: 38px;
+  }
+  .report-period-popover {
+    width: 320px;
+  }
+}
+.report-distribution-actions .tabs__tab {
+  white-space: nowrap;
+  padding-inline: 12px;
+}
+.report-period-popover {
+  background: var(--surface);
+  overflow-y: auto;
+}
+.report-period-presets .button {
+  width: 100%;
+}
+.report-period-calendar
+  .range-calendar__cell-button[data-selected="true"]:not([data-selection-start="true"]):not(
+    [data-selection-end="true"]
+  ) {
+  background: var(--default);
+}
+.reports-page--detailed .report-widget {
+  gap: 18px;
+}

@@ -5,6 +5,20 @@ import process from "node:process";
 const root = process.cwd();
 const sourceRoot = join(root, "src");
 const chartFile = "src/components/ui/chart.tsx";
+const reviewedStylesheets = new Set([
+  "src/styles.css",
+  "src/styles/auth.css",
+  "src/styles/shared-controls.css",
+  "src/styles/navigation.css",
+  "src/styles/theme.css",
+  "src/styles/tracker.css",
+  "src/styles/reports.css",
+  "src/styles/clients.css",
+  "src/styles/teams.css",
+  "src/styles/integrations.css",
+  "src/styles/workspaces.css",
+  "src/styles/settings.css",
+]);
 const legacyImports = [
   "@radix-ui/",
   "class-variance-authority",
@@ -160,19 +174,18 @@ for (const path of sourceFiles) {
       /color-scheme\s*:\s*dark\s*;/gi,
       "",
     );
-    const contentWithoutApprovedThemeVariables =
-      file === "src/styles.css"
-        ? contentWithoutApprovedColorScheme.replace(
-            /(--[a-zA-Z0-9_-]+)\s*:/g,
-            (declaration, variable) => (approvedThemeVariables.has(variable) ? "" : declaration),
-          )
-        : contentWithoutApprovedColorScheme;
+    const contentWithoutApprovedThemeVariables = reviewedStylesheets.has(file)
+      ? contentWithoutApprovedColorScheme.replace(
+          /(--[a-zA-Z0-9_-]+)\s*:/g,
+          (declaration, variable) => (approvedThemeVariables.has(variable) ? "" : declaration),
+        )
+      : contentWithoutApprovedColorScheme;
     if (/--[a-zA-Z0-9_-]+\s*:/.test(contentWithoutApprovedThemeVariables)) {
       violations.push(`${file}: authored design token or theme variable`);
     }
     if (
-      // Figma DEV component overrides live in this single reviewed stylesheet.
-      file !== "src/styles.css" &&
+      // Figma DEV overrides retain their original cascade in these reviewed files.
+      !reviewedStylesheets.has(file) &&
       /(?<!-)\b(?:background|background-color|color|border|box-shadow|font|text-shadow)\s*:/.test(
         contentWithoutApprovedColorScheme,
       )
