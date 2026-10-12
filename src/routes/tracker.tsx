@@ -97,6 +97,7 @@ function TrackerPage() {
             <IconTooltip>
               <Button
                 isIconOnly
+                className="tracker-period-arrow"
                 aria-label={t("Previous {unit}", {
                   unit: t(navigationUnit === "range" ? "range" : navigationUnit),
                 })}
@@ -118,6 +119,7 @@ function TrackerPage() {
             <IconTooltip>
               <Button
                 isIconOnly
+                className="tracker-period-arrow"
                 aria-label={t("Next {unit}", {
                   unit: t(navigationUnit === "range" ? "range" : navigationUnit),
                 })}
