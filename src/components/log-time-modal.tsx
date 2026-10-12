@@ -239,7 +239,7 @@ export function LogTimeModal({
                   </TextField>
                 </div>
 
-                <div className="flex min-w-0 flex-col gap-2">
+                <div className="manual-entry-project flex min-w-0 flex-col gap-1">
                   <Label>{t("Project")}</Label>
                   <ProjectSelect
                     trackerStyle
@@ -268,12 +268,12 @@ export function LogTimeModal({
                     role="status"
                     aria-live="polite"
                   >
-                    <CircleDollar className="size-3.5" aria-hidden="true" />
+                    <CircleDollar className="size-4" aria-hidden="true" />
                     <span>{t(billable ? "Billable" : "Non-billable")}</span>
                   </div>
                 </div>
 
-                <div className="flex min-w-0 flex-col gap-2">
+                <div className="flex min-w-0 flex-col gap-1">
                   <Label>{t("Date")}</Label>
                   <HeroUIDatePicker
                     value={date}
@@ -288,69 +288,79 @@ export function LogTimeModal({
                   {dateError ? <FieldError>{dateError}</FieldError> : null}
                 </div>
 
-                <div
-                  className="manual-entry-mode flex w-fit items-center gap-0 rounded-full bg-default p-0.5"
-                  role="group"
-                  aria-label={t("Time entry mode")}
-                >
-                  <Button
-                    size="sm"
-                    variant={timeMode === "range" ? "primary" : "ghost"}
-                    aria-pressed={timeMode === "range"}
-                    onPress={() => setTimeMode("range")}
+                <div className="manual-entry-time">
+                  <div
+                    className="manual-entry-mode flex w-fit items-center gap-0 rounded-full bg-default"
+                    role="group"
+                    aria-label={t("Time entry mode")}
                   >
-                    {t("Start / End")}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={timeMode === "duration" ? "primary" : "ghost"}
-                    aria-pressed={timeMode === "duration"}
-                    onPress={() => setTimeMode("duration")}
-                  >
-                    {t("Duration")}
-                  </Button>
-                </div>
+                    <Button
+                      size="sm"
+                      variant={timeMode === "range" ? "primary" : "ghost"}
+                      aria-pressed={timeMode === "range"}
+                      onPress={() => setTimeMode("range")}
+                    >
+                      {t("Start / End")}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={timeMode === "duration" ? "primary" : "ghost"}
+                      aria-pressed={timeMode === "duration"}
+                      onPress={() => setTimeMode("duration")}
+                    >
+                      {t("Duration")}
+                    </Button>
+                  </div>
 
-                <div className="space-y-2">
-                  <div className="grid grid-cols-2 gap-4">
-                    <TextField fullWidth name="start" type="time" value={start} onChange={setStart}>
-                      <Label>{t("Start")}</Label>
-                      <Input variant="secondary" />
-                    </TextField>
-                    {timeMode === "range" ? (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-4">
                       <TextField
                         fullWidth
-                        name="end"
+                        name="start"
                         type="time"
-                        value={end}
-                        isInvalid={Boolean(timeError)}
-                        onChange={setEnd}
+                        value={start}
+                        onChange={setStart}
                       >
-                        <Label>{t("End")}</Label>
+                        <Label>{t("Start")}</Label>
                         <Input variant="secondary" />
-                        <FieldError>{timeError}</FieldError>
                       </TextField>
-                    ) : (
-                      <TextField
-                        fullWidth
-                        name="duration"
-                        value={duration}
-                        isInvalid={Boolean(timeError)}
-                        onChange={setDuration}
-                        validate={(value) =>
-                          parseDurationInput(value) === null
-                            ? t("Use H:MM, H:MM:SS, HHMM, HMM, 2h or Ns")
-                            : null
-                        }
-                      >
-                        <Label>{t("Duration")}</Label>
-                        <Input variant="secondary" placeholder={t("e.g. 2:45, 00:00:49 or 45s")} />
-                        <FieldError />
-                      </TextField>
-                    )}
+                      {timeMode === "range" ? (
+                        <TextField
+                          fullWidth
+                          name="end"
+                          type="time"
+                          value={end}
+                          isInvalid={Boolean(timeError)}
+                          onChange={setEnd}
+                        >
+                          <Label>{t("End")}</Label>
+                          <Input variant="secondary" />
+                          <FieldError>{timeError}</FieldError>
+                        </TextField>
+                      ) : (
+                        <TextField
+                          fullWidth
+                          name="duration"
+                          value={duration}
+                          isInvalid={Boolean(timeError)}
+                          onChange={setDuration}
+                          validate={(value) =>
+                            parseDurationInput(value) === null
+                              ? t("Use H:MM, H:MM:SS, HHMM, HMM, 2h or Ns")
+                              : null
+                          }
+                        >
+                          <Label>{t("Duration")}</Label>
+                          <Input
+                            variant="secondary"
+                            placeholder={t("e.g. 2:45, 00:00:49 or 45s")}
+                          />
+                          <FieldError />
+                        </TextField>
+                      )}
+                    </div>
                   </div>
                 </div>
-
                 <TextField
                   fullWidth
                   name="description"

@@ -3,6 +3,9 @@
 Correção pontual: [valores agrupados e tipografia do rastreador](tracker-values.md),
 com referências, evidências e limites da verificação.
 
+Continuação: [ações e modais do rastreador](tracker-dialogs.md), incluindo
+exclusão e registro manual, com propriedades DEV e verificação responsiva.
+
 Refer�ncia inicial: `ab3ca87`, branch `ajustes-gerais`. Auditoria iniciada em 12/10/2026.
 
 ## Crit�rio e andamento

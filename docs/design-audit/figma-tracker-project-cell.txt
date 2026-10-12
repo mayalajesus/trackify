@@ -1,0 +1,34 @@
+https://www.figma.com/design/OxQD1gNLY8qPflf4RuSVI8/Timetracker?node-id=455-23871&t=3YzFCCGy2jkJyEGs-0
+M
+Share
+Comments
+Comments
+Properties
+Properties
+69%
+Get coding, faster
+Dev Mode simplifies handoff, speeds up inspection, and integrates with tools like VS Code and Storybook.
+Request access
+Projeto e cliente
+Component properties
+Contexto
+Relatórios
+Conteúdo
+Projeto e cliente
+Texto
+Loja Aurora
+Texto secundário
+Lumina Comércio
+Layout
+Flow
+Horizontal
+Width
+Fixed (240px)
+Height
+Fill (81px)
+Padding
+Right
+12px
+Left
+12px
+Export

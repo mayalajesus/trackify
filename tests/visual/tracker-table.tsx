@@ -1,6 +1,9 @@
 import "@fontsource-variable/inter";
 import "../../src/styles.css";
 import { createRoot } from "react-dom/client";
+import { useState } from "react";
+import { Button } from "@heroui/react/button";
+import { LogTimeModal } from "../../src/components/log-time-modal";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "../../src/lib/auth-context";
 import { StoreProvider } from "../../src/lib/store";
@@ -20,6 +23,7 @@ const entries: TimeEntry[] = [
     task: "Duração longa",
   },
   { id: "four", start: "08:00", end: "23:59", seconds: 57540, task: "Duração longa" },
+  { id: "single", start: "09:00", end: "09:10", seconds: 600, task: "estudo" },
 ].map((entry) => ({
   userId: "visual-only",
   projectId: null,
@@ -29,6 +33,16 @@ const entries: TimeEntry[] = [
   ...entry,
 }));
 
+function ManualPreview() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button onPress={() => setOpen(true)}>Abrir registro manual</Button>
+      <LogTimeModal isOpen={open} onOpenChange={setOpen} />
+    </>
+  );
+}
+
 createRoot(document.getElementById("root")!).render(
   <QueryClientProvider client={new QueryClient()}>
     <AuthProvider>
@@ -36,6 +50,7 @@ createRoot(document.getElementById("root")!).render(
         <AppI18nProvider locale="pt-BR">
           <main style={{ padding: 24 }}>
             <TrackerEntries days={[{ date: "2026-10-12", totalSeconds: 86290, entries }]} />
+            <ManualPreview />
           </main>
         </AppI18nProvider>
       </StoreProvider>

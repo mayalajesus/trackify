@@ -118,7 +118,7 @@ export function TrackerEntries({ days }: { days: TrackerDay[] }) {
             {t("Duration")}
           </Table.Column>
           <Table.Column className="w-[112px] text-center">{t("Team")}</Table.Column>
-          <Table.Column className="w-[80px]" aria-label={t("Actions")} />
+          <Table.Column className="w-[60px]" aria-label={t("Actions")} />
         </Table.Header>
         <Table.Body>
           {groups.flatMap((group) => {
