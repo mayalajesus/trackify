@@ -178,40 +178,40 @@ export function TrackerGroupSummaryRow({
           </Tooltip>
         </Surface>
       </Table.Cell>
-      <Table.Cell className={`${summaryCellClass} p-0 text-center`}>
+      <Table.Cell className="tracker-summary-value-cell text-center">
         <Surface
           variant={summarySurfaceVariant}
           className="flex min-h-[76px] items-center justify-center px-4 py-3"
         >
-          <span className={`${summaryTextClass} text-center`}>{group.start}</span>
+          <span className="tracker-summary-value">{group.start}</span>
         </Surface>
       </Table.Cell>
-      <Table.Cell className={`${summaryCellClass} p-0 text-center`}>
+      <Table.Cell className="tracker-summary-value-cell text-center">
         <Surface
           variant={summarySurfaceVariant}
           className="flex min-h-[76px] items-center justify-center px-4 py-3"
         >
-          <span className={`${summaryTextClass} text-center`}>
+          <span className="tracker-summary-value">
             <EndTimeValue startDate={group.date} end={group.end} endDate={group.endDate} />
           </span>
         </Surface>
       </Table.Cell>
-      <Table.Cell className={`${summaryCellClass} p-0 text-center`}>
+      <Table.Cell className="tracker-summary-value-cell text-center">
         <Surface
           variant={summarySurfaceVariant}
           className="flex min-h-[76px] items-center justify-center px-4 py-3"
         >
-          <span className={`${summaryTextClass} text-center`}>
-            {formatDate(group.date, locale)}
-          </span>
+          <span className="tracker-summary-value">{formatDate(group.date, locale)}</span>
         </Surface>
       </Table.Cell>
-      <Table.Cell className={`${summaryCellClass} p-0 text-center`}>
+      <Table.Cell className="tracker-summary-value-cell text-center">
         <Surface
           variant={summarySurfaceVariant}
           className="flex min-h-[76px] items-center justify-center px-4 py-3"
         >
-          <span className={summaryTextClass}>{formatDuration(group.totalSeconds, locale)}</span>
+          <span className="tracker-summary-value">
+            {formatDuration(group.totalSeconds, locale)}
+          </span>
         </Surface>
       </Table.Cell>
       <Table.Cell className="text-center">

@@ -240,6 +240,29 @@
   min-height: 80px;
   padding-block: 0;
 }
+/* Numeric summaries need the full column, not two nested horizontal insets. */
+.tracker-entries-table [data-tracker-group] .tracker-summary-value-cell {
+  padding-inline: 0;
+}
+.tracker-entries-table [data-tracker-group] .tracker-summary-value-cell > .surface {
+  padding-inline: 4px;
+}
+.tracker-entries-table .tracker-summary-value,
+.tracker-entries-table .table__cell .button[data-tracker-field="start"],
+.tracker-entries-table .table__cell .button[data-tracker-field="end"],
+.tracker-entries-table .table__cell .button[data-tracker-field="date"],
+.tracker-entries-table .table__cell .button[data-tracker-field="duration"] {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: 0;
+  color: var(--foreground);
+}
+.tracker-entries-table .tracker-summary-value {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 .tracker-entries-table .tracker-task-copy {
   display: flex;
   flex-direction: column;

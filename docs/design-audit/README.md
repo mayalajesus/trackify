@@ -1,5 +1,8 @@
 # Auditoria visual do Trackify
 
+Correção pontual: [valores agrupados e tipografia do rastreador](tracker-values.md),
+com referências, evidências e limites da verificação.
+
 Refer�ncia inicial: `ab3ca87`, branch `ajustes-gerais`. Auditoria iniciada em 12/10/2026.
 
 ## Crit�rio e andamento
