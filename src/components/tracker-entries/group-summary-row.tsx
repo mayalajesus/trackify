@@ -7,7 +7,6 @@ import { useStore } from "@/lib/store";
 import { useFavoriteTasks } from "@/lib/use-favorite-tasks";
 import {
   ChevronDown,
-  ChevronUp,
   Copy,
   LayoutColumns,
   PersonPlus,
@@ -105,7 +104,7 @@ export function TrackerGroupSummaryRow({
     >
       <Table.Cell className={`${summaryCellClass} min-w-0 p-0`}>
         <Surface variant={summarySurfaceVariant} className="min-h-[76px] px-4 py-3">
-          <div className="flex min-h-[3rem] min-w-0 flex-col justify-center">
+          <div className="tracker-task-copy min-w-0 justify-center">
             <Tooltip delay={350}>
               <Button
                 size="sm"
@@ -113,7 +112,7 @@ export function TrackerGroupSummaryRow({
                 aria-label={toggleLabel}
                 aria-expanded={isExpanded}
                 data-tracker-group-toggle
-                className="inline-flex h-8 min-h-8 min-w-0 max-w-full justify-start px-1 py-1 text-left font-semibold"
+                className="inline-flex min-w-0 max-w-full justify-start p-0 text-left font-semibold"
                 {...(group.entries[0]
                   ? { "aria-controls": trackerEntryRowKey(group, group.entries[0], 0) }
                   : {})}
@@ -135,11 +134,10 @@ export function TrackerGroupSummaryRow({
                 {urgent ? (
                   <Thunderbolt className="size-3.5 shrink-0 text-danger" aria-label={t("Urgent")} />
                 ) : null}
-                {isExpanded ? (
-                  <ChevronUp className="ml-1 size-4 shrink-0" aria-hidden="true" />
-                ) : (
-                  <ChevronDown className="ml-1 size-4 shrink-0" aria-hidden="true" />
-                )}
+                <ChevronDown
+                  className={`ml-1 size-4 shrink-0 ${isExpanded ? "" : "-rotate-90"}`.trim()}
+                  aria-hidden="true"
+                />
               </Button>
               <Tooltip.Content
                 showArrow
@@ -148,7 +146,7 @@ export function TrackerGroupSummaryRow({
                 {group.task}
               </Tooltip.Content>
             </Tooltip>
-            <span className="truncate pl-1 font-normal">
+            <span className="tracker-group-count truncate font-normal">
               {t(group.entries.length === 1 ? "{count} entry" : "{count} entries", {
                 count: group.entries.length,
               })}
@@ -163,13 +161,13 @@ export function TrackerGroupSummaryRow({
         >
           <Tooltip delay={350}>
             <Tooltip.Trigger
-              className="flex min-w-0 flex-col"
+              className="tracker-project-copy flex min-w-0 flex-col"
               aria-label={`${projectName}, ${clientName}`}
             >
-              <span className={`${summaryTextClass} flex items-center gap-2 font-medium`}>
+              <span className={`${summaryTextClass} tracker-project-name flex items-center gap-2`}>
                 {projectName}
               </span>
-              <span className={`${summaryTextClass} text-sm font-normal text-muted`}>
+              <span className={`${summaryTextClass} tracker-client-name text-sm font-normal`}>
                 {clientName}
               </span>
             </Tooltip.Trigger>
@@ -231,7 +229,7 @@ export function TrackerGroupSummaryRow({
                 aria-label={t("Start {task} again", { task: group.task })}
                 isDisabled={timer.status !== "idle"}
                 className={trackerActionButtonClass}
-                variant={isHovered || isExpanded ? "tertiary" : "ghost"}
+                variant={isHovered ? "tertiary" : "ghost"}
                 onPress={startAgain}
               >
                 <Play className="size-4" />

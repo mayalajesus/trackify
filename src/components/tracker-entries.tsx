@@ -96,25 +96,29 @@ export function TrackerEntries({ days }: { days: TrackerDay[] }) {
         className="tracker-entries-table"
         label={t("Time entries for selected period")}
         scrollHint={t("Scroll horizontally to see all columns")}
-        minWidth="min-w-[880px]"
+        minWidth="min-w-[1080px] lg:min-w-[960px]"
         contentClassName="table-fixed"
         selectedKeys={selectedRowKeys}
       >
         <Table.Header>
-          <Table.Column isRowHeader className="w-[27%] whitespace-nowrap">
+          <Table.Column isRowHeader className="whitespace-nowrap">
             {t("Task")}
           </Table.Column>
-          <Table.Column className="w-[20%] whitespace-nowrap">{t("Project / client")}</Table.Column>
-          <Table.Column className="w-[8%] whitespace-nowrap text-center">
+          <Table.Column className="w-[240px] whitespace-nowrap">
+            {t("Project / client")}
+          </Table.Column>
+          <Table.Column className="w-[76px] whitespace-nowrap text-center">
             {t("Start column")}
           </Table.Column>
-          <Table.Column className="w-[8%] whitespace-nowrap text-center">{t("End")}</Table.Column>
-          <Table.Column className="w-[11%] whitespace-nowrap text-center">{t("Date")}</Table.Column>
-          <Table.Column className="w-[10%] whitespace-nowrap text-center">
+          <Table.Column className="w-[76px] whitespace-nowrap text-center">{t("End")}</Table.Column>
+          <Table.Column className="w-[100px] whitespace-nowrap text-center">
+            {t("Date")}
+          </Table.Column>
+          <Table.Column className="w-[96px] whitespace-nowrap text-center">
             {t("Duration")}
           </Table.Column>
-          <Table.Column className="w-[9%] text-center">{t("Team")}</Table.Column>
-          <Table.Column className="w-[7%]" aria-label={t("Actions")} />
+          <Table.Column className="w-[112px] text-center">{t("Team")}</Table.Column>
+          <Table.Column className="w-[80px]" aria-label={t("Actions")} />
         </Table.Header>
         <Table.Body>
           {groups.flatMap((group) => {

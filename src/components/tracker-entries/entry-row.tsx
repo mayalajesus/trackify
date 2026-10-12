@@ -661,7 +661,7 @@ export function TrackerEntryRow({
     >
       <Table.Cell className={`${trackerCellClass} min-w-0 ${isGroupedChild ? "pl-8" : ""}`.trim()}>
         {activeField ? <TableEditingMode /> : null}
-        <div className="min-w-0">
+        <div className="tracker-task-copy min-w-0">
           <div className="flex min-w-0 items-center gap-2">
             {activeField === "task" ? (
               <div className="flex min-w-0 flex-1 items-start gap-1">
@@ -827,10 +827,10 @@ export function TrackerEntryRow({
               onPress={() => onActivate("project")}
             >
               <span className="flex min-w-0 flex-1 flex-col">
-                <span className="flex w-full min-w-0 items-center gap-2 truncate font-medium">
+                <span className="tracker-project-name flex w-full min-w-0 items-center gap-2 truncate">
                   {projectName}
                 </span>
-                <span className="block w-full min-w-0 truncate text-sm font-normal text-muted">
+                <span className="tracker-client-name block w-full min-w-0 truncate text-sm font-normal">
                   {clientName}
                 </span>
               </span>
