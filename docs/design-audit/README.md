@@ -76,7 +76,13 @@ a etapa de Projetos, sem modificar a seleção automática de membros.
   os comportamentos existentes. Ainda falta reconferir todos os usos do switch.
 - A tentativa de viewport 390 × 844 no navegador não foi aplicada: `innerWidth`
   continuou 1280. A captura com nome `app-switch-mobile-after.png` é desktop e
-  **não constitui validação mobile**. É necessário outro mecanismo de teste.
+  **não constitui validação mobile**.
+- Essa limitação foi contornada para o switch com `tests/visual/controls.spec.ts`:
+  fixture sem autenticação, store ou API, usando o componente real e o CSS global.
+  Os dois testes passaram em 1280 × 720 e 390 × 844, verificando medidas e cores
+  do Figma, alternância por teclado e estado desabilitado. Capturas em
+  `test-results/visual-controls-*/` foram inspecionadas. A fixture não é uma tela
+  do app e não certifica a responsividade dos módulos.
 - Formatação, lint, TypeScript, auditoria de UI, 179 testes e build passaram
   após a correção. A regra da auditoria de UI foi mantida: o switch usa o
   token semântico `--default` em escopo local.
