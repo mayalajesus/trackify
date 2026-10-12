@@ -15,6 +15,36 @@ body {
   min-height: 100vh;
 }
 
+/* UI Kit / Toggle: 28 × 16 track, 12px indicator with a 2px inset. */
+:where(.light, [data-theme="light"]) .switch {
+  --default: #c7ccd1;
+}
+:where(.light, [data-theme="light"]) .switch .switch__control {
+  width: 28px;
+  height: 16px;
+  border-radius: 999px;
+}
+:where(.light, [data-theme="light"]) .switch .switch__thumb {
+  width: 12px;
+  height: 12px;
+  margin-inline-start: 2px;
+  border-radius: 999px;
+  background: #9ca3af;
+  box-shadow: none;
+}
+:where(.light, [data-theme="light"])
+  .switch:is([data-selected="true"], [aria-checked="true"])
+  .switch__thumb {
+  margin-inline-start: 14px;
+  background: #ffffff;
+}
+:where(.light, [data-theme="light"]) .action-menu__switch {
+  background: #c7ccd1;
+}
+:where(.light, [data-theme="light"]) .action-menu__switch:not([data-selected="true"]) > span {
+  background: #9ca3af;
+}
+
 .project-members,
 .project-members .tag-group__list {
   gap: 8px;

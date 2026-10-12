@@ -1,0 +1,41 @@
+{
+  "off": [
+    {
+      "bg": "rgb(199, 204, 209)",
+      "class": "switch__control",
+      "height": "16px",
+      "margin": "0px",
+      "radius": "999px",
+      "width": "28px"
+    },
+    {
+      "bg": "rgb(156, 163, 175)",
+      "class": "switch__thumb",
+      "height": "12px",
+      "margin": "2px",
+      "radius": "999px",
+      "width": "12px"
+    }
+  ],
+  "onWhileHovered": [
+    {
+      "bg": "oklab(0.58997 0.0886618 -0.202583)",
+      "class": "switch__control",
+      "height": "16px",
+      "margin": "0px",
+      "radius": "999px",
+      "width": "28px"
+    },
+    {
+      "bg": "rgb(255, 255, 255)",
+      "class": "switch__thumb",
+      "height": "12px",
+      "margin": "14px",
+      "radius": "999px",
+      "width": "12px"
+    }
+  ],
+  "onRest": {
+    "background": "rgb(126, 59, 237)"
+  }
+}

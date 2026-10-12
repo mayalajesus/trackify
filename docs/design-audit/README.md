@@ -60,6 +60,27 @@ a etapa de Projetos, sem modificar a seleção automática de membros.
 
 ## Limites atuais
 
+### Switch compartilhado
+
+- Referências: Toggle desligado `96:285`, indicador `96:283`; ligado `96:284`,
+  indicador `84:1573`. Propriedades preservadas nos arquivos `figma-switch-*.txt`.
+- Antes: controle padrão de 40 × 20px, indicador de 22 × 16px, fundo desligado
+  `#EAEBEC` e indicador branco.
+- Corrigido no tema claro: controle 28 × 16px, raio 999px, indicador circular
+  12px, recuo de 2px desligado e 14px ligado. Desligado `#C7CCD1` / `#9CA3AF`;
+  ligado `#7E3BED` / branco. Menu de ações usa as mesmas cores de estado.
+- Verificação local: alternância do formulário de novo projeto, sem submissão.
+  Medidas em `switch-measurements.json`, recortes sem dados pessoais em
+  `switch-off-after.png` e `switch-on-after.png`.
+- Hover/foco/desabilitado não possuem referência individual confirmada; preservados
+  os comportamentos existentes. Ainda falta reconferir todos os usos do switch.
+- A tentativa de viewport 390 × 844 no navegador não foi aplicada: `innerWidth`
+  continuou 1280. A captura com nome `app-switch-mobile-after.png` é desktop e
+  **não constitui validação mobile**. É necessário outro mecanismo de teste.
+- Formatação, lint, TypeScript, auditoria de UI, 179 testes e build passaram
+  após a correção. A regra da auditoria de UI foi mantida: o switch usa o
+  token semântico `--default` em escopo local.
+
 Ainda falta concluir a matriz de estados, temas, breakpoints, modais e todos os
 m�dulos. Nenhum m�dulo completo foi marcado como aprovado por amostragem.
 O tema escuro permanece inalterado enquanto suas refer�ncias s�o investigadas.
