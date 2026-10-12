@@ -271,3 +271,51 @@ body {
   line-height: 20px;
   white-space: normal;
 }
+
+/* DEV confirmation shell (629:3351); height follows the conflict summary. */
+.overlap-confirmation {
+  width: 384px;
+  max-width: calc(100vw - 32px);
+  padding: 28px 24px 24px;
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow:
+    0 18px 38px #1b1b1b24,
+    0 3px 8px #1b1b1b12;
+}
+.overlap-confirmation .alert-dialog__header {
+  padding: 0 0 8px;
+}
+.overlap-confirmation .alert-dialog__heading {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24px;
+  letter-spacing: 0;
+}
+.overlap-confirmation .alert-dialog__body {
+  margin: 0;
+  padding: 0;
+}
+.overlap-confirmation .description {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 24px;
+  overflow-wrap: anywhere;
+}
+.overlap-confirmation .alert-dialog__footer {
+  margin: 0;
+  padding: 20px 0 0;
+  gap: 8px;
+}
+.overlap-confirmation .alert-dialog__footer .button {
+  min-height: 36px;
+  padding: 8px 4px;
+  border-radius: 18px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+}
+.overlap-confirmation .button--secondary {
+  background: var(--default);
+  color: var(--foreground);
+}

@@ -60,6 +60,25 @@ a etapa de Projetos, sem modificar a seleção automática de membros.
 
 ## Limites atuais
 
+### Confirmação de sobreposição de lançamentos
+
+Correção solicitada a partir da captura do usuário: o AlertDialog estava sem
+estilos próprios, com botões altos e texto do botão principal quebrado.
+Aplicado o padrão de confirmação DEV `629:3351`: largura 384px, raio 24px,
+padding 28px 24px 24px, título 18/24, descrição 14/24 e rodapé com gap 8px.
+Altura acompanha o resumo do lançamento; ações ocupam igualmente o rodapé.
+Botões com 36px em desktop/390px e crescimento uniforme quando o texto precisa
+quebrar em 320px. Cancelar usa texto neutro, confirmação preserva roxo.
+Não foi localizado um frame específico para o aviso de sobreposição: trata-se
+da aplicação do padrão de confirmação ao conteúdo existente, sem alterar textos
+ou o comportamento de salvar/cancelar.
+
+`tests/visual/overlap.spec.ts` verifica o componente real, com dados fictícios e
+sem store/API, em 1280, 390 e 320px, incluindo os callbacks de ambas as ações.
+As três verificações passaram e as capturas foram inspecionadas.
+Formatação, lint, TypeScript, auditoria de UI, 179 testes de domínio e build
+também passaram. Evidência desktop: `overlap-desktop.png`.
+
 ### Conflito confirmado: abas de tema
 
 O UI Kit usa Inter 11px/100%, peso 400 e sombra `0 2px 5px #1118270C`.

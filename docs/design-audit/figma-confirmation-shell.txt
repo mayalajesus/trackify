@@ -1,0 +1,61 @@
+https://www.figma.com/design/OxQD1gNLY8qPflf4RuSVI8/Timetracker?node-id=629-3351&t=7ROP1wCNBKbjMXnv-0
+M
+Share
+Comments
+Comments
+Properties
+Properties
+80%
+Get coding, faster
+Dev Mode simplifies handoff, speeds up inspection, and integrates with tools like VS Code and Storybook.
+Request access
+Excluir conta
+Layout
+Flow
+Vertical
+Width
+Fixed (384px)
+Height
+Fixed (292px)
+Radius
+24px
+Padding
+Top
+28px
+Right
+24px
+Bottom
+24px
+Left
+24px
+Colors
+Color format
+Hex
+Neutras/White
+#FFFFFF
+Shadows and blurs
+Color format
+Hex
+Drop shadow
+X
+0
+Y
+18
+Blur
+38
+Spread
+0
+#1B1B1B
+14.12%
+Drop shadow
+X
+0
+Y
+3
+Blur
+8
+Spread
+0
+#1B1B1B
+7.06%
+Export

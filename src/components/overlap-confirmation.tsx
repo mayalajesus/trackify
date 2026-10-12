@@ -35,7 +35,7 @@ export function OverlapConfirmation({
       <AlertDialogTriggerRegistration />
       <AlertDialog.Backdrop>
         <AlertDialog.Container size="sm">
-          <AlertDialog.Dialog>
+          <AlertDialog.Dialog className="overlap-confirmation">
             <AlertDialog.Header>
               <AlertDialog.Heading>{t("This entry overlaps another.")}</AlertDialog.Heading>
             </AlertDialog.Header>
