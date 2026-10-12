@@ -1,13 +1,4 @@
-import { handleTaskAction, taskDetailsValue } from "./task-actions.mjs";
-
-import { welcomeOnAccess } from "./transactional-emails.mjs";
-
 import { randomUUID } from "node:crypto";
-
-import { authenticateDataRequest } from "./authentication.mjs";
-
-import { enforceExtensionOperation, isAllowedExtensionOrigin } from "./extension-origin.mjs";
-
 import {
   acceptLegalTerms,
   cancelAccountDeletion,
@@ -17,64 +8,40 @@ import {
   requestAccountDeletion,
   transferWorkspaceOwnership,
 } from "./account-lifecycle.mjs";
-
+import { authenticateDataRequest } from "./authentication.mjs";
 import { DataApiError } from "./data-api-error.mjs";
-
-import { enforceIpBurstLimit, enforceUserRateLimits } from "./rate-limit.mjs";
-
+import { requirePayloadUser, requireWorkspaceAccess } from "./data/access.mjs";
+import { loadAccount } from "./data/account.mjs";
+import { getPool, getSupabaseAdmin, providerEnv } from "./data/connections.mjs";
+import { loadReportEntries } from "./data/entries.mjs";
+import { acceptInvitation, cancelInvitation, processInvitationEmail } from "./data/invitations.mjs";
+import {
+  removeAvatar,
+  updatePreferences,
+  updateProfileName,
+  uploadAvatar,
+} from "./data/preferences.mjs";
+import { ensureProfile } from "./data/profile.mjs";
+import { syncAccount } from "./data/sync-account.mjs";
+import { timerFromRow } from "./data/timer.mjs";
+import {
+  dateValue,
+  MAX_INTEGER_SECONDS,
+  optionalCurrency,
+  requiredText,
+  timeValue,
+  uuid,
+} from "./data/validation.mjs";
+import { createWorkspace } from "./data/workspaces.mjs";
+import { enforceExtensionOperation, isAllowedExtensionOrigin } from "./extension-origin.mjs";
 import {
   captureServerError,
   initializeServerObservability,
   sanitizeTelemetry,
 } from "./observability.mjs";
-
-import { MAX_INTEGER_SECONDS } from "./data/validation.mjs";
-
-import { providerEnv } from "./data/connections.mjs";
-
-import { getSupabaseAdmin } from "./data/connections.mjs";
-
-import { getPool } from "./data/connections.mjs";
-
-import { uuid } from "./data/validation.mjs";
-
-import { dateValue } from "./data/validation.mjs";
-
-import { timeValue } from "./data/validation.mjs";
-
-import { requiredText } from "./data/validation.mjs";
-
-import { optionalCurrency } from "./data/validation.mjs";
-
-import { requireWorkspaceAccess } from "./data/access.mjs";
-
-import { requirePayloadUser } from "./data/access.mjs";
-
-import { ensureProfile } from "./data/profile.mjs";
-
-import { loadAccount } from "./data/account.mjs";
-
-import { createWorkspace } from "./data/workspaces.mjs";
-
-import { loadReportEntries } from "./data/entries.mjs";
-
-import { syncAccount } from "./data/sync-account.mjs";
-
-import { timerFromRow } from "./data/timer.mjs";
-
-import { processInvitationEmail } from "./data/invitations.mjs";
-
-import { cancelInvitation } from "./data/invitations.mjs";
-
-import { updateProfileName } from "./data/preferences.mjs";
-
-import { uploadAvatar } from "./data/preferences.mjs";
-
-import { removeAvatar } from "./data/preferences.mjs";
-
-import { acceptInvitation } from "./data/invitations.mjs";
-
-import { updatePreferences } from "./data/preferences.mjs";
+import { enforceIpBurstLimit, enforceUserRateLimits } from "./rate-limit.mjs";
+import { handleTaskAction, taskDetailsValue } from "./task-actions.mjs";
+import { welcomeOnAccess } from "./transactional-emails.mjs";
 
 // Initialize before the first request so server-side tracing can instrument the
 // whole invocation. The helper is a no-op when SENTRY_DSN is not configured.

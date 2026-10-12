@@ -1,24 +1,16 @@
-import { isFavoriteTasks } from "../favorite-tasks";
-
 import type {
   PersistedAccount,
   ThemeMode,
   UserPreferences,
   WorkspaceSettings,
 } from "../account-types";
-
-import type { Client, Project, TimeEntry } from "../domain";
-
-import { getElapsedSeconds, isValidDateOnly } from "../format";
-
-import { isLocale } from "../i18n";
-
-import { isDefaultAvatarUrl } from "../default-avatar";
-
 import { clientCurrencyOptions, isCurrencyCode } from "../billing";
-
+import { isDefaultAvatarUrl } from "../default-avatar";
+import type { Client, Project, TimeEntry } from "../domain";
+import { isFavoriteTasks } from "../favorite-tasks";
+import { getElapsedSeconds, isValidDateOnly } from "../format";
+import { isLocale } from "../i18n";
 import { parseStoredReportFiltersValue } from "../report-filter-storage";
-
 import { isValidTimeZone } from "./preferences";
 
 export function isValidClock(value: unknown): value is string {

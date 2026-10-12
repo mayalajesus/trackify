@@ -1,7 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-
 import { DataApiError } from "../data-api-error.mjs";
-
 import { getSupabaseAdmin } from "./connections.mjs";
 
 export async function signedStorageUrl(config, bucket, path) {

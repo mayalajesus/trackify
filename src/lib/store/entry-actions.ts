@@ -2,6 +2,7 @@ import type { TimeEntry } from "../domain";
 import { dateTimeToTimestamp } from "../format";
 import { nextId } from "./ids";
 import type { AddEntryOptions, StoreResult } from "./types";
+
 export function createEntryActions({
   can,
   activeMemberId,

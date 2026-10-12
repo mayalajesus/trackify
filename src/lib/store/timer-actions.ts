@@ -11,6 +11,7 @@ import { initialTimer } from "./defaults";
 import { nextId } from "./ids";
 import { elapsedForTimer, pauseTimerAt } from "./timer";
 import type { StoreResult, TimerState } from "./types";
+
 export function createTimerActions({
   acceptingTaskRef,
   timerRef,

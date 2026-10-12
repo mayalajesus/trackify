@@ -1,9 +1,6 @@
 import type { Client, Project } from "@/lib/domain";
-
 import { getDayOffset } from "@/lib/format";
-
 import type { Locale } from "@/lib/i18n";
-
 import { type ReportAnalytics, type ShiftId, type TemporalBucket } from "@/lib/report-analytics";
 
 export const shiftLabels: Record<ShiftId, string> = {

@@ -2,6 +2,7 @@ import { clientCurrencyOptions, defaultCurrencyForLocale } from "../billing";
 import type { Client } from "../domain";
 import { nextId } from "./ids";
 import type { StoreResult } from "./types";
+
 export function createClientActions({
   can,
   members,

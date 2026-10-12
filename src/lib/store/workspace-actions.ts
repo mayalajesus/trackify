@@ -6,6 +6,7 @@ import { membershipToMember, membersToMemberships } from "./membership";
 import { elapsedForTimer } from "./timer";
 import type { StoreResult } from "./types";
 import { isFiniteNumber, isValidLogoUrl } from "./validation";
+
 export function createWorkspaceActions({
   entries,
   projects,

@@ -1,23 +1,13 @@
 import type { PersistedAccount, WorkspaceData } from "../account-types";
-
+import type { Member } from "../domain";
 import {
   clients as seedClients,
   timeEntries as seedEntries,
   members as seedMembers,
   projects as seedProjects,
 } from "../mock-data";
-
-import type { Member } from "../domain";
-
-import { initialSettings } from "./defaults";
-
-import { initialPreferences } from "./defaults";
-
-import { initialTrello } from "./defaults";
-
-import { membersToMemberships } from "./membership";
-
-import { createIdentity } from "./membership";
+import { initialPreferences, initialSettings, initialTrello } from "./defaults";
+import { createIdentity, membersToMemberships } from "./membership";
 
 export function makeSeedAccount(): PersistedAccount {
   const identities = seedMembers.map(createIdentity);

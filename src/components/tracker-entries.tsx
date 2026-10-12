@@ -1,39 +1,20 @@
-import { TaskParticipantsProvider } from "./tracker-task-team";
-
-import { Button } from "@heroui/react/button";
-
-import { Modal } from "@heroui/react/modal";
-
-import { Table } from "@heroui/react/table";
-
-import { Typography } from "@heroui/react/typography";
-
-import { toast } from "@heroui/react/toast";
-
-import { useEffect, useMemo, useState } from "react";
-
 import { DataTable } from "@/components/data-table";
-
 import { ModalLayout } from "@/components/modal-layout";
-
 import { ModalTriggerRegistration } from "@/components/overlay-trigger-registration";
-
-import { useStore } from "@/lib/store";
-
-import { useI18n } from "@/lib/i18n";
-
 import type { TimeEntry } from "@/lib/domain";
-import type { TrackerDay } from "./tracker-entries/types";
-
-import type { ActiveCell } from "./tracker-entries/types";
-
-import { groupEntries } from "./tracker-entries/grouping";
-
-import { trackerEntryRowKey } from "./tracker-entries/grouping";
-
-import { TrackerGroupSummaryRow } from "./tracker-entries/group-summary-row";
-
+import { useI18n } from "@/lib/i18n";
+import { useStore } from "@/lib/store";
+import { Button } from "@heroui/react/button";
+import { Modal } from "@heroui/react/modal";
+import { Table } from "@heroui/react/table";
+import { toast } from "@heroui/react/toast";
+import { Typography } from "@heroui/react/typography";
+import { useEffect, useMemo, useState } from "react";
 import { TrackerEntryRow } from "./tracker-entries/entry-row";
+import { TrackerGroupSummaryRow } from "./tracker-entries/group-summary-row";
+import { groupEntries, trackerEntryRowKey } from "./tracker-entries/grouping";
+import type { ActiveCell, TrackerDay } from "./tracker-entries/types";
+import { TaskParticipantsProvider } from "./tracker-task-team";
 
 export type { TrackerDay } from "./tracker-entries/types";
 

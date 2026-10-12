@@ -2,6 +2,7 @@ import type { Project } from "../domain";
 import { nextId } from "./ids";
 import type { StoreResult } from "./types";
 import { normalizedProjectName } from "./validation";
+
 export function createProjectActions({
   can,
   clients,

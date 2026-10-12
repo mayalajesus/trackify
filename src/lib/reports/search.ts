@@ -1,17 +1,13 @@
 import { type ReportFilterKey, type ReportFilterValues } from "@/components/report-filters";
-
 import {
   getReportPeriodRange,
   isValidDateOnly,
   type DateRange,
   type ReportPeriodPreset,
 } from "@/lib/format";
-
-import { type ReportView } from "@/lib/report-views";
-
 import { createStoredReportFilters, type StoredReportFilters } from "@/lib/report-filter-storage";
-
 import { reportGroupOptions as groupOptions, type GroupDimension } from "@/lib/report-groups";
+import { type ReportView } from "@/lib/report-views";
 
 export type DetailedColumn =
   | "date"

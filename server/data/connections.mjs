@@ -1,7 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-
 import pg from "pg";
-
 import { DataApiError } from "../data-api-error.mjs";
 
 export const Pool = pg.Pool;

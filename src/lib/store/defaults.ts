@@ -1,12 +1,8 @@
 import type { UserPreferences, WorkspaceSettings } from "../account-types";
-
 import type { TrelloState } from "../domain";
-
 import { defaultLocale } from "../i18n";
-
-import type { TimerState } from "./types";
-
 import { getInitialTimeZone } from "./preferences";
+import type { TimerState } from "./types";
 
 export const initialTimer: TimerState = {
   status: "idle",

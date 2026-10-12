@@ -1,25 +1,6 @@
-import { ProgressBar } from "@heroui/react/progress-bar";
-
-import { Table } from "@heroui/react/table";
-
-import { Tooltip } from "@heroui/react/tooltip";
-
-import { Typography } from "@heroui/react/typography";
-
-import { CircleInfo } from "@gravity-ui/icons";
-
-import { useState, type ReactNode } from "react";
-
-import { Cell, Label as ChartLabel, Pie, PieChart } from "recharts";
-
-import { ReportDistribution } from "@/components/report-distribution";
-
-import { ProjectLabel } from "@/components/project-color";
-
 import { DataTable } from "@/components/data-table";
-
-import { ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-
+import { ProjectLabel } from "@/components/project-color";
+import { ReportDistribution } from "@/components/report-distribution";
 import {
   ReportChartWidget,
   ReportKpi,
@@ -27,19 +8,19 @@ import {
   reportChartColors,
   reportChartTooltipProps,
 } from "@/components/report-widget";
-
+import { ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import type { Client, Project, TimeEntry } from "@/lib/domain";
-
 import { formatDuration } from "@/lib/format";
-
 import { useI18n } from "@/lib/i18n";
-
 import { type ReportAnalytics, type ShiftId } from "@/lib/report-analytics";
-import { shiftLabels } from "../../lib/reports/overview-model";
-
-import { shiftEmoji } from "../../lib/reports/overview-model";
-
-import { overviewProjectRows } from "../../lib/reports/overview-model";
+import { CircleInfo } from "@gravity-ui/icons";
+import { ProgressBar } from "@heroui/react/progress-bar";
+import { Table } from "@heroui/react/table";
+import { Tooltip } from "@heroui/react/tooltip";
+import { Typography } from "@heroui/react/typography";
+import { useState, type ReactNode } from "react";
+import { Cell, Label as ChartLabel, Pie, PieChart } from "recharts";
+import { overviewProjectRows, shiftEmoji, shiftLabels } from "../../lib/reports/overview-model";
 
 export { shiftLabels } from "../../lib/reports/overview-model";
 

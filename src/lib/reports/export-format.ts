@@ -1,7 +1,5 @@
 import type { TimeEntry } from "@/lib/domain";
-
 import { getEndDateForEntry, getEntryEndDayOffset } from "@/lib/format";
-
 import { type ReportView } from "@/lib/report-views";
 
 export function endLabel(entry: TimeEntry): string {

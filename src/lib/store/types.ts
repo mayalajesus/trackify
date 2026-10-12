@@ -6,13 +6,9 @@ import type {
   WorkspaceSettings,
   WorkspaceSummary,
 } from "../account-types";
-
-import type { Client, Member, Project, Role, TimeEntry, TrelloState } from "../domain";
-
-import { type Permission } from "../permissions";
-
 import { type BillingPreference, type CurrencyCode } from "../billing";
-
+import type { Client, Member, Project, Role, TimeEntry, TrelloState } from "../domain";
+import { type Permission } from "../permissions";
 import { type TimerTaskPreset } from "../timer-start";
 
 export type TimerStatus = "idle" | "running" | "paused";

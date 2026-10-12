@@ -1,9 +1,6 @@
-import { getEndDateForEntry } from "@/lib/format";
-
 import type { TimeEntry } from "@/lib/domain";
-import type { TrackerDay } from "./types";
-
-import type { TrackerGroup } from "./types";
+import { getEndDateForEntry } from "@/lib/format";
+import type { TrackerDay, TrackerGroup } from "./types";
 
 export function groupKeyFor(entry: TimeEntry): string {
   return [

@@ -1,10 +1,7 @@
 import type { UserIdentity, WorkspaceMembership } from "../account-types";
-
-import type { Member } from "../domain";
-
-import { defaultLocale } from "../i18n";
-
 import { defaultCurrencyForLocale, type BillingPreference } from "../billing";
+import type { Member } from "../domain";
+import { defaultLocale } from "../i18n";
 
 export function membershipToMember(
   membership: WorkspaceMembership,

@@ -1,8 +1,6 @@
 import { DataApiError } from "../data-api-error.mjs";
-
-import { defaultAvatarUrls } from "./validation.mjs";
-
 import { hasColumn } from "./access.mjs";
+import { defaultAvatarUrls } from "./validation.mjs";
 
 export async function ensureProfile(client, user, config) {
   const existingProfile = await client.query(

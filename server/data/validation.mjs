@@ -1,5 +1,4 @@
 import { avatarDataValue as profileAvatarDataValue } from "../auth-profile.mjs";
-
 import { DataApiError } from "../data-api-error.mjs";
 
 export const MAX_INTEGER_SECONDS = 2_147_483_647;

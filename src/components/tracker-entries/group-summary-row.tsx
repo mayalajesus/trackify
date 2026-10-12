@@ -1,44 +1,32 @@
-import { TrackerTaskTeam } from "../tracker-task-team";
-
-import { EntryTrelloModal } from "@/components/entry-trello-modal";
-
-import { LayoutColumns, PersonPlus, Star, Thunderbolt } from "@gravity-ui/icons";
-
-import { useFavoriteTasks } from "@/lib/use-favorite-tasks";
-
-import { IconTooltip } from "@/components/icon-tooltip";
-
-import { Button } from "@heroui/react/button";
-
-import { Surface } from "@heroui/react/surface";
-
-import { Table } from "@heroui/react/table";
-
-import { Tooltip } from "@heroui/react/tooltip";
-
-import { toast } from "@heroui/react/toast";
-
-import { useState } from "react";
-
-import { ChevronDown, ChevronUp, Copy, Play, TrashBin } from "@gravity-ui/icons";
-
 import { ActionDropdown } from "@/components/action-dropdown";
-
-import { useStore } from "@/lib/store";
-
+import { EntryTrelloModal } from "@/components/entry-trello-modal";
+import { IconTooltip } from "@/components/icon-tooltip";
 import { formatDate, formatDuration } from "@/lib/format";
-
 import { useI18n } from "@/lib/i18n";
-
-import type { TrackerGroup } from "./types";
-
-import { trackerActionLayoutClass } from "./cell-styles";
-
-import { trackerActionButtonClass } from "./cell-styles";
-
-import { EndTimeValue } from "./time-editor";
-
+import { useStore } from "@/lib/store";
+import { useFavoriteTasks } from "@/lib/use-favorite-tasks";
+import {
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  LayoutColumns,
+  PersonPlus,
+  Play,
+  Star,
+  Thunderbolt,
+  TrashBin,
+} from "@gravity-ui/icons";
+import { Button } from "@heroui/react/button";
+import { Surface } from "@heroui/react/surface";
+import { Table } from "@heroui/react/table";
+import { toast } from "@heroui/react/toast";
+import { Tooltip } from "@heroui/react/tooltip";
+import { useState } from "react";
+import { TrackerTaskTeam } from "../tracker-task-team";
+import { trackerActionButtonClass, trackerActionLayoutClass } from "./cell-styles";
 import { trackerEntryRowKey } from "./grouping";
+import { EndTimeValue } from "./time-editor";
+import type { TrackerGroup } from "./types";
 
 export function TrackerGroupSummaryRow({
   group,

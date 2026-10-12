@@ -1,12 +1,8 @@
-import { Button } from "@heroui/react/button";
-
-import { Tabs } from "@heroui/react/tabs";
-
-import { ArrowUpFromSquare } from "@gravity-ui/icons";
-
 import { useI18n } from "@/lib/i18n";
-
 import { type ReportView } from "@/lib/report-views";
+import { ArrowUpFromSquare } from "@gravity-ui/icons";
+import { Button } from "@heroui/react/button";
+import { Tabs } from "@heroui/react/tabs";
 
 export function ReportExportButton({ onPress }: { onPress: () => void }) {
   const { t } = useI18n();

@@ -1,5 +1,3 @@
-import { isFavoriteTasks } from "../favorite-tasks";
-
 import type {
   PersistedAccount,
   UserIdentity,
@@ -7,26 +5,18 @@ import type {
   WorkspaceData,
   WorkspaceMembership,
 } from "../account-types";
-
-import { isLocale } from "../i18n";
-
 import { defaultCurrencyForLocale, isCurrencyCode, type BillingPreference } from "../billing";
-
+import { isFavoriteTasks } from "../favorite-tasks";
+import { isLocale } from "../i18n";
 import { parseStoredReportFiltersValue, type StoredReportFilters } from "../report-filter-storage";
-
-import { isFiniteNumber } from "./validation";
-
-import { isRecord } from "./validation";
-
-import { isThemeMode } from "./validation";
-
-import { isValidTimeZone } from "./preferences";
-
-import { getInitialTimeZone } from "./preferences";
-
-import { isValidAvatarUrl } from "./validation";
-
-import { isValidAccount } from "./validation";
+import { getInitialTimeZone, isValidTimeZone } from "./preferences";
+import {
+  isFiniteNumber,
+  isRecord,
+  isThemeMode,
+  isValidAccount,
+  isValidAvatarUrl,
+} from "./validation";
 
 export function migrateAccountSnapshot(value: unknown): PersistedAccount | null {
   if (!value || typeof value !== "object") return null;

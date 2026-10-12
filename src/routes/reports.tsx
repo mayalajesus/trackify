@@ -1,40 +1,23 @@
-import { useReportsController } from "@/lib/reports/use-reports-controller";
-
-import { createFileRoute } from "@tanstack/react-router";
-
 import { DetailedReport } from "@/components/detailed-report";
-
 import { ExportModal } from "@/components/export-modal";
-
-import { ReportFiltersBar } from "@/components/report-filters";
-
 import { PageHeader } from "@/components/page-header";
-
+import { ReportFiltersBar } from "@/components/report-filters";
 import { CardsSkeleton, ErrorBlock } from "@/components/states";
-
 import { formatReportPeriod, reportPeriodPresets } from "@/lib/format";
-
 import { isLegacyTeamReportView, normalizeReportView } from "@/lib/report-views";
-
-import { defaultVisibleFilters } from "../lib/reports/search";
-
-import type { ReportSearch } from "../lib/reports/search";
-
-import { isPeriodPreset } from "../lib/reports/search";
-
-import { isGroupDimension } from "../lib/reports/search";
-
-import { asText } from "../lib/reports/search";
-
-import { asCsv } from "../lib/reports/search";
-
-import { encodeIds } from "../lib/reports/search";
-
-import { ReportExportButton } from "../components/reports/report-controls";
-
-import { ReportViewSwitcher } from "../components/reports/report-controls";
-
+import { useReportsController } from "@/lib/reports/use-reports-controller";
+import { createFileRoute } from "@tanstack/react-router";
 import { OverviewDashboard } from "../components/reports/overview-dashboard";
+import { ReportExportButton, ReportViewSwitcher } from "../components/reports/report-controls";
+import type { ReportSearch } from "../lib/reports/search";
+import {
+  asCsv,
+  asText,
+  defaultVisibleFilters,
+  encodeIds,
+  isGroupDimension,
+  isPeriodPreset,
+} from "../lib/reports/search";
 
 export const Route = createFileRoute("/reports")({
   validateSearch: (search: Record<string, unknown>): ReportSearch => ({

@@ -1,47 +1,12 @@
-import { TrackerTaskTeam } from "../tracker-task-team";
-
-import { EntryTrelloModal } from "@/components/entry-trello-modal";
-
-import { LayoutColumns, PersonPlus, Star, Thunderbolt } from "@gravity-ui/icons";
-
-import { useFavoriteTasks } from "@/lib/use-favorite-tasks";
-
-import { IconTooltip } from "@/components/icon-tooltip";
-
-import { TableEditingMode } from "@/components/table-editing-mode";
-
-import { Button } from "@heroui/react/button";
-
-import { FieldError } from "@heroui/react/field-error";
-
-import { Input } from "@heroui/react/input";
-
-import { Label } from "@heroui/react/label";
-
-import { Table } from "@heroui/react/table";
-
-import { TextField } from "@heroui/react/textfield";
-
-import { Tooltip } from "@heroui/react/tooltip";
-
-import { toast } from "@heroui/react/toast";
-
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-
-import { Copy, Play, TrashBin } from "@gravity-ui/icons";
-
 import { ActionDropdown } from "@/components/action-dropdown";
-
 import { BillableIndicator } from "@/components/billable-indicator";
-
+import { EntryTrelloModal } from "@/components/entry-trello-modal";
 import { HeroUIDatePicker } from "@/components/hero-ui-date-picker";
-
+import { IconTooltip } from "@/components/icon-tooltip";
 import { OverlapConfirmation } from "@/components/overlap-confirmation";
-
 import { ProjectSelect } from "@/components/project-select";
-
-import { useStore } from "@/lib/store";
-
+import { TableEditingMode } from "@/components/table-editing-mode";
+import type { TimeEntry } from "@/lib/domain";
 import {
   addSecondsToDateTime,
   dateTimeToTimestamp,
@@ -57,30 +22,37 @@ import {
   parseDurationInput,
   shiftDate,
 } from "@/lib/format";
-
 import { useI18n } from "@/lib/i18n";
-
-import type { TimeEntry } from "@/lib/domain";
-
-import type { TrackerEditableField } from "./types";
-
-import type { EntryDraft } from "./types";
-
-import { trackerCellClass } from "./cell-styles";
-
-import { trackerDurationCellClass } from "./cell-styles";
-
-import { trackerActionCellClass } from "./cell-styles";
-
-import { trackerActionLayoutClass } from "./cell-styles";
-
-import { trackerActionButtonClass } from "./cell-styles";
-
-import { EndTimeValue } from "./time-editor";
-
-import { InlineValidationTooltip } from "./time-editor";
-
-import { TrackerTimeEditor } from "./time-editor";
+import { useStore } from "@/lib/store";
+import { useFavoriteTasks } from "@/lib/use-favorite-tasks";
+import {
+  Copy,
+  LayoutColumns,
+  PersonPlus,
+  Play,
+  Star,
+  Thunderbolt,
+  TrashBin,
+} from "@gravity-ui/icons";
+import { Button } from "@heroui/react/button";
+import { FieldError } from "@heroui/react/field-error";
+import { Input } from "@heroui/react/input";
+import { Label } from "@heroui/react/label";
+import { Table } from "@heroui/react/table";
+import { TextField } from "@heroui/react/textfield";
+import { toast } from "@heroui/react/toast";
+import { Tooltip } from "@heroui/react/tooltip";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { TrackerTaskTeam } from "../tracker-task-team";
+import {
+  trackerActionButtonClass,
+  trackerActionCellClass,
+  trackerActionLayoutClass,
+  trackerCellClass,
+  trackerDurationCellClass,
+} from "./cell-styles";
+import { EndTimeValue, InlineValidationTooltip, TrackerTimeEditor } from "./time-editor";
+import type { EntryDraft, TrackerEditableField } from "./types";
 
 export function toDraft(entry: TimeEntry): EntryDraft {
   return {

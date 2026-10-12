@@ -1,16 +1,10 @@
-import { FieldError } from "@heroui/react/field-error";
-
-import { TimeField } from "@heroui/react/time-field";
-
-import { Tooltip } from "@heroui/react/tooltip";
-
-import { Time } from "@internationalized/date";
-
-import { type KeyboardEvent, type RefObject } from "react";
-
-import { CircleExclamation } from "@gravity-ui/icons";
-
 import { getDayOffset } from "@/lib/format";
+import { CircleExclamation } from "@gravity-ui/icons";
+import { FieldError } from "@heroui/react/field-error";
+import { TimeField } from "@heroui/react/time-field";
+import { Tooltip } from "@heroui/react/tooltip";
+import { Time } from "@internationalized/date";
+import { type KeyboardEvent, type RefObject } from "react";
 
 export function EndTimeValue({
   startDate,

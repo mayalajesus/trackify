@@ -2,6 +2,7 @@ import type { Role } from "../domain";
 import { inviteEmailPattern } from "./ids";
 import { createIdentity } from "./membership";
 import type { StoreResult } from "./types";
+
 export function createMemberActions({
   can,
   members,

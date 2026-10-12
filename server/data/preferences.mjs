@@ -1,26 +1,16 @@
 import { DataApiError } from "../data-api-error.mjs";
-
+import { hasColumn, requireWorkspaceAccess } from "./access.mjs";
 import { getSupabaseAdmin } from "./connections.mjs";
-
-import { uuid } from "./validation.mjs";
-
-import { requiredText } from "./validation.mjs";
-
-import { avatarDataValue } from "./validation.mjs";
-
-import { signedStorageUrl } from "./storage.mjs";
-
-import { parseImageDataUrl } from "./validation.mjs";
-
-import { favoriteTasksValue } from "./validation.mjs";
-
-import { reportFiltersJson } from "./validation.mjs";
-
-import { hasColumn } from "./access.mjs";
-
-import { requireWorkspaceAccess } from "./access.mjs";
-
 import { ensureProfile } from "./profile.mjs";
+import { signedStorageUrl } from "./storage.mjs";
+import {
+  avatarDataValue,
+  favoriteTasksValue,
+  parseImageDataUrl,
+  reportFiltersJson,
+  requiredText,
+  uuid,
+} from "./validation.mjs";
 
 export async function updateProfileName(client, user, config, body) {
   const name = requiredText(body.name, "Profile name", 120);

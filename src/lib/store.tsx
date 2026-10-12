@@ -4,8 +4,8 @@ import { createMemberActions } from "@/lib/store/member-actions";
 import { createProjectActions } from "@/lib/store/project-actions";
 import { createTimerActions } from "@/lib/store/timer-actions";
 import { createWorkspaceActions } from "@/lib/store/workspace-actions";
-import { projectIsBillable } from "./project-billability";
-
+import { useQueryClient } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 import {
   createContext,
   useCallback,
@@ -15,15 +15,6 @@ import {
   useRef,
   useState,
 } from "react";
-
-import { useQueryClient } from "@tanstack/react-query";
-
-import type { ReactNode } from "react";
-
-import { useAuth } from "./auth-context";
-
-import { createApiDataSource } from "./api-data-source";
-
 import type {
   PersistedAccount,
   SessionStatus,
@@ -32,64 +23,33 @@ import type {
   WorkspaceSettings,
   WorkspaceSummary,
 } from "./account-types";
-
+import { createApiDataSource } from "./api-data-source";
+import { useAuth } from "./auth-context";
+import { defaultCurrencyForLocale, type BillingPreference, type CurrencyCode } from "./billing";
+import { resetSessionDefaultAvatar } from "./default-avatar";
 import type { Client, Member, Project, TimeEntry, TrelloState } from "./domain";
-
 import { getElapsedSeconds, getEndDateForEntry, getLocalToday, isValidDateOnly } from "./format";
-
 import {
   canTrackProject as canTrackProjectForRole,
   hasPermission,
   type Permission,
 } from "./permissions";
-
-import { resetSessionDefaultAvatar } from "./default-avatar";
-
-import { defaultCurrencyForLocale, type BillingPreference, type CurrencyCode } from "./billing";
-
-import { findTimeEntryConflict, type ScopedTimeIntervalEntry } from "./time-entry-overlap";
-
+import { projectIsBillable } from "./project-billability";
 import { entriesForReportWindow, reportEntriesQueryName } from "./report-query";
-
+import { initialPreferences, initialSettings, initialTimer, initialTrello } from "./store/defaults";
+import { inviteEmailPattern } from "./store/ids";
+import { initialsFromName, membershipToMember, membersToMemberships } from "./store/membership";
+import { getDevicePreferences, getInitialTimeZone } from "./store/preferences";
+import { reuseIfEqual, shareAccountReferences } from "./store/references";
+import { elapsedForTimer } from "./store/timer";
+import type { StoreResult, StoreValue, TimerState } from "./store/types";
+import { isValidPreferences } from "./store/validation";
+import { findTimeEntryConflict, type ScopedTimeIntervalEntry } from "./time-entry-overlap";
 import {
   recentTimerTasksFromEntries,
   rememberRecentTimerTask,
   validateTimerDetails,
 } from "./timer-start";
-
-import type { TimerState } from "./store/types";
-
-import type { StoreResult } from "./store/types";
-
-import { initialTimer } from "./store/defaults";
-
-import { initialSettings } from "./store/defaults";
-
-import { initialPreferences } from "./store/defaults";
-
-import { initialTrello } from "./store/defaults";
-
-import { getInitialTimeZone } from "./store/preferences";
-
-import { getDevicePreferences } from "./store/preferences";
-
-import { isValidPreferences } from "./store/validation";
-
-import { membershipToMember } from "./store/membership";
-
-import { membersToMemberships } from "./store/membership";
-
-import { elapsedForTimer } from "./store/timer";
-
-import { initialsFromName } from "./store/membership";
-
-import type { StoreValue } from "./store/types";
-
-import { reuseIfEqual } from "./store/references";
-
-import { shareAccountReferences } from "./store/references";
-
-import { inviteEmailPattern } from "./store/ids";
 
 export { findTimeEntryConflict, timeEntriesOverlap } from "./time-entry-overlap";
 
