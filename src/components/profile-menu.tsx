@@ -84,7 +84,10 @@ export function ProfileMenu({
       </Dropdown.Trigger>
       <Dropdown.Popover
         placement={placement ?? (showName ? "right" : "bottom")}
-        className="profile-menu w-[257px] max-w-[calc(100vw-1.5rem)] p-2"
+        containerPadding={12}
+        offset={8}
+        shouldFlip
+        className="profile-menu w-[257px] min-w-0 max-w-[calc(100dvw-24px)] max-h-[calc(100dvh-24px)] overflow-y-auto p-2"
       >
         <div className="space-y-0.5 px-2 py-1.5">
           <Typography type="body-sm" weight="semibold" truncate>

@@ -16,7 +16,7 @@ import { Surface } from "@heroui/react/surface";
 import { TextField } from "@heroui/react/textfield";
 import { Typography } from "@heroui/react/typography";
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import { Bars, ChevronDown, Clock, LayoutSideContentLeft } from "@gravity-ui/icons";
+import { Bars, ChevronDown, Clock, LayoutSideContentLeft, Magnifier } from "@gravity-ui/icons";
 import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
 import { CommandMenu } from "@/components/command-menu";
 import { HeaderTimerControl } from "@/components/header-timer-control";
@@ -304,7 +304,17 @@ function AppShellContent({ children }: { children: ReactNode }) {
                   <Bars aria-hidden="true" className="size-4" />
                 </Button>
               </div>
-              <div className="min-w-0 flex-1">
+              <Button
+                aria-label={t("Search")}
+                isIconOnly
+                size="sm"
+                variant="tertiary"
+                className="shrink-0 md:hidden"
+                onPress={() => setCmdOpen(true)}
+              >
+                <Magnifier aria-hidden="true" className="size-4" />
+              </Button>
+              <div className="hidden min-w-0 flex-1 md:block">
                 <GlobalSearchForm
                   className="max-w-[398px]"
                   query={query}
@@ -329,8 +339,8 @@ function AppShellContent({ children }: { children: ReactNode }) {
           <DrawerTriggerRegistration />
           <Drawer.Backdrop>
             <Drawer.Content placement="left" className="w-[min(18rem,calc(100vw-1rem))]">
-              <Drawer.Dialog className="app-sidebar flex h-full flex-col">
-                <Drawer.Header className="flex items-center gap-3 px-4 py-3">
+              <Drawer.Dialog className="app-sidebar flex h-full flex-col p-3">
+                <Drawer.Header className="flex flex-row items-center gap-3 py-1 pl-0 pr-8">
                   <div className="min-w-0 flex-1">
                     <Link href="/tracker" aria-label={t("Trackify")}>
                       <img
@@ -348,17 +358,17 @@ function AppShellContent({ children }: { children: ReactNode }) {
                   </div>
                   <Drawer.CloseTrigger aria-label={t("Close navigation")} />
                 </Drawer.Header>
-                <div className="shrink-0 px-3 pb-5 pt-3">
+                <div className="shrink-0 px-0 pb-3 pt-2">
                   <WorkspaceSwitcher />
                 </div>
-                <Drawer.Body className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
+                <Drawer.Body className="min-h-0 flex-1 overflow-y-auto p-0">
                   <SidebarNavigation
                     reportsOpen={reportsOpen}
                     onReportsOpenChange={setReportsOpen}
                     onNavigate={() => setMobileNavOpen(false)}
                   />
                 </Drawer.Body>
-                <Drawer.Footer className="flex shrink-0 flex-col gap-2 px-3 py-3">
+                <Drawer.Footer className="flex shrink-0 flex-col gap-2 px-0 py-2">
                   <ProfileMenu showName placement="top start" />
                 </Drawer.Footer>
               </Drawer.Dialog>
