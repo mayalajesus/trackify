@@ -25,7 +25,7 @@ const dynamicStyleExceptions = new Set([
   "src/components/modal-select.tsx",
   "src/components/project-color.tsx",
   "src/routes/projects.index.tsx",
-  "src/routes/reports.tsx",
+  "src/components/reports/overview-dashboard.tsx",
 ]);
 const approvedThemeVariables = new Set([
   "--accent",
@@ -128,7 +128,10 @@ for (const path of sourceFiles) {
   if (content.includes('from "recharts"') || content.includes("from 'recharts'")) {
     if (
       !isChartException &&
-      !["src/routes/reports.tsx", "src/components/report-distribution.tsx"].includes(file)
+      ![
+        "src/components/reports/overview-dashboard.tsx",
+        "src/components/report-distribution.tsx",
+      ].includes(file)
     ) {
       violations.push(`${file}: Recharts is allowed only in the chart helper and reports route`);
     }
