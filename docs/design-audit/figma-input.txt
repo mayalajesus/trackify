@@ -1,0 +1,55 @@
+Reference: https://www.figma.com/design/OxQD1gNLY8qPflf4RuSVI8/Timetracker?node-id=75-109&t=22e2XrgbCvS5g8i2-0
+M
+Share
+Comments
+Comments
+Properties
+Properties
+32%
+Get coding, faster
+Dev Mode simplifies handoff, speeds up inspection, and integrates with tools like VS Code and Storybook.
+Request access
+Input Box
+Parent component
+State=Default
+Component properties
+State
+—
+Label
+E-mail *
+Placeholder
+john@example.com
+showIcon
+false
+Layout
+Flow
+Horizontal
+Width
+Fill (448px)
+Height
+Fixed (44px)
+Radius
+12px
+Border
+1px
+Justify
+space-between
+Padding
+Right
+12px
+Left
+12px
+Colors
+Color format
+Hex
+Neutras/BG Gray
+#F8F8F8
+Borders
+Color format
+Hex
+1px
+All sides
+Neutras/Secondary Gray
+#C7CCD1
+Inner alignment
+Export

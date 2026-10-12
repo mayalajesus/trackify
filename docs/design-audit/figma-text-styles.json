@@ -1,0 +1,110 @@
+[
+  {
+    "name": "Title/Semi Bold/Title grande SB",
+    "summary": "Title grande SB · 36/44"
+  },
+  {
+    "name": "Title/Semi Bold/Title pequeno SB",
+    "summary": "Title pequeno SB · 18/24"
+  },
+  {
+    "name": "Title/Semi Bold/Title grande SB (28px)",
+    "summary": "Title grande SB (28px) · 28/34"
+  },
+  {
+    "name": "Title/Medium/Title grande M",
+    "summary": "Title grande M · 36/44"
+  },
+  {
+    "name": "Subtitle/Semi Bold/Subtitle grande SB",
+    "summary": "Subtitle grande SB · 30/36"
+  },
+  {
+    "name": "Subtitle/Semi Bold/Subtitle Normal SB",
+    "summary": "Subtitle Normal SB · 24/30"
+  },
+  {
+    "name": "Subtitle/Semi Bold/Subtitle Normal SB (20px)",
+    "summary": "Subtitle Normal SB (20px) · 20/24"
+  },
+  {
+    "name": "Subtitle/Semi Bold/Subtitle Normal SB (22px)",
+    "summary": "Subtitle Normal SB (22px) · 22/27"
+  },
+  {
+    "name": "Body/Regular/Body Normal R",
+    "summary": "Body Normal R · 14/20"
+  },
+  {
+    "name": "Body/Regular/Body pequeno R",
+    "summary": "Body pequeno R · 12/16"
+  },
+  {
+    "name": "Body/Regular/Body pequeno R (13px)",
+    "summary": "Body pequeno R (13px) · 13/18"
+  },
+  {
+    "name": "Body/Regular/Body pequeno R (11px)",
+    "summary": "Body pequeno R (11px) · 11/Auto"
+  },
+  {
+    "name": "Body/Regular/Body pequeno R (10px)",
+    "summary": "Body pequeno R (10px) · 10/30"
+  },
+  {
+    "name": "Body/Regular/Body Normal R (16px)",
+    "summary": "Body Normal R (16px) · 16/Auto"
+  },
+  {
+    "name": "Body/Regular/Body pequeno R (10px auto)",
+    "summary": "Body pequeno R (10px auto) · 10/Auto"
+  },
+  {
+    "name": "Body/Relaxed Regular/Body Normal RR",
+    "summary": "Body Normal RR · 14/24"
+  },
+  {
+    "name": "Body/Compact/Body Normal C",
+    "summary": "Body Normal C · 14/16"
+  },
+  {
+    "name": "Label/Medium/Label pequeno M (13px)",
+    "summary": "Label pequeno M (13px) · 13/120"
+  },
+  {
+    "name": "Label/Medium/Label Normal M",
+    "summary": "Label Normal M · 14/120"
+  },
+  {
+    "name": "Label/Medium/Label pequeno M (12px)",
+    "summary": "Label pequeno M (12px) · 12/120"
+  },
+  {
+    "name": "Label/Medium/Label pequeno M",
+    "summary": "Label pequeno M · 11/Auto"
+  },
+  {
+    "name": "Label/Medium/Label Normal M (16px)",
+    "summary": "Label Normal M (16px) · 16/24"
+  },
+  {
+    "name": "Label/Regular/Label Normal R",
+    "summary": "Label Normal R · 14/Auto"
+  },
+  {
+    "name": "Label/Semi Bold/Label Normal SB",
+    "summary": "Label Normal SB · 14/120"
+  },
+  {
+    "name": "Label/Semi Bold/Label pequeno SB",
+    "summary": "Label pequeno SB · 11/Auto"
+  },
+  {
+    "name": "Label/Semi Bold/Label pequeno SB (13px)",
+    "summary": "Label pequeno SB (13px) · 13/Auto"
+  },
+  {
+    "name": "Tag/Regular/Tag pequeno R",
+    "summary": "Tag pequeno R · 12/16"
+  }
+]

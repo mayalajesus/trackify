@@ -1,0 +1,93 @@
+Reference: https://www.figma.com/design/OxQD1gNLY8qPflf4RuSVI8/Timetracker?node-id=629-2984&t=uBsWUWrKgkaeT8fL-0
+M
+Share
+Comments
+Comments
+Properties
+Properties
+95%
+Get coding, faster
+Dev Mode simplifies handoff, speeds up inspection, and integrates with tools like VS Code and Storybook.
+Request access
+Modal / Projeto
+Component properties
+Tipo
+Novo projeto
+Título
+Novo projeto
+Mostrar fechar
+true
+Fechar modal
+style
+regular
+keywords
+close delete remove
+Nome
+State
+bg cinza
+Label
+Nome *
+Placeholder
+ex.: Atualização da marca
+showIcon
+false
+Faturável desativado
+Estado
+Desligado
+Projeto / Seletor de cor
+Cor
+Lilás
+Rótulo
+Cor do projeto
+Seletor de cliente
+State
+bg cinza
+Label
+Cliente *
+Placeholder
+Selecione um cliente
+showIcon
+true
+Seletor de cliente
+State
+bg cinza
+Label
+Membros do projeto
+Placeholder
+Adicionar membros
+showIcon
+true
+Cancelar
+Type
+Primary
+Text
+Cancelar
+Mostrar ícone
+false
+Criar projeto desativado
+Type
+Disabled
+Layout
+Flow
+Vertical
+Width
+Fixed (384px)
+Height
+Hug (468px)
+Radius
+24px
+Padding
+Top
+28px
+Right
+24px
+Bottom
+24px
+Left
+24px
+Colors
+Color format
+Hex
+Neutras/White
+#FFFFFF
+Export

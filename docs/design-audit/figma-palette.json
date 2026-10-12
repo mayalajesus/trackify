@@ -1,0 +1,86 @@
+{
+  "source": "https://www.figma.com/design/OxQD1gNLY8qPflf4RuSVI8/Timetracker?node-id=0-1",
+  "method": "Read-only DOM of visible Figma style swatches",
+  "colors": [
+    {
+      "fill": "rgba(249, 249, 249, 1)",
+      "name": "Marca/Grey"
+    },
+    {
+      "fill": "rgba(27, 27, 27, 1)",
+      "name": "Marca/Black"
+    },
+    {
+      "fill": "rgba(198, 255, 52, 1)",
+      "name": "Marca/Green"
+    },
+    {
+      "fill": "rgba(126, 59, 237, 1)",
+      "name": "Marca/Purple"
+    },
+    {
+      "fill": "rgba(163, 123, 228, 1)",
+      "name": "Marca/Secondary purple"
+    },
+    {
+      "fill": "rgba(240, 234, 250, 1)",
+      "name": "Marca/Tertiary purple"
+    },
+    {
+      "fill": "rgba(255, 255, 255, 1)",
+      "name": "Neutras/White"
+    },
+    {
+      "fill": "rgba(248, 248, 248, 1)",
+      "name": "Neutras/BG Gray"
+    },
+    {
+      "fill": "rgba(234, 235, 236, 1)",
+      "name": "Neutras/Primary Gray"
+    },
+    {
+      "fill": "rgba(199, 204, 209, 1)",
+      "name": "Neutras/Secondary Gray"
+    },
+    {
+      "fill": "rgba(156, 163, 175, 1)",
+      "name": "Neutras/Tertiary Gray"
+    },
+    {
+      "fill": "rgba(115, 125, 137, 1)",
+      "name": "Neutras/Quartenary Grey"
+    },
+    {
+      "fill": "rgba(217, 247, 233, 1)",
+      "name": "Sistema/Verde/Suave"
+    },
+    {
+      "fill": "rgba(20, 122, 77, 1)",
+      "name": "Sistema/Verde/Intensa"
+    },
+    {
+      "fill": "rgba(255, 244, 243, 1)",
+      "name": "Sistema/Vermelho/Suave"
+    },
+    {
+      "fill": "rgba(221, 29, 13, 1)",
+      "name": "Sistema/Vermelho/Intensa"
+    },
+    {
+      "fill": "rgba(253, 242, 219, 1)",
+      "name": "Sistema/Amarelo/Suave"
+    },
+    {
+      "fill": "rgba(156, 93, 15, 1)",
+      "name": "Sistema/Amarelo/Intensa"
+    },
+    {
+      "fill": "rgba(223, 245, 252, 1)",
+      "name": "Sistema/Azul/Suave"
+    },
+    {
+      "fill": "rgba(12, 79, 104, 1)",
+      "name": "Sistema/Azul/Intensa"
+    }
+  ]
+}

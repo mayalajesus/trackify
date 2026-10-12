@@ -1,0 +1,65 @@
+Reference: https://www.figma.com/design/OxQD1gNLY8qPflf4RuSVI8/Timetracker?node-id=194-4598&t=Z1M8yr30eSFcvZdR-0
+M
+Share
+Comments
+Comments
+Properties
+Properties
+24%
+Get coding, faster
+Dev Mode simplifies handoff, speeds up inspection, and integrates with tools like VS Code and Storybook.
+Request access
+Modal / Projeto
+Component properties
+Tipo
+Novo projeto
+Título
+Novo projeto
+Mostrar fechar
+true
+Título de gerenciamento
+Gerenciar membros do projeto
+Rótulo dos membros
+Membros selecionados
+Título de edição
+Editar projeto
+Mostrar membros do projeto
+true
+Título de arquivamento
+Arquivar projeto?
+Mensagem de arquivamento
+Homologação sairá das listas Ativo e Inativo. Os registros existentes continuarão disponíveis nos relatórios e no histórico.
+Título de exclusão
+Excluir projeto permanentemente?
+Mensagem de exclusão
+Isto exclui Cópia de teste permanentemente. Esta ação não pode ser desfeita.
+Mostrar ícone de alerta
+true
+Layout
+Flow
+Vertical
+Width
+Fixed (384px)
+Height
+Hug (468px)
+Top
+24px
+Left
+24px
+Radius
+24px
+Padding
+Top
+28px
+Right
+24px
+Bottom
+24px
+Left
+24px
+Colors
+Color format
+Hex
+Neutras/White
+#FFFFFF
+Export

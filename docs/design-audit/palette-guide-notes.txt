@@ -1,0 +1,5 @@
+Source: https://www.figma.com/design/OxQD1gNLY8qPflf4RuSVI8/Timetracker?node-id=649-6089
+Read-only layer text:
+Escopo: apenas as nove seções de telas desta página. UI Kit, estilos globais, componentes principais e demais páginas não foram alterados.
+Verde: sucesso e status ativo. Vermelho: erros e ações destrutivas. Amarelo: atenção, pendências e apoio. Azul: informação e segurança.
+As telas atuais usam os pares claros disponíveis. Purple permanece nas ações padrão; marcas, estados neutros e cores personalizadas de projetos foram preservados.

@@ -1,0 +1,42 @@
+[
+  {
+    "page": "Clientes",
+    "tables": [
+      {
+        "background": "rgb(234, 235, 236)",
+        "radius": "20px"
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "page": "Equipe",
+    "tables": [
+      {
+        "background": "rgb(234, 235, 236)",
+        "radius": "20px"
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "page": "Integrações",
+    "tables": [
+      {
+        "background": "rgb(234, 235, 236)",
+        "radius": "20px"
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "page": "Workspaces",
+    "tables": [
+      {
+        "background": "rgb(234, 235, 236)",
+        "radius": "20px"
+      }
+    ],
+    "overflow": false
+  }
+]
