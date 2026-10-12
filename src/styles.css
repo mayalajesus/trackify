@@ -2452,17 +2452,34 @@ body {
   font-size: 12px;
 }
 .settings-page .theme-tabs--text .tabs__tab {
-  min-height: 28px;
-  height: 28px;
-  font-size: 12px;
+  min-height: 26px;
+  height: 26px;
+  font-size: 11px;
+  font-weight: 400;
+  color: #9ca3af;
+}
+.settings-page .theme-tabs--text .tabs__tab[aria-selected="true"] {
+  color: var(--foreground);
+  font-weight: 500;
+}
+.settings-page .theme-tabs--text .tabs__indicator {
+  box-shadow: 0 2px 5px #1b1b1b0c;
 }
 .settings-page .switch__control {
   width: 28px;
   height: 16px;
+  border-radius: 999px;
 }
 .settings-page .switch__thumb {
   width: 12px;
   height: 12px;
+  margin-inline-start: 2px;
+  border-radius: 999px;
+  box-shadow: none;
+}
+.settings-page .switch[data-selected="true"] .switch__thumb,
+.settings-page .switch[aria-checked="true"] .switch__thumb {
+  margin-inline-start: 14px;
 }
 .settings-page .switch .label {
   font-size: 12px;
