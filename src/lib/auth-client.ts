@@ -116,7 +116,7 @@ async function createConfiguredClient(): Promise<AuthClient | null> {
       const result = await neonAuth.getBetterAuthInstance().signUp.email({
         email: credentials.email,
         password: credentials.password,
-        name: credentials.options?.data?.displayName ?? "",
+        name: credentials.options?.data?.["displayName"] ?? "",
         callbackURL: credentials.options?.emailRedirectTo,
       });
       if (result.error)

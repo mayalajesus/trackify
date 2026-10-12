@@ -3,7 +3,12 @@ const DEFAULT_AUTH_RETURN_PATH = "/tracker";
 export function getAuthReturnPath(fallback = DEFAULT_AUTH_RETURN_PATH): string {
   if (typeof window === "undefined") return fallback;
   const redirect = new URLSearchParams(window.location.search).get("redirect");
-  if (!redirect || !redirect.startsWith("/") || /[\\\u0000-\u0020]/.test(redirect)) return fallback;
+  if (
+    !redirect ||
+    !redirect.startsWith("/") ||
+    Array.from(redirect).some((character) => character === "\\" || character.charCodeAt(0) <= 32)
+  )
+    return fallback;
   try {
     const target = new URL(redirect, window.location.origin);
     if (target.origin !== window.location.origin) return fallback;

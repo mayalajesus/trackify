@@ -46,9 +46,10 @@ export function ProjectColorPicker({
         <ColorPicker value={color} onChange={(next) => onChange(next.toString("hex"))}>
           <ColorPicker.Trigger
             aria-label={t("Choose a custom project color")}
-            title={`${t("Choose a custom project color")}: ${color.toString("hex")}`}
             className="flex size-7 min-w-7 items-center justify-center rounded-full border border-separator bg-surface p-1 text-foreground"
-            style={isCustom ? { borderColor: value, boxShadow: `0 0 0 2px ${value}` } : undefined}
+            {...(isCustom
+              ? { style: { borderColor: value, boxShadow: `0 0 0 2px ${value}` } }
+              : {})}
           >
             <svg
               aria-hidden="true"
