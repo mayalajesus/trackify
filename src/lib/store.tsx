@@ -1,4 +1,5 @@
 import { projectIsBillable } from "./project-billability";
+
 import {
   createContext,
   useCallback,
@@ -8,30 +9,26 @@ import {
   useRef,
   useState,
 } from "react";
+
 import { useQueryClient } from "@tanstack/react-query";
+
 import type { ReactNode } from "react";
-import { isFavoriteTasks } from "./favorite-tasks";
+
 import { useAuth } from "./auth-context";
+
 import { createApiDataSource, request } from "./api-data-source";
+
 import type {
   PersistedAccount,
   SessionStatus,
-  ThemeMode,
-  UserIdentity,
   UserPreferences,
-  Workspace,
   WorkspaceData,
-  WorkspaceMembership,
   WorkspaceSettings,
   WorkspaceSummary,
 } from "./account-types";
-import {
-  clients as seedClients,
-  members as seedMembers,
-  projects as seedProjects,
-  timeEntries as seedEntries,
-} from "./mock-data";
+
 import type { Client, Member, Project, Role, TimeEntry, TrelloState } from "./domain";
+
 import {
   addSecondsToDateTime,
   dateTimeToTimestamp,
@@ -41,33 +38,82 @@ import {
   isValidDateOnly,
   nowTime,
 } from "./format";
-import { defaultLocale, isLocale } from "./i18n";
+
 import {
   canTrackProject as canTrackProjectForRole,
   hasPermission,
   type Permission,
 } from "./permissions";
-import { isDefaultAvatarUrl, resetSessionDefaultAvatar } from "./default-avatar";
+
+import { resetSessionDefaultAvatar } from "./default-avatar";
+
 import {
-  defaultCurrencyForLocale,
   clientCurrencyOptions,
+  defaultCurrencyForLocale,
   isCurrencyCode,
   type BillingPreference,
   type CurrencyCode,
 } from "./billing";
+
 import { findTimeEntryConflict, type ScopedTimeIntervalEntry } from "./time-entry-overlap";
+
 import { entriesForReportWindow, reportEntriesQueryName } from "./report-query";
-import { parseStoredReportFiltersValue, type StoredReportFilters } from "./report-filter-storage";
+
 import {
   createRunningTimer,
   recentTimerTasksFromEntries,
   rememberRecentTimerTask,
-  validateTimerTaskStart,
   validateTimerDetails,
+  validateTimerTaskStart,
   type TimerTaskPreset,
 } from "./timer-start";
 
+import type { TimerState } from "./store/types";
+
+import type { StoreResult } from "./store/types";
+
+import type { AddEntryOptions } from "./store/types";
+
+import { initialTimer } from "./store/defaults";
+
+import { initialSettings } from "./store/defaults";
+
+import { initialPreferences } from "./store/defaults";
+
+import { initialTrello } from "./store/defaults";
+
+import { isFiniteNumber } from "./store/validation";
+
+import { getInitialTimeZone } from "./store/preferences";
+
+import { getDevicePreferences } from "./store/preferences";
+
+import { isValidLogoUrl } from "./store/validation";
+
+import { isValidPreferences } from "./store/validation";
+
+import { normalizedProjectName } from "./store/validation";
+
+import { membershipToMember } from "./store/membership";
+
+import { membersToMemberships } from "./store/membership";
+
+import { createIdentity } from "./store/membership";
+
+import { elapsedForTimer } from "./store/timer";
+
+import { pauseTimerAt } from "./store/timer";
+
+import { initialsFromName } from "./store/membership";
+
+import type { StoreValue } from "./store/types";
+
+import { reuseIfEqual } from "./store/references";
+
+import { shareAccountReferences } from "./store/references";
+
 export { findTimeEntryConflict, timeEntriesOverlap } from "./time-entry-overlap";
+
 export type {
   PersistedAccount,
   SessionStatus,
@@ -82,828 +128,44 @@ export type {
   WorkspaceSummary,
 } from "./account-types";
 
-export type TimerStatus = "idle" | "running" | "paused";
-
-export interface TimerState {
-  taskDetails?: import("./domain").TaskDetails;
-  status: TimerStatus;
-  workspaceId: string | null;
-  task: string;
-  projectId: string | null;
-  billable: boolean;
-  startedAt: number | null;
-  startedDate: string | null;
-  accumulated: number;
-  startClock: string;
-  hourlyRate?: number;
-  currency?: CurrencyCode;
-}
-
 export type { Permission } from "./permissions";
+export type { TimerStatus } from "./store/types";
 
-export type StoreResult =
-  | {
-      success: true;
-      id?: string;
-      invitationUrl?: string;
-      emailStatus?: import("./account-data-source").InvitationEmailStatus;
-      warning?: string;
-      conflict?: TimeEntry;
-    }
-  | { success: false; error: string };
+export type { TimerState } from "./store/types";
 
-type AddEntryOptions = {
-  allowWhileTimerActive?: boolean;
-  refreshBilling?: boolean;
-};
+export type { StoreResult } from "./store/types";
 
-const initialTimer: TimerState = {
-  status: "idle",
-  workspaceId: null,
-  task: "",
-  projectId: null,
-  billable: false,
-  startedAt: null,
-  startedDate: null,
-  accumulated: 0,
-  startClock: "09:00",
-};
+export { isValidTimeZone } from "./store/preferences";
 
-const initialSettings: WorkspaceSettings = {
-  weekStart: "monday",
-};
+export { getInitialTimeZone } from "./store/preferences";
 
-const initialPreferences: UserPreferences = {
-  idleDetection: true,
-  language: defaultLocale,
-  theme: "system",
-  avatarUrl: null,
-  timezone: getInitialTimeZone(),
-  activeWorkspaceId: null,
-  reportFilters: {},
-};
+export { getDevicePreferences } from "./store/preferences";
 
-const initialTrello: TrelloState = {
-  status: "disconnected",
-  workspace: null,
-  board: null,
-  lists: [],
-  cards: [],
-  rule: "lists",
-  lastSync: null,
-};
+export { migrateAccountSnapshot } from "./store/migrations";
 
-function isValidClock(value: unknown): value is string {
-  return typeof value === "string" && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
-}
+export { repairDuplicateEntryIds } from "./store/migrations";
 
-function isFiniteNumber(value: unknown): value is number {
-  return typeof value === "number" && Number.isFinite(value);
-}
+export { makeSeedAccount } from "./store/seed-account";
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object";
-}
+export { isValidAccount } from "./store/validation";
 
-function isThemeMode(value: unknown): value is ThemeMode {
-  return value === "system" || value === "light" || value === "dark";
-}
+export { elapsedForTimer } from "./store/timer";
 
-export function isValidTimeZone(value: unknown): value is string {
-  if (typeof value !== "string" || !value.trim()) return false;
-  try {
-    new Intl.DateTimeFormat("en-US", { timeZone: value }).format();
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-export function getInitialTimeZone(): string {
-  try {
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    return isValidTimeZone(timezone) ? timezone : "UTC";
-  } catch {
-    return "UTC";
-  }
-}
-
-export function getDevicePreferences(
-  storedPreferences: UserPreferences,
-  deviceTimeZone = getInitialTimeZone(),
-): UserPreferences {
-  // The device clock is authoritative; API defaults or another device's saved zone
-  // must not shift the local dates and clock values used for tracking time.
-  return storedPreferences.timezone === deviceTimeZone
-    ? storedPreferences
-    : { ...storedPreferences, timezone: deviceTimeZone };
-}
-
-function isValidAvatarUrl(value: unknown): value is string | null {
-  return (
-    value === null ||
-    (typeof value === "string" &&
-      ((/^data:image\/(?:png|jpeg|webp|gif);base64,[a-zA-Z0-9+/=\r\n]+$/.test(value) &&
-        value.length <= 1_500_000) ||
-        /^https:\/\/[^/]+\.supabase\.co\/storage\/v1\/object\/sign\/avatars\//.test(value) ||
-        /^https:\/\/(?:[^/.]+\.)*googleusercontent\.com\//.test(value) ||
-        isDefaultAvatarUrl(value)))
-  );
-}
-
-function isValidLogoUrl(value: unknown): value is string | null {
-  return (
-    value === null ||
-    (typeof value === "string" &&
-      ((/^data:image\/(?:png|jpeg|webp);base64,[a-zA-Z0-9+/=\r\n]+$/.test(value) &&
-        value.length <= 900_000) ||
-        /^https:\/\/[^/]+\.supabase\.co\/storage\/v1\/object\/sign\/workspace-logos\//.test(value)))
-  );
-}
-
-function isValidPreferences(value: unknown): value is UserPreferences {
-  if (!value || typeof value !== "object") return false;
-  const prefs = value as Partial<UserPreferences>;
-  return (
-    (prefs.favoriteTasks === undefined || isFavoriteTasks(prefs.favoriteTasks)) &&
-    typeof prefs.idleDetection === "boolean" &&
-    isLocale(prefs.language) &&
-    isThemeMode(prefs.theme) &&
-    isValidAvatarUrl(prefs.avatarUrl) &&
-    isValidTimeZone(prefs.timezone) &&
-    (prefs.activeWorkspaceId === null || typeof prefs.activeWorkspaceId === "string") &&
-    isRecord(prefs.reportFilters) &&
-    Object.values(prefs.reportFilters).every(
-      (filters) => parseStoredReportFiltersValue(filters) !== null,
-    )
-  );
-}
-
-function isValidSettings(value: unknown): value is WorkspaceSettings {
-  if (!value || typeof value !== "object") return false;
-  const settings = value as Partial<WorkspaceSettings>;
-  return settings.weekStart === "monday" || settings.weekStart === "sunday";
-}
-
-function isValidClient(value: unknown): value is Client {
-  if (!value || typeof value !== "object") return false;
-  const client = value as Partial<Client>;
-  return (
-    typeof client.id === "string" &&
-    typeof client.name === "string" &&
-    Boolean(client.name.trim()) &&
-    typeof client.contact === "string" &&
-    (client.status === undefined || ["active", "on-hold", "archived"].includes(client.status)) &&
-    (client.memberIds === undefined ||
-      (Array.isArray(client.memberIds) &&
-        client.memberIds.every((id) => typeof id === "string"))) &&
-    (client.billable === undefined || typeof client.billable === "boolean") &&
-    (client.currency === undefined || clientCurrencyOptions.includes(client.currency)) &&
-    (client.contractedHours == null ||
-      (typeof client.contractedHours === "number" &&
-        Number.isFinite(client.contractedHours) &&
-        client.contractedHours > 0))
-  );
-}
-
-function isValidProject(value: unknown, clients: Client[]): value is Project {
-  if (!value || typeof value !== "object") return false;
-  const project = value as Partial<Project>;
-  return (
-    typeof project.id === "string" &&
-    typeof project.name === "string" &&
-    Boolean(project.name.trim()) &&
-    typeof project.clientId === "string" &&
-    clients.some((client) => client.id === project.clientId) &&
-    typeof project.billable === "boolean" &&
-    (project.status === "active" ||
-      project.status === "on-hold" ||
-      project.status === "archived") &&
-    typeof project.color === "string" &&
-    typeof project.lastActivity === "string" &&
-    Array.isArray(project.memberIds) &&
-    project.memberIds.every((id) => typeof id === "string")
-  );
-}
-
-function normalizedProjectName(name: string): string {
-  return name.trim().replace(/\s+/g, " ").toLowerCase();
-}
-
-function isValidEntry(value: unknown, projects: Project[]): value is TimeEntry {
-  if (!value || typeof value !== "object") return false;
-  const entry = value as Partial<TimeEntry>;
-  if (
-    typeof entry.id !== "string" ||
-    !entry.id.trim() ||
-    typeof entry.date !== "string" ||
-    typeof entry.start !== "string" ||
-    typeof entry.end !== "string" ||
-    typeof entry.seconds !== "number" ||
-    typeof entry.userId !== "string" ||
-    typeof entry.task !== "string" ||
-    typeof entry.billable !== "boolean"
-  )
-    return false;
-  if (!isValidDateOnly(entry.date) || !isValidDateOnly(entry.endDate ?? entry.date)) return false;
-  if (entry.endDate && entry.endDate < entry.date) return false;
-  if (!isValidClock(entry.start) || !isValidClock(entry.end)) return false;
-  if (entry.projectId !== null && typeof entry.projectId !== "string") return false;
-  if (entry.projectId !== null && !projects.some((project) => project.id === entry.projectId))
-    return false;
-  if (!entry.task.trim() || !isFiniteNumber(entry.seconds) || entry.seconds <= 0) return false;
-  if (entry.startTimestamp !== undefined && !isFiniteNumber(entry.startTimestamp)) return false;
-  if (entry.endTimestamp !== undefined && !isFiniteNumber(entry.endTimestamp)) return false;
-  if ((entry.startTimestamp === undefined) !== (entry.endTimestamp === undefined)) return false;
-  if (entry.startTimestamp !== undefined && entry.endTimestamp! < entry.startTimestamp)
-    return false;
-  if (entry.hourlyRate !== undefined && (!isFiniteNumber(entry.hourlyRate) || entry.hourlyRate < 0))
-    return false;
-  if (entry.currency !== undefined && !isCurrencyCode(entry.currency)) return false;
-  const calculated = getElapsedSeconds(entry as TimeEntry);
-  return calculated > 0 && Math.abs(calculated - entry.seconds) <= 1;
-}
-
-function membershipToMember(
-  membership: WorkspaceMembership,
-  identities: UserIdentity[],
-): Member | null {
-  const identity = identities.find((candidate) => candidate.id === membership.userId);
-  if (!identity) return null;
-  return {
-    ...identity,
-    role: membership.role,
-    status: membership.status,
-    ...(membership.invitedAt ? { invitedAt: membership.invitedAt } : {}),
-  };
-}
-
-function membersToMemberships(
-  workspaceId: string,
-  members: Member[],
-  existingMemberships: WorkspaceMembership[] = [],
-  billingByUserId: Record<string, BillingPreference> = {},
-): WorkspaceMembership[] {
-  const existingByUserId = new Map(
-    existingMemberships.map((membership) => [membership.userId, membership]),
-  );
-  return members.map((member) => {
-    const billing = billingByUserId[member.id] ?? existingByUserId.get(member.id);
-    return {
-      ...existingByUserId.get(member.id),
-      workspaceId,
-      userId: member.id,
-      role: member.role,
-      status: member.status,
-      hourlyRate: billing?.hourlyRate ?? 0,
-      currency: billing?.currency ?? defaultCurrencyForLocale(defaultLocale),
-      ...(member.invitedAt ? { invitedAt: member.invitedAt } : {}),
-    };
-  });
-}
-
-function createIdentity(member: Member): UserIdentity {
-  return { id: member.id, name: member.name, email: member.email, initials: member.initials };
-}
-
-export function migrateAccountSnapshot(value: unknown): PersistedAccount | null {
-  if (!value || typeof value !== "object") return null;
-  const raw = value as {
-    version?: unknown;
-    identities?: UserIdentity[];
-    workspaces?: WorkspaceData[];
-    preferencesByUserId?: Record<string, unknown>;
-  };
-  if (
-    (raw.version !== 9 && raw.version !== 10 && raw.version !== 11 && raw.version !== 12) ||
-    !Array.isArray(raw.identities) ||
-    !Array.isArray(raw.workspaces) ||
-    !raw.workspaces.every((workspace) => Array.isArray(workspace?.memberships)) ||
-    !raw.preferencesByUserId ||
-    typeof raw.preferencesByUserId !== "object"
-  )
-    return null;
-
-  const preferencesByUserId: Record<string, UserPreferences> = {};
-  const billingByUserId: Record<string, BillingPreference> = {};
-  for (const identity of raw.identities) {
-    if (!identity || typeof identity !== "object" || typeof identity.id !== "string") return null;
-    const candidate = raw.preferencesByUserId[identity.id];
-    if (!candidate || typeof candidate !== "object") return null;
-    const preferences = candidate as Partial<UserPreferences> & Partial<BillingPreference>;
-    if (
-      typeof preferences.idleDetection !== "boolean" ||
-      !isLocale(preferences.language) ||
-      !isThemeMode(preferences.theme) ||
-      !isValidAvatarUrl(preferences.avatarUrl)
-    )
-      return null;
-    billingByUserId[identity.id] = {
-      hourlyRate:
-        isFiniteNumber(preferences.hourlyRate) && preferences.hourlyRate >= 0
-          ? preferences.hourlyRate
-          : 0,
-      currency: isCurrencyCode(preferences.currency)
-        ? preferences.currency
-        : defaultCurrencyForLocale(preferences.language),
-    };
-    const reportFilters =
-      isRecord(preferences.reportFilters) &&
-      Object.values(preferences.reportFilters).every(
-        (filters) => parseStoredReportFiltersValue(filters) !== null,
-      )
-        ? (preferences.reportFilters as Record<string, StoredReportFilters>)
-        : {};
-    preferencesByUserId[identity.id] = {
-      idleDetection: preferences.idleDetection,
-      language: preferences.language,
-      theme: preferences.theme,
-      avatarUrl: preferences.avatarUrl,
-      timezone: isValidTimeZone(preferences.timezone) ? preferences.timezone : getInitialTimeZone(),
-      activeWorkspaceId:
-        preferences.activeWorkspaceId === null || typeof preferences.activeWorkspaceId === "string"
-          ? preferences.activeWorkspaceId
-          : null,
-      reportFilters,
-      favoriteTasks: isFavoriteTasks(preferences.favoriteTasks) ? preferences.favoriteTasks : {},
-    };
-  }
-
-  const migrated: PersistedAccount = {
-    version: 13,
-    identities: raw.identities,
-    workspaces: raw.workspaces.map((data) => ({
-      ...data,
-      settings: {
-        weekStart: data.settings.weekStart === "sunday" ? "sunday" : "monday",
-      },
-      memberships: data.memberships.map((membership) => {
-        const current = membership as Partial<WorkspaceMembership> &
-          Pick<WorkspaceMembership, "userId">;
-        const fallback = billingByUserId[current.userId] ?? {
-          hourlyRate: 0,
-          currency: "USD" as const,
-        };
-        return {
-          ...membership,
-          hourlyRate:
-            isFiniteNumber(current.hourlyRate) && current.hourlyRate >= 0
-              ? current.hourlyRate
-              : fallback.hourlyRate,
-          currency: isCurrencyCode(current.currency) ? current.currency : fallback.currency,
-        };
-      }),
-    })),
-    preferencesByUserId,
-  };
-  const repaired = repairDuplicateEntryIds(migrated);
-  return isValidAccount(repaired) ? repaired : null;
-}
-
-/**
- * Older local snapshots could contain duplicate entry IDs because the in-memory
- * counter restarted after a full page reload. Repair only the later copies so
- * the first existing record keeps its original identity and history.
- */
-export function repairDuplicateEntryIds(value: unknown): unknown {
-  if (
-    !isRecord(value) ||
-    (value["version"] !== 10 &&
-      value["version"] !== 11 &&
-      value["version"] !== 12 &&
-      value["version"] !== 13) ||
-    !Array.isArray(value["workspaces"])
-  ) {
-    return value;
-  }
-
-  const workspaces = value["workspaces"];
-  if (
-    !workspaces.every((workspace) => isRecord(workspace) && Array.isArray(workspace["entries"]))
-  ) {
-    return value;
-  }
-
-  let replacementNumber = 0;
-  let changed = false;
-  const repairedWorkspaces = workspaces.map((workspace) => {
-    const record = workspace as Record<string, unknown>;
-    const entries = record["entries"] as unknown[];
-    const originalIds = new Set<string>();
-    const usedIds = new Set<string>();
-    for (const entry of entries) {
-      if (isRecord(entry) && typeof entry["id"] === "string" && entry["id"].trim()) {
-        originalIds.add(entry["id"]);
-      }
-    }
-    let workspaceChanged = false;
-    const repairedEntries = entries.map((entry) => {
-      if (!isRecord(entry) || typeof entry["id"] !== "string") return entry;
-
-      const id = entry["id"];
-      if (id.trim() && !usedIds.has(id)) {
-        usedIds.add(id);
-        return entry;
-      }
-
-      let replacementId = "";
-      do {
-        replacementId = `t-migrated-${++replacementNumber}`;
-      } while (originalIds.has(replacementId) || usedIds.has(replacementId));
-
-      usedIds.add(replacementId);
-      changed = true;
-      workspaceChanged = true;
-      return { ...entry, id: replacementId };
-    });
-
-    return workspaceChanged ? { ...record, entries: repairedEntries } : workspace;
-  });
-
-  return changed ? { ...value, workspaces: repairedWorkspaces } : value;
-}
-
-export function makeSeedAccount(): PersistedAccount {
-  const identities = seedMembers.map(createIdentity);
-  const defaultWorkspaceId = "w1";
-  const sharedWorkspaceId = "w2";
-  const defaultWorkspace: WorkspaceData = {
-    workspace: {
-      id: defaultWorkspaceId,
-      name: "Studio Co.",
-      ownerId: "u1",
-      logoDataUrl: null,
-      status: "active",
-      createdAt: "2026-08-01T09:00:00.000Z",
-    },
-    memberships: membersToMemberships(defaultWorkspaceId, seedMembers),
-    entries: seedEntries,
-    projects: seedProjects,
-    clients: seedClients,
-    settings: { ...initialSettings },
-    trello: initialTrello,
-  };
-  const sharedMembers: Member[] = [
-    { ...seedMembers[1]!, role: "Owner" },
-    { ...seedMembers[0]!, role: "Member" },
-    { ...seedMembers[2]!, role: "Member" },
-  ];
-  const sharedWorkspace: WorkspaceData = {
-    workspace: {
-      id: sharedWorkspaceId,
-      name: "Product Lab",
-      ownerId: "u2",
-      logoDataUrl: null,
-      status: "active",
-      createdAt: "2026-08-05T09:00:00.000Z",
-    },
-    memberships: membersToMemberships(sharedWorkspaceId, sharedMembers),
-    entries: seedEntries.filter((entry) => entry.projectId === "p1"),
-    projects: seedProjects.filter((project) => project.id === "p1"),
-    clients: seedClients.filter((client) => client.id === "c1"),
-    settings: { ...initialSettings },
-    trello: initialTrello,
-  };
-  return {
-    version: 13,
-    identities,
-    workspaces: [defaultWorkspace, sharedWorkspace],
-    preferencesByUserId: Object.fromEntries(
-      identities.map((identity) => [identity.id, { ...initialPreferences }]),
-    ),
-  };
-}
-
-export function isValidAccount(value: unknown): value is PersistedAccount {
-  if (!value || typeof value !== "object") return false;
-  const account = value as Partial<PersistedAccount>;
-  if (
-    account.version !== 13 ||
-    !Array.isArray(account.identities) ||
-    !Array.isArray(account.workspaces) ||
-    !account.preferencesByUserId ||
-    typeof account.preferencesByUserId !== "object"
-  )
-    return false;
-  const identities = account.identities;
-  const workspaces = account.workspaces;
-  const preferencesByUserId = account.preferencesByUserId;
-  const identityIds = new Set(identities.map((identity) => identity.id));
-  const workspaceIds = new Set(workspaces.map((data) => data.workspace.id));
-  if (
-    identities.length === 0 ||
-    identityIds.size !== identities.length ||
-    !identities.every(
-      (identity) =>
-        identity &&
-        typeof identity.id === "string" &&
-        Boolean(identity.id.trim()) &&
-        typeof identity.name === "string" &&
-        Boolean(identity.name.trim()) &&
-        typeof identity.email === "string" &&
-        Boolean(identity.email.trim()) &&
-        typeof identity.initials === "string" &&
-        Boolean(identity.initials.trim()),
-    ) ||
-    !Object.values(preferencesByUserId).every(isValidPreferences)
-  )
-    return false;
-  if (workspaceIds.size !== workspaces.length) return false;
-  return workspaces.every((data) => {
-    const entryIds = new Set<string>();
-    if (!data || typeof data !== "object") return false;
-    const workspace = data.workspace;
-    if (
-      !workspace ||
-      typeof workspace.id !== "string" ||
-      typeof workspace.name !== "string" ||
-      !workspace.name.trim() ||
-      typeof workspace.ownerId !== "string" ||
-      !isValidLogoUrl(workspace.logoDataUrl) ||
-      (workspace.status !== "active" && workspace.status !== "archived") ||
-      typeof workspace.createdAt !== "string" ||
-      Number.isNaN(Date.parse(workspace.createdAt)) ||
-      (workspace.archivedAt !== undefined &&
-        (typeof workspace.archivedAt !== "string" ||
-          Number.isNaN(Date.parse(workspace.archivedAt)))) ||
-      !identityIds.has(workspace.ownerId) ||
-      !Array.isArray(data.memberships) ||
-      !Array.isArray(data.clients) ||
-      !Array.isArray(data.projects) ||
-      !Array.isArray(data.entries) ||
-      !isValidSettings(data.settings)
-    )
-      return false;
-    if (!data.clients.every(isValidClient)) return false;
-    const membershipIds = new Set(data.memberships.map((membership) => membership.userId));
-    if (membershipIds.size !== data.memberships.length) return false;
-    if (
-      !data.memberships.every(
-        (membership) =>
-          membership &&
-          membership.workspaceId === workspace.id &&
-          typeof membership.userId === "string" &&
-          identityIds.has(membership.userId) &&
-          (membership.role === "Owner" ||
-            membership.role === "Admin" ||
-            membership.role === "Member") &&
-          (membership.status === "active" ||
-            membership.status === "invited" ||
-            membership.status === "removed") &&
-          isFiniteNumber(membership.hourlyRate) &&
-          membership.hourlyRate >= 0 &&
-          isCurrencyCode(membership.currency) &&
-          (membership.invitedAt === undefined ||
-            (typeof membership.invitedAt === "string" &&
-              !Number.isNaN(Date.parse(membership.invitedAt)))) &&
-          (membership.joinedAt === undefined ||
-            (typeof membership.joinedAt === "string" &&
-              !Number.isNaN(Date.parse(membership.joinedAt)))),
-      )
-    )
-      return false;
-    const ownerMemberships = data.memberships.filter(
-      (membership) => membership.role === "Owner" && membership.userId === workspace.ownerId,
-    );
-    if (ownerMemberships.length !== 1) return false;
-    if (
-      data.memberships.some(
-        (membership) => membership.role === "Owner" && membership.userId !== workspace.ownerId,
-      )
-    )
-      return false;
-    if (!data.projects.every((project) => isValidProject(project, data.clients))) return false;
-    if (
-      data.projects.some((project) =>
-        project.memberIds.some((memberId) => !membershipIds.has(memberId)),
-      )
-    )
-      return false;
-    if (
-      !data.entries.every(
-        (entry) =>
-          identityIds.has(entry.userId) &&
-          membershipIds.has(entry.userId) &&
-          isValidEntry(entry, data.projects),
-      )
-    )
-      return false;
-    for (const entry of data.entries) {
-      if (entryIds.has(entry.id)) return false;
-      entryIds.add(entry.id);
-    }
-    return true;
-  });
-}
-
-export function elapsedForTimer(timer: TimerState, now = Date.now()): number {
-  if (timer.status !== "running" || timer.startedAt === null) return timer.accumulated;
-  return Math.max(0, timer.accumulated + Math.floor((now - timer.startedAt) / 1000));
-}
-
-export function pauseTimerAt(timer: TimerState, effectiveAt = Date.now()): TimerState {
-  if (timer.status !== "running") return timer;
-  const now = Date.now();
-  const requestedAt = Number.isFinite(effectiveAt) ? effectiveAt : now;
-  const pauseAt = Math.max(timer.startedAt ?? requestedAt, Math.min(requestedAt, now));
-  return {
-    ...timer,
-    status: "paused",
-    accumulated: elapsedForTimer(timer, pauseAt),
-    startedAt: null,
-  };
-}
-
-function initialsFromName(name: string): string {
-  const initials = name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
-  return initials || "?";
-}
+export { pauseTimerAt } from "./store/timer";
 
 let idCounter = 100;
+
 const nextId = (_prefix: string, _existingIds: Iterable<string> = []) => {
   if (typeof globalThis.crypto?.randomUUID === "function") return globalThis.crypto.randomUUID();
   const suffix = (++idCounter).toString(16).padStart(12, "0");
   return `00000000-0000-4000-8000-${suffix}`;
 };
+
 const inviteEmailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-interface StoreValue {
-  entries: TimeEntry[];
-  projects: Project[];
-  clients: Client[];
-  members: Member[];
-  timer: TimerState;
-  recentTasks: TimerTaskPreset[];
-  trello: TrelloState;
-  settings: WorkspaceSettings;
-  preferences: UserPreferences;
-  preferencesByUserId: Record<string, UserPreferences>;
-  workspaceBilling: BillingPreference;
-  billingPreferencesByUserId: Record<string, BillingPreference>;
-  currentMember: Member | null;
-  currentWorkspace: Workspace | null;
-  currentWorkspaceMembership: WorkspaceMembership | null;
-  workspaces: WorkspaceSummary[];
-  activeWorkspaceId: string;
-  sessionStatus: SessionStatus;
-  accountLoading: boolean;
-  accountError: string | null;
-  retryAccountLoad: () => void;
-  can: (permission: Permission) => boolean;
-  canTrackProject: (projectId: string) => boolean;
-  findEntryConflict: (
-    entry: Omit<TimeEntry, "id">,
-    excludedEntryId?: string,
-  ) => TimeEntry | undefined;
-  setActiveMember: (memberId: string) => StoreResult;
-  currentUserId: string;
-  today: string;
-  startTimer: (
-    task: string,
-    projectId: string | null,
-    billable?: boolean,
-    taskDetails?: import("./domain").TaskDetails,
-  ) => StoreResult;
-  acceptTaskInvitation: (invitationId: string) => Promise<StoreResult>;
-  startTimerFromTask: (task: TimerTaskPreset) => StoreResult;
-  updateTimer: (patch: {
-    taskDetails?: import("./domain").TaskDetails;
-    task?: string;
-    projectId?: string | null;
-    billable?: boolean;
-  }) => StoreResult;
-  setTimerElapsed: (seconds: number) => StoreResult;
-  pauseTimer: (effectiveAt?: number) => void;
-  resumeTimer: () => StoreResult;
-  stopTimer: () => StoreResult;
-  addEntry: (entry: Omit<TimeEntry, "id">, options?: AddEntryOptions) => StoreResult;
-  updateEntry: (id: string, patch: Partial<Omit<TimeEntry, "id">>) => StoreResult;
-  deleteEntry: (id: string) => StoreResult;
-  restoreEntry: (entry: TimeEntry) => StoreResult;
-  addProject: (project: Omit<Project, "id">) => StoreResult;
-  updateProject: (id: string, patch: Partial<Omit<Project, "id">>) => StoreResult;
-  deleteProject: (id: string) => StoreResult;
-  addClient: (client: Omit<Client, "id">) => StoreResult;
-  updateClient: (id: string, patch: Partial<Client>) => StoreResult;
-  deleteClient: (id: string) => StoreResult;
-  inviteMember: (email: string, role: Exclude<Role, "Owner">) => Promise<StoreResult>;
-  resendInvite: (memberId: string) => Promise<StoreResult>;
-  cancelInvite: (memberId: string) => Promise<StoreResult>;
-  removeMember: (memberId: string) => StoreResult;
-  restoreMember: (memberId: string) => StoreResult;
-  updateMemberRole: (memberId: string, role: Exclude<Role, "Owner">) => StoreResult;
-  setTrello: (patch: Partial<TrelloState>) => StoreResult;
-  setWorkspaceSettings: (patch: Partial<WorkspaceSettings>, workspaceId?: string) => StoreResult;
-  setUserPreferences: (patch: Partial<UserPreferences>) => StoreResult;
-  saveUserPreferences: (patch: Partial<UserPreferences>) => Promise<StoreResult>;
-  updateCurrentMemberName: (name: string) => StoreResult;
-  updateCurrentMemberEmail: (email: string) => StoreResult;
-  switchWorkspace: (workspaceId: string) => StoreResult;
-  createWorkspace: (
-    name: string,
-    billing: BillingPreference,
-    logoDataUrl?: string | null,
-  ) => Promise<StoreResult>;
-  setWorkspaceBilling: (workspaceId: string, billing: BillingPreference) => StoreResult;
-  updateWorkspace: (
-    workspaceId: string,
-    patch: { name?: string; logoDataUrl?: string | null },
-  ) => StoreResult;
-  archiveWorkspace: (workspaceId: string) => StoreResult;
-  restoreWorkspace: (workspaceId: string) => StoreResult;
-  leaveWorkspace: (workspaceId: string) => StoreResult;
-  signOut: () => StoreResult;
-  resumeSession: (memberId: string) => StoreResult;
-}
-
 const StoreContext = createContext<StoreValue | null>(null);
+
 const TimerTickerContext = createContext<{ elapsed: number } | null>(null);
-
-function reuseIfEqual<T>(previous: T, next: T): T {
-  return JSON.stringify(previous) === JSON.stringify(next) ? previous : next;
-}
-
-function reuseWorkspaceLogoUrl(previous: string | null, next: string | null) {
-  if (!previous || !next || previous === next) return next;
-  try {
-    const oldUrl = new URL(previous);
-    const newUrl = new URL(next);
-    if (
-      oldUrl.protocol !== "https:" ||
-      !oldUrl.hostname.endsWith(".supabase.co") ||
-      !oldUrl.pathname.startsWith("/storage/v1/object/sign/workspace-logos/") ||
-      oldUrl.origin !== newUrl.origin ||
-      oldUrl.pathname !== newUrl.pathname
-    )
-      return next;
-    const payload = oldUrl.searchParams.get("token")?.split(".")[1];
-    if (!payload) return next;
-    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const { exp } = JSON.parse(atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, "=")));
-    // This only reads cache expiry; Storage still verifies the signature.
-    // Refresh before expiry, but don't change the image src on every poll.
-    return typeof exp === "number" && exp * 1000 > Date.now() + 5 * 60_000 ? previous : next;
-  } catch {
-    return next;
-  }
-}
-
-function shareAccountReferences(
-  previous: PersistedAccount,
-  next: PersistedAccount,
-): PersistedAccount {
-  const identities = reuseIfEqual(previous.identities, next.identities);
-  const preferencesByUserId = reuseIfEqual(previous.preferencesByUserId, next.preferencesByUserId);
-  const previousWorkspaces = new Map(
-    previous.workspaces.map((workspace) => [workspace.workspace.id, workspace]),
-  );
-  const workspaces = next.workspaces.map((workspace) => {
-    const previousWorkspace = previousWorkspaces.get(workspace.workspace.id);
-    if (!previousWorkspace) return workspace;
-    const shared = {
-      ...workspace,
-      workspace: reuseIfEqual(previousWorkspace.workspace, {
-        ...workspace.workspace,
-        logoDataUrl: reuseWorkspaceLogoUrl(
-          previousWorkspace.workspace.logoDataUrl,
-          workspace.workspace.logoDataUrl,
-        ),
-      }),
-      memberships: reuseIfEqual(previousWorkspace.memberships, workspace.memberships),
-      entries: reuseIfEqual(previousWorkspace.entries, workspace.entries),
-      projects: reuseIfEqual(previousWorkspace.projects, workspace.projects),
-      clients: reuseIfEqual(previousWorkspace.clients, workspace.clients),
-      settings: reuseIfEqual(previousWorkspace.settings, workspace.settings),
-      trello: reuseIfEqual(previousWorkspace.trello, workspace.trello),
-    };
-    const unchanged =
-      shared.workspace === previousWorkspace.workspace &&
-      shared.memberships === previousWorkspace.memberships &&
-      shared.entries === previousWorkspace.entries &&
-      shared.projects === previousWorkspace.projects &&
-      shared.clients === previousWorkspace.clients &&
-      shared.settings === previousWorkspace.settings &&
-      shared.trello === previousWorkspace.trello;
-    return unchanged ? previousWorkspace : shared;
-  });
-  const sharedWorkspaces =
-    workspaces.length === previous.workspaces.length &&
-    workspaces.every((workspace, index) => workspace === previous.workspaces[index])
-      ? previous.workspaces
-      : workspaces;
-  if (
-    identities === previous.identities &&
-    preferencesByUserId === previous.preferencesByUserId &&
-    sharedWorkspaces === previous.workspaces
-  )
-    return previous;
-  return { ...next, identities, preferencesByUserId, workspaces: sharedWorkspaces };
-}
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const { loading: authLoading, session } = useAuth();
