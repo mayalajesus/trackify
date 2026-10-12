@@ -95,7 +95,7 @@ export function TrackerTimeEditor({
   const timeValue = toTimeValue(value) ?? new Time(0, 0);
 
   return (
-    <div className="flex min-w-0 items-start gap-1">
+    <div className="tracker-inline-editor flex min-w-0 items-start gap-1">
       <TimeField
         aria-label={label}
         autoFocus
@@ -127,7 +127,7 @@ export function TrackerTimeEditor({
           className="h-8 min-h-8 px-1"
           data-tracker-editor="true"
         >
-          <TimeField.Input className="min-w-0 gap-0 overflow-hidden px-1 whitespace-nowrap">
+          <TimeField.Input className="min-w-0 justify-center gap-0 px-0 whitespace-nowrap">
             {(segment) => (
               <TimeField.Segment
                 segment={segment}

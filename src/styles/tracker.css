@@ -33,6 +33,34 @@
   border-bottom: 0;
 }
 
+/* Keep the DEV column widths while leaving room for complete editable values. */
+.tracker-entries-table .table__cell:nth-child(n + 3):nth-child(-n + 6) {
+  padding-inline: 4px;
+}
+.tracker-entries-table .tracker-inline-editor {
+  position: relative;
+}
+.tracker-entries-table .tracker-inline-editor > [data-tracker-editor] {
+  position: absolute;
+  top: 24px;
+  right: 0;
+}
+.tracker-entries-table .tracker-duration-input {
+  padding-inline: 4px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.tracker-entries-table [data-tracker-date-picker] .date-input-group {
+  padding-inline: 4px;
+}
+.tracker-entries-table .date-input-group__input,
+.tracker-entries-table .date-input-group__segment {
+  font-size: 14px;
+}
+.tracker-entries-table [data-tracker-field="duration"] {
+  padding-inline: 0;
+}
+
 .manual-entry-modal .modal__heading {
   font-size: 18px;
   line-height: 24px;

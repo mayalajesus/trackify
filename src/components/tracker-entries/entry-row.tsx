@@ -369,36 +369,6 @@ export function TrackerEntryRow({
     onDeactivate();
   };
 
-  const finishEditing = (valueOverride?: string): boolean => {
-    if (!activeField) return true;
-    if (activeField === "task" || activeField === "description") {
-      const value = valueOverride ?? draft[activeField];
-      const saved = commitField(activeField, value);
-      if (saved) onDeactivate();
-      return saved;
-    }
-    if (activeField === "start" || activeField === "end") {
-      const start =
-        activeField === "start" && valueOverride !== undefined ? valueOverride : draft.start;
-      const end = activeField === "end" && valueOverride !== undefined ? valueOverride : draft.end;
-      return commitTime(start, end, true);
-    }
-    if (activeField === "duration") {
-      return commitDuration(valueOverride ?? draft.duration, true);
-    }
-    if (activeField === "project") {
-      const saved = commitField("project", draft.projectId);
-      if (saved) onDeactivate();
-      return saved;
-    }
-    if (activeField === "date") {
-      const saved = commitField("date", draft.date);
-      if (saved) onDeactivate();
-      return saved;
-    }
-    return true;
-  };
-
   useEffect(() => {
     if (!activeField) return;
 
@@ -406,12 +376,8 @@ export function TrackerEntryRow({
       if (pendingEdit) return;
       const target = event.target instanceof Element ? event.target : null;
       const clickedEditor = target?.closest("[data-tracker-editor]");
-      if (clickedEditor) return;
+      if (clickedEditor && rowRef.current?.contains(clickedEditor)) return;
 
-      const clickedField = target
-        ?.closest("[data-tracker-field]")
-        ?.getAttribute("data-tracker-field");
-      const clickedAction = target?.closest("[data-tracker-action]");
       const clickedDatePicker = target?.closest(
         "[data-tracker-date-picker], [data-tracker-date-picker-popover]",
       );
@@ -424,23 +390,7 @@ export function TrackerEntryRow({
         (activeField === "project" && clickedProjectSelect);
       if (clickedActiveOverlay) return;
 
-      if (rowRef.current?.contains(target)) {
-        if (clickedField && clickedField !== activeField) {
-          if (!finishEditing()) {
-            event.preventDefault();
-            event.stopPropagation();
-          }
-        } else if (clickedAction && !finishEditing()) {
-          event.preventDefault();
-          event.stopPropagation();
-        }
-        return;
-      }
-
-      if (!finishEditing()) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
+      restoreField();
     };
 
     document.addEventListener("pointerdown", handleOutsidePointer, true);
@@ -618,25 +568,9 @@ export function TrackerEntryRow({
     }
   };
 
-  const refocusEditor = () => {
-    window.requestAnimationFrame(() => {
-      if (activeField === "start" || activeField === "end") {
-        const firstSegment = timeFieldRef.current?.querySelector<HTMLElement>(
-          '[data-type]:not([data-type="literal"])',
-        );
-        firstSegment?.focus();
-        return;
-      }
-      if (activeField && focusRef.current) focusRef.current.focus();
-    });
-  };
-
-  const handleEditorBlur = (value: string) => {
-    if (skipNextBlurRef.current) {
-      skipNextBlurRef.current = false;
-      return;
-    }
-    if (!finishEditing(value)) refocusEditor();
+  const handleEditorBlur = () => {
+    if (skipNextBlurRef.current || pendingEdit) return;
+    restoreField();
   };
 
   const cellButtonClass =
@@ -650,7 +584,7 @@ export function TrackerEntryRow({
   const timeSlotClass =
     "inline-flex h-8 w-full min-w-0 items-center justify-center px-1 whitespace-nowrap";
   const compactInputClass = "h-8 min-h-8 px-2 py-1";
-  const durationInputClass = `${compactInputClass} w-full min-w-0 max-w-full`;
+  const durationInputClass = `${compactInputClass} tracker-duration-input w-full min-w-0 max-w-full`;
   return (
     <Table.Row
       {...(rowId ? { id: rowId } : {})}
@@ -683,7 +617,7 @@ export function TrackerEntryRow({
                     ref={focusRef}
                     className={compactInputClass}
                     data-tracker-editor="true"
-                    onBlur={(event) => handleEditorBlur(event.currentTarget.value)}
+                    onBlur={handleEditorBlur}
                     onKeyDown={(event) => handleTextKeyDown(event, "task")}
                   />
                   <FieldError className="sr-only">{validationMessage}</FieldError>
@@ -756,7 +690,7 @@ export function TrackerEntryRow({
                   className={compactInputClass}
                   data-tracker-editor="true"
                   placeholder={t("Add a note")}
-                  onBlur={(event) => handleEditorBlur(event.currentTarget.value)}
+                  onBlur={handleEditorBlur}
                   onKeyDown={(event) => handleTextKeyDown(event, "description")}
                 />
                 <FieldError className="sr-only">{validationMessage}</FieldError>
@@ -934,7 +868,7 @@ export function TrackerEntryRow({
 
       <Table.Cell className={trackerDurationCellClass}>
         {activeField === "duration" ? (
-          <div className="flex min-w-0 items-start gap-1">
+          <div className="tracker-inline-editor flex min-w-0 items-start gap-1">
             <TextField
               className="inline-flex min-w-0 flex-1"
               name={`duration-${entry.id}`}
@@ -952,7 +886,7 @@ export function TrackerEntryRow({
                 autoComplete="off"
                 spellCheck={false}
                 placeholder={t("e.g. 2:45, 00:00:49 or 40s")}
-                onBlur={(event) => handleEditorBlur(event.currentTarget.value)}
+                onBlur={handleEditorBlur}
                 onKeyDown={handleDurationKeyDown}
               />
               <FieldError className="sr-only">{validationMessage}</FieldError>
