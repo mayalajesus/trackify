@@ -46,6 +46,11 @@ export { selectTopProjects } from "../../lib/reports/overview-model";
 
 export { overviewProjectRows } from "../../lib/reports/overview-model";
 
+function formatKpiName(value: string | undefined, locale: string): string {
+  const name = value?.trim().toLocaleLowerCase(locale);
+  return name ? name.charAt(0).toLocaleUpperCase(locale) + name.slice(1) : "—";
+}
+
 export function OverviewTooltipTitle({ label, help }: { label: string; help: ReactNode }) {
   const { t } = useI18n();
   return (
@@ -197,7 +202,9 @@ export function OverviewDashboard({
               help={t("Project with the most tracked time in the selected period.")}
             />
           }
-          value={<span className="break-words">{summary.topProject?.label ?? "—"}</span>}
+          value={
+            <span className="break-words">{formatKpiName(summary.topProject?.label, locale)}</span>
+          }
           contentDescription={t("Project with the most tracked time in the selected period.")}
           showNeutralComparison={false}
         />
@@ -210,7 +217,9 @@ export function OverviewDashboard({
               help={t("Client with the most tracked time in the selected period.")}
             />
           }
-          value={<span className="break-words">{summary.topClient?.label ?? "—"}</span>}
+          value={
+            <span className="break-words">{formatKpiName(summary.topClient?.label, locale)}</span>
+          }
           contentDescription={t("Client with the most tracked time in the selected period.")}
           showNeutralComparison={false}
         />
