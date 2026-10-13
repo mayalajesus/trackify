@@ -12,6 +12,8 @@ import { projectColorValue } from "@/lib/project-colors";
 import { useI18n } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
 
+const durationAxisWidth = 88;
+
 export function ReportDistribution({
   analytics,
   entries,
@@ -122,14 +124,14 @@ export function ReportDistribution({
         <BarChart
           data={data}
           accessibilityLayer
-          margin={{ top: 24, right: 12, left: 0, bottom: 0 }}
+          margin={{ top: 24, right: durationAxisWidth, left: 0, bottom: 0 }}
           barCategoryGap="18%"
         >
           <CartesianGrid vertical={false} stroke="var(--separator)" strokeOpacity={0.5} />
           <XAxis {...reportChartAxisProps} dataKey="label" minTickGap={20} tickMargin={10} />
           <YAxis
             {...reportChartAxisProps}
-            width={88}
+            width={durationAxisWidth}
             tick={{ fontSize: 12 }}
             tickFormatter={(value) => formatDuration(Number(value), locale)}
           />
