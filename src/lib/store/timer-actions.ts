@@ -34,7 +34,6 @@ export function createTimerActions({
   projects,
   canTrackProject,
   activeMemberId,
-  findEntryConflict,
   setEntries,
 }: {
   acceptingTaskRef: React.RefObject<boolean>;
@@ -68,10 +67,6 @@ export function createTimerActions({
   projects: import("@/lib/domain").Project[];
   canTrackProject: (projectId: string) => boolean;
   activeMemberId: string;
-  findEntryConflict: (
-    entry: Omit<import("@/lib/domain").TimeEntry, "id">,
-    excludedEntryId?: string | undefined,
-  ) => import("@/lib/domain").TimeEntry | undefined;
   setEntries: React.Dispatch<React.SetStateAction<import("@/lib/domain").TimeEntry[]>>;
 }) {
   const acceptTaskInvitation = async (invitationId: string): Promise<StoreResult> => {
@@ -272,17 +267,19 @@ export function createTimerActions({
     if (!details.success) return details;
     const total = elapsedForTimer(current);
     const startedDate = current.startedDate ?? getLocalToday(new Date(), preferences.timezone);
-    const finish = addSecondsToDateTime(startedDate, current.startClock, total);
-    let warning: string | undefined;
-    let conflict: TimeEntry | undefined;
     if (total > 0) {
-      const startTimestamp = dateTimeToTimestamp(
-        startedDate,
-        current.startClock,
-        0,
-        preferences.timezone,
-      );
+      const startTimestamp =
+        current.status === "running" && current.accumulated === 0
+          ? current.startedAt
+          : dateTimeToTimestamp(startedDate, current.startClock, 0, preferences.timezone);
       const endTimestamp = startTimestamp === null ? null : startTimestamp + total * 1000;
+      const finish =
+        endTimestamp === null
+          ? addSecondsToDateTime(startedDate, current.startClock, total)
+          : {
+              end: nowTime(preferences.timezone, new Date(endTimestamp)),
+              endDate: getLocalToday(new Date(endTimestamp), preferences.timezone),
+            };
       const stoppedEntry: Omit<TimeEntry, "id"> = {
         date: startedDate,
         start: current.startClock,
@@ -299,8 +296,6 @@ export function createTimerActions({
         hourlyRate: current.hourlyRate ?? workspaceBilling.hourlyRate,
         currency: current.currency ?? workspaceBilling.currency,
       };
-      conflict = findEntryConflict(stoppedEntry);
-      warning = conflict ? "This time overlaps another entry. It was saved anyway." : undefined;
       setEntries((list) => [
         {
           ...stoppedEntry,
@@ -319,7 +314,6 @@ export function createTimerActions({
     setElapsed(0);
     return {
       success: true,
-      ...(warning && conflict ? { warning, conflict } : {}),
     };
   };
   return {

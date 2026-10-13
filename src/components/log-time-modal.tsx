@@ -30,7 +30,9 @@ import {
   getElapsedMinutes,
   getEndDateForClockRange,
   getEndDateForEntry,
+  getLocalToday,
   isValidDateOnly,
+  nowTime,
   parseDurationInput,
   shiftDate,
 } from "@/lib/format";
@@ -101,17 +103,32 @@ export function LogTimeModal({
       ? shiftDate(date, getDayOffset(entry.date, originalEndDate))
       : getEndDateForClockRange(date, start, end, originalEndDate);
   const parsedDurationSeconds = parseDurationInput(duration);
+  const preservedStartTimestamp =
+    entry && date === entry.date && start === entry.start ? entry.startTimestamp : undefined;
   const durationFinish =
     parsedDurationSeconds === null
       ? null
-      : addSecondsToDateTime(date, start, parsedDurationSeconds);
+      : preservedStartTimestamp !== undefined
+        ? {
+            end: nowTime(
+              preferences.timezone,
+              new Date(preservedStartTimestamp + parsedDurationSeconds * 1000),
+            ),
+            endDate: getLocalToday(
+              new Date(preservedStartTimestamp + parsedDurationSeconds * 1000),
+              preferences.timezone,
+            ),
+          }
+        : addSecondsToDateTime(date, start, parsedDurationSeconds);
   const effectiveEnd = timeMode === "duration" && durationFinish ? durationFinish.end : end;
   const effectiveEndDate =
     timeMode === "duration" && durationFinish ? durationFinish.endDate : endDate;
   const entrySeconds =
     timeMode === "duration"
       ? (parsedDurationSeconds ?? 0)
-      : getElapsedMinutes(date, start, effectiveEndDate, effectiveEnd) * 60;
+      : entry && preserveOriginalRange
+        ? entry.seconds
+        : getElapsedMinutes(date, start, effectiveEndDate, effectiveEnd) * 60;
   const taskError = task.trim().length === 0 ? t("Task is required") : undefined;
   const dateError = !isValidDateOnly(date) ? t("Choose a valid date") : undefined;
   const timeError =
@@ -146,7 +163,17 @@ export function LogTimeModal({
   const submit = () => {
     if (invalid) return;
     const cleanDescription = description.trim();
-    const startTimestamp = dateTimeToTimestamp(date, start, 0, preferences.timezone);
+    const timeChanged =
+      !entry ||
+      date !== entry.date ||
+      start !== entry.start ||
+      effectiveEnd !== entry.end ||
+      effectiveEndDate !== getEndDateForEntry(entry) ||
+      entrySeconds !== entry.seconds;
+    const startTimestamp =
+      (!timeChanged || timeMode === "duration") && preservedStartTimestamp !== undefined
+        ? preservedStartTimestamp
+        : dateTimeToTimestamp(date, start, 0, preferences.timezone);
     const timestampPatch =
       startTimestamp === null
         ? {}
@@ -181,7 +208,7 @@ export function LogTimeModal({
           billable,
           ...timestampPatch,
         };
-    const conflict = findEntryConflict(candidate, entry?.id);
+    const conflict = entry && timeChanged ? findEntryConflict(candidate, entry.id) : undefined;
     if (conflict) {
       setPendingEntry(candidate);
       return;

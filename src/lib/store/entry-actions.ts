@@ -53,8 +53,6 @@ export function createEntryActions({
     } satisfies Omit<TimeEntry, "id">;
     const validation = validateEntry(billedEntry);
     if (!validation.success) return validation;
-    const conflict = findEntryConflict(billedEntry);
-    const warning = conflict ? "This time overlaps another entry. It was saved anyway." : undefined;
     setEntries((list) => [
       {
         ...billedEntry,
@@ -67,7 +65,6 @@ export function createEntryActions({
     ]);
     return {
       success: true,
-      ...(warning && conflict ? { warning, conflict } : {}),
     };
   };
 
@@ -90,7 +87,8 @@ export function createEntryActions({
         : {}),
     };
     const timeChanged = ["date", "start", "end", "endDate", "seconds"].some(
-      (field) => field in patch,
+      (field) =>
+        field in patch && next[field as keyof TimeEntry] !== current[field as keyof TimeEntry],
     );
     if (timeChanged && !("startTimestamp" in patch) && !("endTimestamp" in patch)) {
       const onlyDateChanged =
@@ -134,12 +132,9 @@ export function createEntryActions({
       return { success: false, error: "This time entry already exists." };
     const validation = validateEntry(entry);
     if (!validation.success) return validation;
-    const conflict = findEntryConflict(entry);
-    const warning = conflict ? "This time overlaps another entry. It was saved anyway." : undefined;
     setEntries((list) => [entry, ...list]);
     return {
       success: true,
-      ...(warning && conflict ? { warning, conflict } : {}),
     };
   };
   return { addEntry, updateEntry, deleteEntry, restoreEntry };

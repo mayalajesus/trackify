@@ -777,7 +777,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       projects,
       canTrackProject,
       activeMemberId,
-      findEntryConflict,
       setEntries,
     });
     const { addEntry, updateEntry, deleteEntry, restoreEntry } = createEntryActions({
