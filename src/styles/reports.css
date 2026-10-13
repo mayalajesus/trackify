@@ -77,6 +77,16 @@
 }
 .reports-page .report-distribution {
   min-height: 326px;
+  padding: 0;
+  gap: 0;
+}
+.reports-page .report-distribution > .card__header {
+  padding: 10px 16px 8px;
+  align-items: center;
+}
+.reports-page .report-distribution [data-chart] {
+  height: 272px;
+  margin-block: 0;
 }
 .report-distribution-actions {
   display: flex;
@@ -85,7 +95,7 @@
 }
 .report-distribution-actions > span {
   font-size: 12px;
-  line-height: 18px;
+  line-height: 16px;
   color: var(--muted);
 }
 .report-distribution-actions .tabs__tab {
@@ -216,6 +226,9 @@
   }
 }
 @container (max-width:650px) {
+  .report-distribution .recharts-label-list {
+    display: none;
+  }
   .reports-overview-grid > div {
     grid-column: span 1;
   }

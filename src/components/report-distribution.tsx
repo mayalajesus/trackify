@@ -6,13 +6,16 @@ import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis } from "recharts"
 import { ReportChart, ReportWidget, reportChartAxisProps } from "./report-widget";
 import { ChartTooltip, ChartTooltipContent } from "./ui/chart";
 import { groupEntriesByTime, type ReportAnalytics } from "@/lib/report-analytics";
-import { formatClock, formatDuration, formatReportPeriod } from "@/lib/format";
+import { formatClock, formatDuration } from "@/lib/format";
+import {
+  distributionHourScale,
+  formatDistributionDate,
+  formatDistributionPeriod,
+} from "@/lib/reports/distribution-format";
 import type { Project, TimeEntry } from "@/lib/domain";
 import { projectColorValue } from "@/lib/project-colors";
 import { useI18n } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
-
-const durationAxisWidth = 88;
 
 export function ReportDistribution({
   analytics,
@@ -52,13 +55,8 @@ export function ReportDistribution({
         },
       ),
     );
-    const formatter = new Intl.DateTimeFormat(locale, {
-      day: "2-digit",
-      month: "short",
-      ...(analytics.granularity === "day" ? { weekday: "short" } : {}),
-    });
     return analytics.temporal.map((bucket) => ({
-      label: formatter.format(new Date(`${bucket.startDate}T12:00:00`)),
+      label: formatDistributionDate(bucket.startDate, locale, analytics.granularity === "day"),
       total: bucket.totalSeconds,
       ...Object.fromEntries(
         series.map((item, index) => [
@@ -68,6 +66,7 @@ export function ReportDistribution({
       ),
     }));
   }, [analytics, entries, locale, preferences.timezone, series, weekStartsOn]);
+  const hourScale = distributionHourScale(Math.max(0, ...data.map((item) => item.total)));
   const config = Object.fromEntries(
     series.map((item) => [item.key, { label: item.label, color: item.color }]),
   );
@@ -90,7 +89,7 @@ export function ReportDistribution({
       contentDescription={t("Bars show tracked time across the selected period.")}
       action={
         <div className="report-distribution-actions">
-          <span>{formatReportPeriod(analytics.period, locale)}</span>
+          <span>{formatDistributionPeriod(analytics.period, locale)}</span>
           <Tabs
             selectedKey={mode}
             onSelectionChange={(key) => setMode(String(key))}
@@ -124,16 +123,26 @@ export function ReportDistribution({
         <BarChart
           data={data}
           accessibilityLayer
-          margin={{ top: 24, right: durationAxisWidth, left: 0, bottom: 0 }}
+          margin={{ top: 24, right: 12, left: 0, bottom: 0 }}
           barCategoryGap="18%"
         >
           <CartesianGrid vertical={false} stroke="var(--separator)" strokeOpacity={0.5} />
-          <XAxis {...reportChartAxisProps} dataKey="label" minTickGap={20} tickMargin={10} />
+          <XAxis
+            {...reportChartAxisProps}
+            dataKey="label"
+            minTickGap={20}
+            tickMargin={10}
+            tick={{ fontSize: 12 }}
+            interval="preserveStartEnd"
+          />
           <YAxis
             {...reportChartAxisProps}
-            width={durationAxisWidth}
+            width={52}
+            tickMargin={20}
             tick={{ fontSize: 12 }}
-            tickFormatter={(value) => formatDuration(Number(value), locale)}
+            domain={[0, hourScale.maximum]}
+            ticks={hourScale.ticks}
+            tickFormatter={(value) => `${Number(value) / 3600}h`}
           />
           <ChartTooltip
             cursor={false}
