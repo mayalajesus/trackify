@@ -129,7 +129,8 @@ export function ReportDistribution({
           <XAxis {...reportChartAxisProps} dataKey="label" minTickGap={20} tickMargin={10} />
           <YAxis
             {...reportChartAxisProps}
-            width={38}
+            width={88}
+            tick={{ fontSize: 12 }}
             tickFormatter={(value) => formatDuration(Number(value), locale)}
           />
           <ChartTooltip
