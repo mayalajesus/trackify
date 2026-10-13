@@ -229,7 +229,7 @@ async function operation(request, user, config, body) {
         throw new DataApiError(400, "Invalid timer payload.");
       }
       const workspaceId = uuid(timer.workspaceId);
-      const access = await requireWorkspaceAccess(client, user.id, workspaceId);
+      await requireWorkspaceAccess(client, user.id, workspaceId);
       if (timer.status !== "running" && timer.status !== "paused") {
         throw new DataApiError(400, "Invalid timer status.");
       }
@@ -260,21 +260,14 @@ async function operation(request, user, config, body) {
       if (timer.projectId) {
         const projectId = uuid(timer.projectId);
         const project = await client.query(
-          `select p.status,
-                  exists (
-                    select 1 from public.project_members pm
-                    where pm.project_id = p.id and pm.workspace_id = p.workspace_id and pm.user_id = $2
-                  ) as assigned
+          `select p.status
              from public.projects p
-            where p.id = $1 and p.workspace_id = $3`,
-          [projectId, user.id, workspaceId],
+            where p.id = $1 and p.workspace_id = $2`,
+          [projectId, workspaceId],
         );
         if (!project.rows[0]) throw new DataApiError(400, "This project no longer exists.");
         if (project.rows[0].status !== "active") {
           throw new DataApiError(400, "This project cannot be used for a timer.");
-        }
-        if (access.role === "Member" && !project.rows[0].assigned) {
-          throw new DataApiError(403, "This project is not assigned to your team member.");
         }
       }
       const result = await client.query(

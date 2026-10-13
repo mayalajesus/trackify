@@ -50,7 +50,7 @@ export function validateTimerTaskStart(
     if (!context.canUseProject(project.id)) {
       return {
         success: false,
-        error: "This project is not assigned to your team member.",
+        error: "This project is not available to the selected member.",
       };
     }
   }

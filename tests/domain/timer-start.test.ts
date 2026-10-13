@@ -123,7 +123,7 @@ describe("starting a timer from an earlier entry", () => {
     expect(refreshed[0]).toEqual(favorite);
   });
 
-  it("distinguishes missing, inactive, unassigned, and explicit no-project starts", () => {
+  it("distinguishes missing, inactive, unavailable, and explicit no-project starts", () => {
     expect(
       validateTimerTaskStart(originalEntry, {
         timerStatus: "idle",
@@ -151,7 +151,7 @@ describe("starting a timer from an earlier entry", () => {
       }),
     ).toEqual({
       success: false,
-      error: "This project is not assigned to your team member.",
+      error: "This project is not available to the selected member.",
     });
 
     expect(

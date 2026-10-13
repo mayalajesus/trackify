@@ -24,11 +24,21 @@ describe("workspace permissions", () => {
     expect(hasPermission("Member", "manage-projects", active)).toBe(false);
   });
 
-  it("only allows members to track assigned active projects", () => {
+  it("allows members to track every active workspace project without project assignment", () => {
     const project = { status: "active" as const, memberIds: ["u3"] };
     expect(canTrackProject("Member", "u3", project, active)).toBe(true);
-    expect(canTrackProject("Member", "u2", project, active)).toBe(false);
+    expect(canTrackProject("Member", "u2", project, active)).toBe(true);
+    expect(canTrackProject("Member", "u2", { ...project, memberIds: [] }, active)).toBe(true);
     expect(canTrackProject("Admin", "u2", project, active)).toBe(true);
     expect(canTrackProject("Member", "u3", { ...project, status: "archived" }, active)).toBe(false);
+    expect(canTrackProject("Member", "u3", { ...project, status: "on-hold" }, active)).toBe(false);
+    expect(canTrackProject("Member", "u3", project, { ...active, memberActive: false })).toBe(
+      false,
+    );
+    expect(canTrackProject("Member", "u3", project, { ...active, sessionActive: false })).toBe(
+      false,
+    );
+    expect(canTrackProject(null, "u3", project, active)).toBe(false);
+    expect(canTrackProject("Member", null, project, active)).toBe(false);
   });
 });

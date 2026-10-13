@@ -31,8 +31,7 @@ async function requireProject(client, workspaceId, projectId, userId) {
   const result = await client.query(
     `select p.id from public.projects p
     join public.workspace_members m on m.workspace_id=p.workspace_id and m.user_id=$3 and m.status='active'
-    where p.id=$2 and p.workspace_id=$1 and p.status='active'
-    and (m.role in ('Owner','Admin') or exists(select 1 from public.project_members pm where pm.project_id=p.id and pm.user_id=$3))`,
+    where p.id=$2 and p.workspace_id=$1 and p.status='active'`,
     [workspaceId, projectId, userId],
   );
   if (!result.rowCount)

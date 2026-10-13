@@ -695,7 +695,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           error: "This project is inactive and cannot be used to start a timer.",
         };
       if (canTrackProject(projectId)) return { success: true };
-      return { success: false, error: "This project is not assigned to your team member." };
+      return { success: false, error: "This project is not available to the selected member." };
     };
 
     const validateEntry = (

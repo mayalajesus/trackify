@@ -41,5 +41,5 @@ export function canTrackProject(
   if (!context.sessionActive || !context.memberActive || !project || project.status !== "active") {
     return false;
   }
-  return role !== "Member" || (memberId !== null && project.memberIds.includes(memberId));
+  return memberId !== null && (role === "Owner" || role === "Admin" || role === "Member");
 }

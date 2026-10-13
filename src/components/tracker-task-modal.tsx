@@ -45,7 +45,7 @@ export function TrackerTaskModal({
   onDetailsChange: (details: TaskDetails) => void | boolean;
   onBeforeInvite?: () => boolean;
 }) {
-  const { members, currentUserId, activeWorkspaceId, projects, preferencesByUserId } = useStore();
+  const { members, currentUserId, activeWorkspaceId, preferencesByUserId } = useStore();
   const { t } = useI18n();
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
@@ -90,13 +90,7 @@ export function TrackerTaskModal({
       cancelled = true;
     };
   }, [board, mode, t]);
-  const project = projects.find((p) => p.id === projectId);
-  const available = members.filter(
-    (m) =>
-      m.status === "active" &&
-      m.id !== currentUserId &&
-      (m.role !== "Member" || project?.memberIds.includes(m.id)),
-  );
+  const available = members.filter((m) => m.status === "active" && m.id !== currentUserId);
   const filtered = available.filter((m) =>
     `${m.name} ${m.email}`.toLocaleLowerCase().includes(query.toLocaleLowerCase()),
   );
