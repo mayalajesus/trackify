@@ -52,7 +52,7 @@ export async function ensureProfile(client, user, config) {
   await client.query(
     `insert into public.user_preferences (user_id, language) values ($1, $2)
      on conflict (user_id) do nothing`,
-    [user.id, config.initialLanguage === "pt-BR" ? "pt-BR" : "en-US"],
+    [user.id, config.initialLanguage === "en-US" ? "en-US" : "pt-BR"],
   );
   if (user.avatarUrl && (await hasColumn(client, "user_preferences", "avatar_data_url"))) {
     await client.query(

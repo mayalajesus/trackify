@@ -24,7 +24,7 @@ import { IdleDetectionPrompt } from "@/components/idle-detection-prompt";
 import { LogTimeModal } from "@/components/log-time-modal";
 import { ProfileMenu } from "@/components/profile-menu";
 import { FormAlert } from "@/components/form-feedback";
-import { WorkspaceOnboarding } from "@/components/workspace-onboarding";
+import { WorkspaceAccessOnboarding } from "@/components/workspace-access-onboarding";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { SidebarNavigation } from "@/components/layout/sidebar-navigation";
 import { DrawerTriggerRegistration } from "@/components/overlay-trigger-registration";
@@ -98,7 +98,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         currentLocation.pathname !== "/legal-consent" &&
         !legalDocumentPaths.has(currentLocation.pathname)
       ) {
-        const returnPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+        const returnPath = ["/login", "/signup"].includes(currentLocation.pathname)
+          ? getAuthReturnPath()
+          : `${window.location.pathname}${window.location.search}${window.location.hash}`;
         window.location.replace(`/legal-consent?redirect=${encodeURIComponent(returnPath)}`);
       }
       return;
@@ -201,7 +203,7 @@ function AppDataGate({ children }: { children: ReactNode }) {
   }
 
   if (sessionStatus === "signed-out") return <SignedOutScreen />;
-  if (workspaces.length === 0) return <WorkspaceOnboarding />;
+  if (workspaces.length === 0) return <WorkspaceAccessOnboarding />;
   return <AppShellContent>{children}</AppShellContent>;
 }
 

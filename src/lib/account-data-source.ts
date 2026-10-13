@@ -32,6 +32,7 @@ export type InvitationLink = {
   invitationUrl: string;
   emailStatus: InvitationEmailStatus;
 };
+export type PendingWorkspaceInvitation = { id: string; workspaceName: string };
 export type CreateWorkspaceInput = {
   name: string;
   logoDataUrl?: string | null;
@@ -102,6 +103,7 @@ export interface AccountDataSource {
   uploadAvatar(avatarDataUrl: string): Promise<DataSourceResult<string>>;
   removeAvatar(): Promise<DataSourceResult<null>>;
   acceptInvitation(invitationId: string): Promise<DataSourceResult<{ workspaceId: string }>>;
+  listPendingInvitations(): Promise<DataSourceResult<PendingWorkspaceInvitation[]>>;
   getAccountDeletionStatus(): Promise<DataSourceResult<AccountDeletionStatus>>;
   acceptLegalTerms(locale: "pt-BR" | "en-US"): Promise<DataSourceResult<AccountDeletionStatus>>;
   transferWorkspaceOwnership(

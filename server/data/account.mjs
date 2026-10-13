@@ -237,7 +237,7 @@ export async function loadAccount(client, user, config) {
         id,
         {
           idleDetection: isOwnPreferences ? (row?.idle_detection ?? true) : true,
-          language: isOwnPreferences && row?.language === "pt-BR" ? "pt-BR" : "en-US",
+          language: isOwnPreferences && row?.language === "en-US" ? "en-US" : "pt-BR",
           theme:
             isOwnPreferences && (row?.theme === "light" || row?.theme === "dark")
               ? row.theme

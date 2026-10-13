@@ -37,9 +37,9 @@ export function qaCredentials(role: QaRole): QaCredentials {
 export async function signInAs(page: Page, role: QaRole): Promise<void> {
   const credentials = qaCredentials(role);
   await page.goto("/login");
-  await page.getByLabel("Email", { exact: true }).fill(credentials.email);
-  await page.getByLabel("Password", { exact: true }).fill(credentials.password);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.getByLabel(/^(Email|E-mail)\s*\*?$/).fill(credentials.email);
+  await page.getByLabel(/^(Password|Senha)\s*\*?$/).fill(credentials.password);
+  await page.getByRole("button", { name: /^(Sign in|Entrar)$/ }).click();
   await expect(page).toHaveURL(/\/tracker(?:\?.*)?$/);
   await expect(page.locator("#main-content")).toBeVisible({ timeout: 15_000 });
 }

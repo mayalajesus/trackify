@@ -43,6 +43,10 @@ export function acceptInvitation(
   config: Record<string, unknown>,
   body: Record<string, unknown>,
 ): Promise<{ workspaceId: string }>;
+export function listPendingInvitations(
+  client: QueryClient,
+  user: { id: string; email: string },
+): Promise<Array<{ id: string; workspaceName: string }>>;
 export function readBody(request: unknown): Promise<Record<string, unknown>>;
 export function handleDataRequest(
   request: unknown,

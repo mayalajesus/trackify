@@ -14,7 +14,12 @@ import { requirePayloadUser, requireWorkspaceAccess } from "./data/access.mjs";
 import { loadAccount } from "./data/account.mjs";
 import { getPool, getSupabaseAdmin, providerEnv } from "./data/connections.mjs";
 import { loadReportEntries } from "./data/entries.mjs";
-import { acceptInvitation, cancelInvitation, processInvitationEmail } from "./data/invitations.mjs";
+import {
+  acceptInvitation,
+  cancelInvitation,
+  listPendingInvitations,
+  processInvitationEmail,
+} from "./data/invitations.mjs";
 import {
   removeAvatar,
   updatePreferences,
@@ -60,12 +65,12 @@ export { upsertOwnEntry } from "./data/entries.mjs";
 
 export { syncEntries } from "./data/entries.mjs";
 
-export { acceptInvitation } from "./data/invitations.mjs";
+export { acceptInvitation, listPendingInvitations } from "./data/invitations.mjs";
 
 const MAX_REQUEST_BODY_BYTES = 4 * 1024 * 1024;
 
 async function operation(request, user, config, body) {
-  config = { ...config, initialLanguage: body.initialLanguage === "pt-BR" ? "pt-BR" : "en-US" };
+  config = { ...config, initialLanguage: body.initialLanguage === "en-US" ? "en-US" : "pt-BR" };
   const pool = getPool(config);
   const client = await pool.connect();
   let discardClient = false;
@@ -172,6 +177,8 @@ async function operation(request, user, config, body) {
       return await updateProfileName(client, user, config, body);
     if (body.operation === "uploadAvatar") return await uploadAvatar(client, user, config, body);
     if (body.operation === "removeAvatar") return await removeAvatar(client, user, config);
+    if (body.operation === "listPendingInvitations")
+      return await listPendingInvitations(client, user);
     if (body.operation === "acceptInvitation") {
       await client.query("begin");
       try {

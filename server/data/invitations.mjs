@@ -5,6 +5,25 @@ import { hasColumn, requireInvitationManager } from "./access.mjs";
 import { ensureProfile } from "./profile.mjs";
 import { iso, numberValue, uuid } from "./validation.mjs";
 
+export async function listPendingInvitations(client, user) {
+  const result = await client.query(
+    `select invitation.id::text, workspace.name as workspace_name
+       from public.workspace_invitations invitation
+       join public.workspaces workspace on workspace.id = invitation.workspace_id
+      where lower(trim(invitation.email)) = $1
+        and invitation.status = 'pending' and invitation.expires_at > now()
+        and workspace.status <> 'archived'
+        and not exists (
+          select 1 from public.workspace_members member
+           where member.workspace_id = invitation.workspace_id
+             and member.user_id = $2 and member.status = 'active'
+        )
+      order by invitation.invited_at desc, invitation.id`,
+    [user.email.trim().toLowerCase(), user.id],
+  );
+  return result.rows.map((row) => ({ id: row.id, workspaceName: row.workspace_name }));
+}
+
 export function invitationMember(row) {
   const name = String(row.email ?? "")
     .split("@")[0]

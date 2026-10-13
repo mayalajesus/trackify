@@ -1,6 +1,6 @@
 import type { Session } from "@supabase/supabase-js";
 import { getAuthClient } from "./auth-client";
-import { getSystemLocale } from "./i18n";
+import { defaultLocale } from "./i18n";
 import type {
   AccountDataSource,
   AccountDeletionStatus,
@@ -8,6 +8,7 @@ import type {
   CreateWorkspaceResult,
   DataSourceResult,
   InvitationLink,
+  PendingWorkspaceInvitation,
   ReportEntriesQuery,
 } from "./account-data-source";
 import type { TimeEntry } from "./domain";
@@ -67,7 +68,7 @@ export async function request<T>(
         "content-type": "application/json",
         authorization: `Bearer ${await token(currentSession.data)}`,
       },
-      body: JSON.stringify({ operation, ...payload, initialLanguage: getSystemLocale() }),
+      body: JSON.stringify({ operation, ...payload, initialLanguage: defaultLocale }),
     });
     const body = (await response.json().catch((error: unknown) => {
       if (controller.signal.aborted) throw error;
@@ -136,6 +137,7 @@ export function createApiDataSource(): AccountDataSource {
     removeAvatar: () => request<null>("removeAvatar"),
     acceptInvitation: (invitationId) =>
       request<{ workspaceId: string }>("acceptInvitation", { invitationId }),
+    listPendingInvitations: () => request<PendingWorkspaceInvitation[]>("listPendingInvitations"),
     getAccountDeletionStatus: () => request<AccountDeletionStatus>("getAccountDeletionStatus"),
     acceptLegalTerms: (locale) => request<AccountDeletionStatus>("acceptLegalTerms", { locale }),
     transferWorkspaceOwnership: (workspaceId, targetUserId) =>

@@ -14,7 +14,7 @@ export function getSystemLocale(): Locale {
   return "en-US";
 }
 
-export const defaultLocale: Locale = getSystemLocale();
+export const defaultLocale: Locale = "pt-BR";
 
 export const localeOptions: Array<{ id: Locale; label: string }> = [
   { id: "en-US", label: "English" },
@@ -1259,6 +1259,13 @@ const ptBR: Record<string, string> = {
   "Remember your password?": "Lembrou sua senha?",
   "Finishing sign in": "Finalizando entrada",
   "Preparing your workspace securely.": "Preparando seu workspace com segurança.",
+  "Workspace invitations": "Convites para workspaces",
+  "Loading invitations": "Carregando convites",
+  "We couldn't load your invitations": "Não conseguimos carregar seus convites",
+  "You can join an invited workspace without creating a new one.":
+    "Você pode entrar no workspace para o qual foi convidado sem criar outro.",
+  "Join {workspace}": "Entrar em {workspace}",
+  "Create my own workspace": "Criar meu próprio workspace",
   "Workspace invitation": "Convite para o workspace",
   "Accept your invitation to collaborate on tracked time.":
     "Aceite seu convite para colaborar no controle de horas.",

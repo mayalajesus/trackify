@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { acceptInvitation, createWorkspace, loadAccount } from "../../server/data-api.mjs";
+import {
+  acceptInvitation,
+  createWorkspace,
+  listPendingInvitations,
+  loadAccount,
+} from "../../server/data-api.mjs";
 
 const user = {
   id: "user-without-workspace",
@@ -12,52 +17,105 @@ function emptyResult(rows: Array<Record<string, unknown>> = []) {
 }
 
 describe("company workspace access", () => {
-  it("loads a profile and preferences when the user has no workspaces", async () => {
-    const query = vi.fn(async (sql: string, _parameters?: unknown[]) => {
-      if (sql.includes("select name, email from public.profiles")) {
+  it.each([
+    { status: "pending", expires_at: new Date(0), workspace_status: "active" },
+    { status: "cancelled", expires_at: new Date(Date.now() + 60_000), workspace_status: "active" },
+    { status: "pending", expires_at: new Date(Date.now() + 60_000), workspace_status: "archived" },
+  ])("does not grant unavailable invitations: %j", async (state) => {
+    const query = vi.fn(async (sql: string) => {
+      if (sql.includes("select name, email from public.profiles"))
         return emptyResult([{ name: user.name, email: user.email }]);
-      }
-      if (sql.includes("information_schema.columns")) return emptyResult([{ present: false }]);
-      if (sql.includes("select distinct p.id")) {
+      if (sql.includes("from public.workspace_invitations invitation"))
         return emptyResult([
           {
-            id: user.id,
-            name: user.name,
+            id: "33333333-3333-4333-8333-333333333333",
+            workspace_id: "11111111-1111-4111-8111-111111111111",
             email: user.email,
-            initials: "TP",
-            avatar_path: null,
+            role: "Member",
+            invited_at: new Date(),
+            ...state,
           },
         ]);
-      }
-      if (sql.includes("from public.user_preferences where user_id")) {
-        return emptyResult([
-          {
-            user_id: user.id,
-            language: "pt-BR",
-            theme: "system",
-            timezone: "America/Sao_Paulo",
-            idle_detection: true,
-            avatar_data_url: null,
-            active_workspace_id: null,
-            report_filters: {},
-          },
-        ]);
-      }
       return emptyResult();
     });
-
-    const account = await loadAccount({ query }, user, { databaseProvider: "postgres" });
-
-    expect(account.workspaces).toEqual([]);
-    expect(account.identities).toEqual([
-      { id: user.id, name: user.name, email: user.email, initials: "TP" },
-    ]);
-    expect(account.preferencesByUserId[user.id]).toMatchObject({
-      language: "pt-BR",
-      timezone: "America/Sao_Paulo",
-      activeWorkspaceId: null,
-    });
+    await expect(
+      acceptInvitation(
+        { query },
+        user,
+        { databaseProvider: "postgres" },
+        {
+          invitationId: "33333333-3333-4333-8333-333333333333",
+        },
+      ),
+    ).rejects.toMatchObject({ status: 409 });
+    expect(
+      query.mock.calls.some(([sql]) => sql.includes("insert into public.workspace_members")),
+    ).toBe(false);
   });
+  it("discovers invitations only for the authenticated email and excludes unavailable workspaces", async () => {
+    const query = vi
+      .fn()
+      .mockResolvedValue(emptyResult([{ id: "invite-1", workspace_name: "Company" }]));
+    await expect(
+      listPendingInvitations({ query }, { ...user, email: " Person@Example.com " }),
+    ).resolves.toEqual([{ id: "invite-1", workspaceName: "Company" }]);
+    const [sql, parameters] = query.mock.calls[0]!;
+    expect(parameters).toEqual(["person@example.com", user.id]);
+    expect(sql).toContain("lower(trim(invitation.email)) = $1");
+    expect(sql).toContain("invitation.status = 'pending'");
+    expect(sql).toContain("invitation.expires_at > now()");
+    expect(sql).toContain("workspace.status <> 'archived'");
+    expect(sql).toContain("member.user_id = $2 and member.status = 'active'");
+  });
+  it.each(["pt-BR", "en-US", undefined])(
+    "loads preferences without a workspace, preserving saved language %s",
+    async (language) => {
+      const query = vi.fn(async (sql: string, _parameters?: unknown[]) => {
+        if (sql.includes("select name, email from public.profiles")) {
+          return emptyResult([{ name: user.name, email: user.email }]);
+        }
+        if (sql.includes("information_schema.columns")) return emptyResult([{ present: false }]);
+        if (sql.includes("select distinct p.id")) {
+          return emptyResult([
+            {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              initials: "TP",
+              avatar_path: null,
+            },
+          ]);
+        }
+        if (sql.includes("from public.user_preferences where user_id")) {
+          return emptyResult([
+            {
+              user_id: user.id,
+              language,
+              theme: "system",
+              timezone: "America/Sao_Paulo",
+              idle_detection: true,
+              avatar_data_url: null,
+              active_workspace_id: null,
+              report_filters: {},
+            },
+          ]);
+        }
+        return emptyResult();
+      });
+
+      const account = await loadAccount({ query }, user, { databaseProvider: "postgres" });
+
+      expect(account.workspaces).toEqual([]);
+      expect(account.identities).toEqual([
+        { id: user.id, name: user.name, email: user.email, initials: "TP" },
+      ]);
+      expect(account.preferencesByUserId[user.id]).toMatchObject({
+        language: language === "en-US" ? "en-US" : "pt-BR",
+        timezone: "America/Sao_Paulo",
+        activeWorkspaceId: null,
+      });
+    },
+  );
 
   it("lets any authenticated user create a company workspace as its owner", async () => {
     const query = vi.fn(async (sql: string, _parameters?: unknown[]) => {

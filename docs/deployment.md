@@ -26,6 +26,10 @@ database URL, service-role key or access token with `VITE_`.
 
 ## Production release
 
+Apply `20261013120000_default_portuguese.sql` with the Portuguese-default release.
+It changes only the default for newly inserted preferences, including profiles
+created by Supabase Auth triggers. Existing language choices are preserved.
+
 Client currency selection requires `20260929140000_client_currency.sql` before
 deploying the API. Legacy clients retain member currency defaults until a currency
 is selected. New time entries snapshot the selected client currency; existing
