@@ -456,7 +456,9 @@ function ReportPeriodPicker({
               >
                 <Calendar aria-hidden="true" className={reportFilterIconClassName} />
                 {presetLabel ? (
-                  <span className="whitespace-nowrap text-sm">{presetLabel}</span>
+                  <span className="whitespace-nowrap text-sm text-field-foreground">
+                    {presetLabel}
+                  </span>
                 ) : null}
               </DateRangePicker.Trigger>
             </DateField.Prefix>
