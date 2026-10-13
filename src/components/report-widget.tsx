@@ -241,6 +241,7 @@ const chartHeightClassNames: Record<ReportChartHeight, string> = {
 
 export const reportChartColors = {
   accent: "var(--accent)",
+  neutral: "var(--default)",
   foreground: "var(--foreground)",
   muted: "var(--muted)",
   success: "var(--success)",

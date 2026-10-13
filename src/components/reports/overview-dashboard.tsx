@@ -156,8 +156,8 @@ export function OverviewDashboard({
       key: "internal",
       name: t("Internal"),
       value: summary.internalSeconds,
-      color: reportChartColors.accent,
-      opacity: 0.1,
+      color: reportChartColors.neutral,
+      opacity: 1,
       percentage: internalPercentage,
     },
   ];
@@ -328,7 +328,7 @@ export function OverviewDashboard({
           )}, ${internalPercentage}%.`}
           config={{
             billable: { label: t("Billable"), color: reportChartColors.accent },
-            internal: { label: t("Internal"), color: reportChartColors.accent },
+            internal: { label: t("Internal"), color: reportChartColors.neutral },
           }}
           summary={`${t("Billable")}: ${billablePercentage}%. ${t(
             "Internal",
@@ -344,8 +344,8 @@ export function OverviewDashboard({
                 >
                   <div className="flex min-w-0 items-center gap-2">
                     <span
-                      className="size-2.5 shrink-0 rounded-full bg-accent"
-                      style={{ opacity: item.opacity }}
+                      className="size-2.5 shrink-0 rounded-full"
+                      style={{ backgroundColor: item.color, opacity: item.opacity }}
                       aria-hidden="true"
                     />
                     <Typography type="body-sm" color="muted" weight="medium">
