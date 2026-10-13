@@ -17,6 +17,10 @@ import { projectColorValue } from "@/lib/project-colors";
 import { useI18n } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
 
+// DEV: 272px chart, 15px top inset, 202px plot, 26px date row and 29px below it.
+// The 36px right inset includes the container's 12px and the plot's extra 24px.
+const distributionChartMargin = { top: 15, right: 36, left: 0, bottom: 29 };
+
 export function ReportDistribution({
   analytics,
   entries,
@@ -123,7 +127,7 @@ export function ReportDistribution({
         <BarChart
           data={data}
           accessibilityLayer
-          margin={{ top: 24, right: 12, left: 0, bottom: 0 }}
+          margin={distributionChartMargin}
           barCategoryGap="18%"
         >
           <CartesianGrid vertical={false} stroke="var(--separator)" strokeOpacity={0.5} />
@@ -132,6 +136,7 @@ export function ReportDistribution({
             dataKey="label"
             minTickGap={20}
             tickMargin={10}
+            height={26}
             tick={{ fontSize: 12 }}
             interval="preserveStartEnd"
           />
