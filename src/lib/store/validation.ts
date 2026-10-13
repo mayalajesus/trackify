@@ -56,7 +56,6 @@ export function isValidPreferences(value: unknown): value is UserPreferences {
   const prefs = value as Partial<UserPreferences>;
   return (
     (prefs.favoriteTasks === undefined || isFavoriteTasks(prefs.favoriteTasks)) &&
-    typeof prefs.idleDetection === "boolean" &&
     isLocale(prefs.language) &&
     isThemeMode(prefs.theme) &&
     isValidAvatarUrl(prefs.avatarUrl) &&

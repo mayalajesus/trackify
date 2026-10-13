@@ -21,7 +21,6 @@ export const initialSettings: WorkspaceSettings = {
 };
 
 export const initialPreferences: UserPreferences = {
-  idleDetection: true,
   language: defaultLocale,
   theme: "system",
   avatarUrl: null,

@@ -14,7 +14,6 @@ import {
 import { createRunningTimer } from "../../src/lib/timer-start";
 
 const storedPreferences: UserPreferences = {
-  idleDetection: true,
   language: "pt-BR",
   theme: "system",
   avatarUrl: null,

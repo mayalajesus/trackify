@@ -6,15 +6,13 @@ import { Input } from "@heroui/react/input";
 import { Label } from "@heroui/react/label";
 import { ListBox } from "@heroui/react/list-box";
 import { Select } from "@heroui/react/select";
-import { Switch } from "@heroui/react/switch";
 import { ThemeTabs } from "@/components/theme-tabs";
 import { TextField } from "@heroui/react/textfield";
-import { Tooltip } from "@heroui/react/tooltip";
 import { Modal } from "@heroui/react/modal";
 import { Typography } from "@heroui/react/typography";
 import { toast } from "@heroui/react/toast";
 import { createFileRoute } from "@tanstack/react-router";
-import { ChevronDown, CircleInfo } from "@gravity-ui/icons";
+import { ChevronDown } from "@gravity-ui/icons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FormAlert } from "@/components/form-feedback";
 import { PageHeader } from "@/components/page-header";
@@ -126,14 +124,6 @@ function SettingsPage() {
     setPasswordConfirmation("");
     setAccountError(null);
   }, [currentMember?.id, currentMember?.name, currentMember?.email, session?.user.email]);
-
-  const toggles = [
-    {
-      key: "idleDetection" as const,
-      title: "Idle detection",
-      hint: "Ask whether to pause the timer after long inactivity.",
-    },
-  ];
 
   const savePreference = async (patch: Partial<typeof preferences>) => {
     const result = await saveUserPreferences(patch);
@@ -584,39 +574,6 @@ function SettingsPage() {
             value={preferences.theme}
             onChange={(theme) => void savePreference({ theme })}
           />
-        </div>
-
-        <div className="space-y-3">
-          {toggles.map((item) => (
-            <div key={item.key} className="flex items-center gap-1.5">
-              <Switch
-                className="shrink-0"
-                aria-label={t(item.title)}
-                isSelected={preferences[item.key]}
-                onChange={(selected: boolean) =>
-                  savePreference({ [item.key]: selected } as Partial<typeof preferences>)
-                }
-              >
-                <Switch.Content className="flex min-w-0 items-center gap-2">
-                  <Switch.Control>
-                    <Switch.Thumb />
-                  </Switch.Control>
-                  <Label>{t(item.title)}</Label>
-                </Switch.Content>
-              </Switch>
-              <Tooltip delay={0} closeDelay={0} shouldSkipAnimation>
-                <Tooltip.Trigger
-                  aria-label={t("More information about {label}", { label: t(item.title) })}
-                  className="inline-flex size-5 min-w-5 shrink-0 items-center justify-center text-muted"
-                >
-                  <CircleInfo aria-hidden="true" className="size-3.5" />
-                </Tooltip.Trigger>
-                <Tooltip.Content className="max-w-xs" showArrow>
-                  {t(item.hint)}
-                </Tooltip.Content>
-              </Tooltip>
-            </div>
-          ))}
         </div>
       </Card>
 

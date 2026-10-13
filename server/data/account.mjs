@@ -135,7 +135,7 @@ export async function loadAccount(client, user, config) {
     }
   }
   const preferences = await client.query(
-    `select user_id, language, theme, timezone, idle_detection, ${
+    `select user_id, language, theme, timezone, ${
       hasAvatarData ? "avatar_data_url" : "null::text as avatar_data_url"
     }, ${hasActiveWorkspace ? "active_workspace_id::text" : "null::text as active_workspace_id"},
        ${hasReportFilters ? "report_filters" : "'{}'::jsonb as report_filters"},
@@ -236,7 +236,6 @@ export async function loadAccount(client, user, config) {
       return [
         id,
         {
-          idleDetection: isOwnPreferences ? (row?.idle_detection ?? true) : true,
           language: isOwnPreferences && row?.language === "en-US" ? "en-US" : "pt-BR",
           theme:
             isOwnPreferences && (row?.theme === "light" || row?.theme === "dark")

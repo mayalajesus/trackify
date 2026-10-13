@@ -52,7 +52,6 @@ export type SessionStatus = "active" | "signed-out";
 
 export interface UserPreferences {
   favoriteTasks?: Record<string, import("./favorite-tasks").FavoriteTask[]>;
-  idleDetection: boolean;
   language: Locale;
   theme: ThemeMode;
   avatarUrl: string | null;

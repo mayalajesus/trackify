@@ -8,6 +8,30 @@ import {
 } from "../../src/lib/store";
 
 describe("local account persistence", () => {
+  it.each([true, false])(
+    "accepts old snapshots with idleDetection=%s without requiring it",
+    (idleDetection) => {
+      const account = makeSeedAccount();
+      expect(isValidAccount(account)).toBe(true);
+      const legacy = {
+        ...account,
+        preferencesByUserId: Object.fromEntries(
+          Object.entries(account.preferencesByUserId).map(([id, preferences]) => [
+            id,
+            { ...preferences, idleDetection },
+          ]),
+        ),
+      };
+      expect(isValidAccount(legacy)).toBe(true);
+      const migrated = migrateAccountSnapshot({ ...legacy, version: 12 });
+      expect(migrated).not.toBeNull();
+      expect(isValidAccount(migrated)).toBe(true);
+      for (const preferences of Object.values(migrated!.preferencesByUserId)) {
+        expect(preferences).not.toHaveProperty("idleDetection");
+      }
+    },
+  );
+
   it("accepts an authenticated account with profile preferences and no workspace", () => {
     const account: PersistedAccount = {
       version: 13,
@@ -22,7 +46,6 @@ describe("local account persistence", () => {
       workspaces: [],
       preferencesByUserId: {
         "new-user": {
-          idleDetection: true,
           language: "en-US",
           theme: "system",
           avatarUrl: null,

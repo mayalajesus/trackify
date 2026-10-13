@@ -84,12 +84,11 @@ export async function syncAccount(client, user, config, account) {
       ownPreferences.language,
       ownPreferences.theme,
       ownPreferences.timezone,
-      ownPreferences.idleDetection,
     ];
     await client.query(
-      `insert into public.user_preferences (user_id, language, theme, timezone, idle_detection)
-       values ($1, $2, $3, $4, $5)
-       on conflict (user_id) do update set language = excluded.language, theme = excluded.theme, timezone = excluded.timezone, idle_detection = excluded.idle_detection, updated_at = now()`,
+      `insert into public.user_preferences (user_id, language, theme, timezone)
+       values ($1, $2, $3, $4)
+       on conflict (user_id) do update set language = excluded.language, theme = excluded.theme, timezone = excluded.timezone, updated_at = now()`,
       preferenceValues,
     );
     if (ownPreferences.favoriteTasks !== undefined) {

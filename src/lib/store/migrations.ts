@@ -44,7 +44,6 @@ export function migrateAccountSnapshot(value: unknown): PersistedAccount | null 
     if (!candidate || typeof candidate !== "object") return null;
     const preferences = candidate as Partial<UserPreferences> & Partial<BillingPreference>;
     if (
-      typeof preferences.idleDetection !== "boolean" ||
       !isLocale(preferences.language) ||
       !isThemeMode(preferences.theme) ||
       !isValidAvatarUrl(preferences.avatarUrl)
@@ -67,7 +66,6 @@ export function migrateAccountSnapshot(value: unknown): PersistedAccount | null 
         ? (preferences.reportFilters as Record<string, StoredReportFilters>)
         : {};
     preferencesByUserId[identity.id] = {
-      idleDetection: preferences.idleDetection,
       language: preferences.language,
       theme: preferences.theme,
       avatarUrl: preferences.avatarUrl,

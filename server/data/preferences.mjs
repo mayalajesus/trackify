@@ -118,7 +118,6 @@ export async function updatePreferences(client, user, config, body) {
     throw new DataApiError(400, "Invalid preferences payload.");
   }
   const allowedKeys = new Set([
-    "idleDetection",
     "language",
     "theme",
     "avatarUrl",
@@ -139,11 +138,6 @@ export async function updatePreferences(client, user, config, body) {
   };
   if (patch.favoriteTasks !== undefined) {
     addValue("favorite_tasks", JSON.stringify(favoriteTasksValue(patch.favoriteTasks)), "::jsonb");
-  }
-  if (patch.idleDetection !== undefined) {
-    if (typeof patch.idleDetection !== "boolean")
-      throw new DataApiError(400, "Choose a valid idle detection preference.");
-    addValue("idle_detection", patch.idleDetection);
   }
   if (patch.language !== undefined) {
     if (patch.language !== "en-US" && patch.language !== "pt-BR")
