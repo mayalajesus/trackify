@@ -224,13 +224,8 @@ export async function syncAccount(client, user, config, account) {
       if (!ownMembership || ownMembership.status !== "active") {
         throw new DataApiError(403, "You cannot remove your own workspace access.");
       }
-      const billing = membershipBilling(ownMembership);
-      await client.query(
-        `update public.workspace_members
-            set hourly_rate = $3, currency = $4
-          where workspace_id = $1 and user_id = $2 and status = 'active'`,
-        [workspaceId, user.id, billing.hourlyRate, billing.currency],
-      );
+      // Member snapshots may contain stale or tampered workspace fields.
+      // Only their own time entries can be synchronized from this branch.
       await syncEntries(client, user.id, workspaceId, data.entries ?? []);
       continue;
     }

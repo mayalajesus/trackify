@@ -286,6 +286,12 @@ export function createWorkspaceActions({
     if (!membership || membership.status !== "active") {
       return { success: false, error: "You do not have access to this workspace." };
     }
+    if (membership.role !== "Owner" && membership.role !== "Admin") {
+      return {
+        success: false,
+        error: "Only Admins and the Owner can change workspace settings.",
+      };
+    }
     if (target.workspace.status === "archived") {
       return { success: false, error: "Archived workspaces are read-only. Restore it first." };
     }

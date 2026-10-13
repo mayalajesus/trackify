@@ -173,6 +173,12 @@ function WorkspacesPage() {
   };
 
   const openEdit = (workspace: WorkspaceSummary) => {
+    if (
+      workspace.status !== "active" ||
+      workspace.membershipStatus !== "active" ||
+      workspace.role === "Member"
+    )
+      return;
     setFormError(null);
     setEditWorkspace(workspace);
   };
@@ -219,6 +225,16 @@ function WorkspacesPage() {
 
   const submitEdit = () => {
     if (!editWorkspace) return;
+    const currentWorkspace = workspaces.find((workspace) => workspace.id === editWorkspace.id);
+    if (
+      !currentWorkspace ||
+      currentWorkspace.status !== "active" ||
+      currentWorkspace.membershipStatus !== "active" ||
+      currentWorkspace.role === "Member"
+    ) {
+      setFormError(t("Only Admins and the Owner can change workspace settings."));
+      return;
+    }
     if (editWorkspace.isOwned && !name.trim()) {
       setFormError(t("Workspace name is required"));
       return;
@@ -312,7 +328,10 @@ function WorkspacesPage() {
 
   const renderWorkspaceRow = (workspace: WorkspaceSummary) => {
     const isCurrent = workspace.id === activeWorkspaceId;
-    const canEdit = workspace.status === "active";
+    const canEdit =
+      workspace.status === "active" &&
+      workspace.membershipStatus === "active" &&
+      (workspace.role === "Owner" || workspace.role === "Admin");
     const ownerLabel = workspace.isOwned
       ? t("Owned by you")
       : t("Owned by {name}", { name: workspace.ownerName });
