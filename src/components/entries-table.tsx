@@ -3,7 +3,7 @@ import { Button } from "@heroui/react/button";
 import { Modal } from "@heroui/react/modal";
 import { Table } from "@heroui/react/table";
 import { Typography } from "@heroui/react/typography";
-import { toast } from "@heroui/react/toast";
+import { toast } from "@/lib/toast";
 import { Pencil, TrashBin, Thunderbolt, LayoutColumns, PersonPlus } from "@gravity-ui/icons";
 import { BillableIndicator } from "@/components/billable-indicator";
 import { ProjectLabel } from "@/components/project-color";

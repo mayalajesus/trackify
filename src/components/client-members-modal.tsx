@@ -3,7 +3,7 @@ import { Button } from "@heroui/react/button";
 import { Modal } from "@heroui/react/modal";
 import { ListBox } from "@heroui/react/list-box";
 import { SearchField } from "@heroui/react/search-field";
-import { toast } from "@heroui/react/toast";
+import { toast } from "@/lib/toast";
 import { Check, Plus } from "@gravity-ui/icons";
 import { ModalLayout } from "./modal-layout";
 import { ModalTriggerRegistration } from "./overlay-trigger-registration";

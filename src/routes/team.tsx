@@ -10,7 +10,7 @@ import { Modal } from "@heroui/react/modal";
 import { Table } from "@heroui/react/table";
 import { TextField } from "@heroui/react/textfield";
 import { Typography } from "@heroui/react/typography";
-import { toast } from "@heroui/react/toast";
+import { toast } from "@/lib/toast";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   ArrowRightFromSquare,

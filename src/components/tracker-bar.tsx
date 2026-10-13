@@ -9,7 +9,7 @@ import { Separator } from "@heroui/react/separator";
 import { ToggleButton } from "@heroui/react/toggle-button";
 import { ToggleButtonGroup } from "@heroui/react/toggle-button-group";
 import { Toolbar } from "@heroui/react/toolbar";
-import { toast } from "@heroui/react/toast";
+import { toast } from "@/lib/toast";
 import { Button } from "@heroui/react/button";
 import { useFavoriteTasks } from "@/lib/use-favorite-tasks";
 import { type FavoriteTask } from "@/lib/favorite-tasks";

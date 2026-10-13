@@ -7,7 +7,7 @@ import { Form } from "@heroui/react/form";
 import { Input } from "@heroui/react/input";
 import { Label } from "@heroui/react/label";
 import { TextField } from "@heroui/react/textfield";
-import { toast } from "@heroui/react/toast";
+import { toast } from "@/lib/toast";
 import { Typography } from "@heroui/react/typography";
 import { ArrowRightFromSquare, CloudArrowUpIn, Layers } from "@gravity-ui/icons";
 import { useRef, useState } from "react";

@@ -40,7 +40,7 @@ import { Input } from "@heroui/react/input";
 import { Label } from "@heroui/react/label";
 import { Table } from "@heroui/react/table";
 import { TextField } from "@heroui/react/textfield";
-import { toast } from "@heroui/react/toast";
+import { toast } from "@/lib/toast";
 import { Tooltip } from "@heroui/react/tooltip";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { TrackerTaskTeam } from "../tracker-task-team";

@@ -16,7 +16,7 @@ import { TagGroup } from "@heroui/react/tag-group";
 import { TextField } from "@heroui/react/textfield";
 import { Switch } from "@heroui/react/switch";
 import { Typography } from "@heroui/react/typography";
-import { toast } from "@heroui/react/toast";
+import { toast } from "@/lib/toast";
 import { ChevronDown } from "@gravity-ui/icons";
 import { useEffect, useMemo, useState } from "react";
 import { ProjectColorPicker } from "@/components/project-color-picker";

@@ -6,7 +6,7 @@ import { Modal } from "@heroui/react/modal";
 import { Dropdown } from "@heroui/react/dropdown";
 import { Table } from "@heroui/react/table";
 import { Typography } from "@heroui/react/typography";
-import { toast } from "@heroui/react/toast";
+import { toast } from "@/lib/toast";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Archive,

@@ -7,7 +7,7 @@ import { useStore } from "@/lib/store";
 import { Button } from "@heroui/react/button";
 import { Modal } from "@heroui/react/modal";
 import { Table } from "@heroui/react/table";
-import { toast } from "@heroui/react/toast";
+import { toast } from "@/lib/toast";
 import { Typography } from "@heroui/react/typography";
 import { useEffect, useMemo, useState } from "react";
 import { TrackerEntryRow } from "./tracker-entries/entry-row";

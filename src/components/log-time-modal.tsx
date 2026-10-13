@@ -8,7 +8,7 @@ import { Label } from "@heroui/react/label";
 import { Modal } from "@heroui/react/modal";
 import { TextArea } from "@heroui/react/textarea";
 import { TextField } from "@heroui/react/textfield";
-import { toast } from "@heroui/react/toast";
+import { toast } from "@/lib/toast";
 import { useEffect, useState } from "react";
 import { CircleDollar } from "@gravity-ui/icons";
 import { FormAlert } from "@/components/form-feedback";

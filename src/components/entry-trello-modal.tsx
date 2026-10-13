@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { toast } from "@heroui/react/toast";
+import { toast } from "@/lib/toast";
 import { TrackerTaskModal } from "./tracker-task-modal";
 import { useStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";

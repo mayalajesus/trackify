@@ -10,7 +10,7 @@ import { ThemeTabs } from "@/components/theme-tabs";
 import { TextField } from "@heroui/react/textfield";
 import { Modal } from "@heroui/react/modal";
 import { Typography } from "@heroui/react/typography";
-import { toast } from "@heroui/react/toast";
+import { toast } from "@/lib/toast";
 import { createFileRoute } from "@tanstack/react-router";
 import { ChevronDown } from "@gravity-ui/icons";
 import { useEffect, useMemo, useRef, useState } from "react";

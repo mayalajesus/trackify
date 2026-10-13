@@ -5,7 +5,7 @@ import { ListBox } from "@heroui/react/list-box";
 import { Modal } from "@heroui/react/modal";
 import { TextField } from "@heroui/react/textfield";
 import { Typography } from "@heroui/react/typography";
-import { toast } from "@heroui/react/toast";
+import { toast } from "@/lib/toast";
 import { useNavigate } from "@tanstack/react-router";
 import {
   Calendar,

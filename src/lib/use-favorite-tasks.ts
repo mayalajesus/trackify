@@ -1,4 +1,4 @@
-import { toast } from "@heroui/react/toast";
+import { toast } from "@/lib/toast";
 import { useStore } from "./store";
 import { useI18n } from "./i18n";
 import { favoriteTaskKey, type FavoriteTask } from "./favorite-tasks";

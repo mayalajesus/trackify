@@ -9,7 +9,7 @@ import { TagGroup } from "@heroui/react/tag-group";
 import { Separator } from "@heroui/react/separator";
 import { Check, Plus, LayoutColumns } from "@gravity-ui/icons";
 import { useEffect, useRef, useState } from "react";
-import { toast } from "@heroui/react/toast";
+import { toast } from "@/lib/toast";
 import { ProfileAvatar } from "./profile-avatar";
 import { ModalLayout } from "./modal-layout";
 import { ModalSelect } from "./modal-select";

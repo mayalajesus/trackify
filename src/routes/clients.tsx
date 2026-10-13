@@ -9,7 +9,7 @@ import { Modal } from "@heroui/react/modal";
 import { Table } from "@heroui/react/table";
 import { Switch } from "@heroui/react/switch";
 import { TextField } from "@heroui/react/textfield";
-import { toast } from "@heroui/react/toast";
+import { toast } from "@/lib/toast";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Archive,

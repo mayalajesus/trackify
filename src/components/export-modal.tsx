@@ -5,7 +5,7 @@ import { Label } from "@heroui/react/label";
 import { Modal } from "@heroui/react/modal";
 import { Radio } from "@heroui/react/radio";
 import { RadioGroup } from "@heroui/react/radio-group";
-import { toast } from "@heroui/react/toast";
+import { toast } from "@/lib/toast";
 import { ArrowDownToLine } from "@gravity-ui/icons";
 import { useState } from "react";
 import { FormAlert } from "@/components/form-feedback";

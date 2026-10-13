@@ -2,7 +2,7 @@ import { Dropdown } from "@heroui/react/dropdown";
 import { Label } from "@heroui/react/label";
 import { Separator } from "@heroui/react/separator";
 import { ThemeTabs } from "@/components/theme-tabs";
-import { toast } from "@heroui/react/toast";
+import { toast } from "@/lib/toast";
 import { Typography } from "@heroui/react/typography";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowRightFromSquare, Gear } from "@gravity-ui/icons";

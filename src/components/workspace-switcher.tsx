@@ -5,7 +5,7 @@ import { Description } from "@heroui/react/description";
 import { Dropdown } from "@heroui/react/dropdown";
 import { Modal } from "@heroui/react/modal";
 import { Typography } from "@heroui/react/typography";
-import { toast } from "@heroui/react/toast";
+import { toast } from "@/lib/toast";
 import { Check, ChevronDown, Layers3Diagonal } from "@gravity-ui/icons";
 import { useState } from "react";
 import { ModalLayout } from "@/components/modal-layout";
