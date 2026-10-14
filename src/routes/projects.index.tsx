@@ -37,6 +37,7 @@ import { useI18n } from "@/lib/i18n";
 import type { Project } from "@/lib/domain";
 import { projectColorValue } from "@/lib/project-colors";
 import { useStore } from "@/lib/store";
+import { sortClientsByName } from "@/lib/client-order";
 
 export const Route = createFileRoute("/projects/")({
   head: () => ({
@@ -232,7 +233,7 @@ function ProjectsPage() {
                     <Label>{t("All clients")}</Label>
                     <Dropdown.ItemIndicator />
                   </Dropdown.Item>
-                  {clients.map((client) => (
+                  {sortClientsByName(clients, locale).map((client) => (
                     <Dropdown.Item key={client.id} id={client.id} textValue={client.name}>
                       <Label>{client.name}</Label>
                       <Dropdown.ItemIndicator />

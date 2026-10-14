@@ -47,6 +47,7 @@ import {
 } from "@/lib/format";
 import type { Client, Member, Project } from "@/lib/domain";
 import type { CurrencyCode } from "@/lib/billing";
+import { sortClientsByName } from "@/lib/client-order";
 
 export type ReportFilterKey = "member" | "client" | "project" | "description";
 
@@ -634,7 +635,7 @@ export function ReportFiltersBar({
   onChange: (patch: Partial<ReportFilterValues>) => void;
   onClear: () => void;
 }) {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const visible = showTeam ? visibleFilters : visibleFilters.filter((key) => key !== "member");
   const memberOptions = useMemo(
     () =>
@@ -645,12 +646,12 @@ export function ReportFiltersBar({
   );
   const clientOptions = useMemo(
     () =>
-      clients.map((client) => ({
+      sortClientsByName(clients, locale).map((client) => ({
         id: client.id,
         label: client.name,
         description: client.contact,
       })),
-    [clients],
+    [clients, locale],
   );
   const clientNameById = useMemo(
     () => new Map(clients.map((client) => [client.id, client.name])),

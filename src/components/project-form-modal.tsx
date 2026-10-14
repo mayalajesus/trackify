@@ -28,6 +28,7 @@ import type { Project } from "@/lib/domain";
 import { useI18n } from "@/lib/i18n";
 import { defaultProjectColor, projectColorValue } from "@/lib/project-colors";
 import { useStore } from "@/lib/store";
+import { sortClientsByName } from "@/lib/client-order";
 
 export interface CreatedProjectSelection {
   id: string;
@@ -50,7 +51,8 @@ export function ProjectFormModal({
   onCreated,
 }: ProjectFormModalProps) {
   const { clients, members, preferencesByUserId, today, addProject, updateProject } = useStore();
-  const { t, error } = useI18n();
+  const { locale, t, error } = useI18n();
+  const sortedClients = useMemo(() => sortClientsByName(clients, locale), [clients, locale]);
   const { contains } = useFilter({ sensitivity: "base" });
   const [name, setName] = useState("");
   const [clientId, setClientId] = useState("");
@@ -241,7 +243,7 @@ export function ProjectFormModal({
                           className="max-h-64 overflow-y-auto"
                           renderEmptyState={() => <EmptyState>{t("No results")}</EmptyState>}
                         >
-                          {clients
+                          {sortedClients
                             .filter(
                               (client) =>
                                 (client.status ?? "active") === "active" || client.id === clientId,
