@@ -27,6 +27,7 @@ import {
   uploadAvatar,
 } from "./data/preferences.mjs";
 import { ensureProfile } from "./data/profile.mjs";
+import { deleteMember } from "./data/members.mjs";
 import { syncAccount } from "./data/sync-account.mjs";
 import { timerFromRow } from "./data/timer.mjs";
 import {
@@ -185,6 +186,17 @@ async function operation(request, user, config, body) {
         const accepted = await acceptInvitation(client, user, config, body);
         await client.query("commit");
         return accepted;
+      } catch (error) {
+        await client.query("rollback");
+        throw error;
+      }
+    }
+    if (body.operation === "deleteMember") {
+      await client.query("begin");
+      try {
+        const result = await deleteMember(client, user, body);
+        await client.query("commit");
+        return result;
       } catch (error) {
         await client.query("rollback");
         throw error;

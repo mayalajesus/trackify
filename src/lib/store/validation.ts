@@ -235,6 +235,10 @@ export function isValidAccount(value: unknown): value is PersistedAccount {
           (membership.invitedAt === undefined ||
             (typeof membership.invitedAt === "string" &&
               !Number.isNaN(Date.parse(membership.invitedAt)))) &&
+          (membership.deletedAt === undefined ||
+            (membership.status === "removed" &&
+              typeof membership.deletedAt === "string" &&
+              !Number.isNaN(Date.parse(membership.deletedAt)))) &&
           (membership.joinedAt === undefined ||
             (typeof membership.joinedAt === "string" &&
               !Number.isNaN(Date.parse(membership.joinedAt)))),

@@ -83,7 +83,7 @@ export async function loadAccount(client, user, config) {
   }));
   const profileIds = identityRows.rows.map((identity) => identity.id);
   const memberships = await client.query(
-    `select workspace_id::text, user_id, role, status, hourly_rate, currency, invited_at, joined_at
+    `select workspace_id::text, user_id, role, status, hourly_rate, currency, invited_at, joined_at, to_jsonb(workspace_members)->>'deleted_at' as deleted_at
      from public.workspace_members where workspace_id = any($1::uuid[])`,
     [workspaceIds],
   );
@@ -156,6 +156,7 @@ export async function loadAccount(client, user, config) {
       currency: ["BRL", "USD", "EUR", "GBP"].includes(row.currency) ? row.currency : "USD",
       ...(row.invited_at ? { invitedAt: iso(row.invited_at) } : {}),
       ...(row.joined_at ? { joinedAt: iso(row.joined_at) } : {}),
+      ...(row.deleted_at ? { deletedAt: iso(row.deleted_at) } : {}),
     });
     membershipsByWorkspace.set(row.workspace_id, list);
   }

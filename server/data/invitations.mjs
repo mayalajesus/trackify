@@ -134,7 +134,7 @@ export async function inviteMember(client, user, config, body) {
     `select 1
        from public.workspace_members wm
        join public.profiles p on p.id = wm.user_id
-      where wm.workspace_id = $1 and lower(p.email) = $2
+      where wm.workspace_id = $1 and lower(p.email) = $2 and to_jsonb(wm)->>'deleted_at' is null
       limit 1`,
     [workspaceId, email],
   );
@@ -249,6 +249,17 @@ export async function acceptInvitation(client, user, config, body) {
   if (String(invitation.email).trim().toLowerCase() !== user.email.trim().toLowerCase()) {
     throw new DataApiError(403, "This invitation belongs to a different email address.");
   }
+  const historical = await client.query(
+    `select to_jsonb(workspace_members)->>'deleted_at' as deleted_at
+       from public.workspace_members where workspace_id = $1 and user_id = $2 for update`,
+    [invitation.workspace_id, user.id],
+  );
+  if (
+    historical.rows[0]?.deleted_at &&
+    new Date(invitation.invited_at).getTime() <= new Date(historical.rows[0].deleted_at).getTime()
+  ) {
+    throw new DataApiError(409, "This invitation is no longer valid.");
+  }
   const existing = await client.query(
     `select 1 from public.workspace_members
       where workspace_id = $1 and user_id = $2 and status = 'active'`,
@@ -282,7 +293,8 @@ export async function acceptInvitation(client, user, config, body) {
        role = excluded.role,
        status = 'active',
        invited_at = excluded.invited_at,
-       joined_at = excluded.joined_at`,
+       joined_at = excluded.joined_at
+       ${(await hasColumn(client, "workspace_members", "deleted_at")) ? ", deleted_at = null" : ""}`,
     [invitation.workspace_id, user.id, invitation.role, invitation.invited_at],
   );
   await client.query(

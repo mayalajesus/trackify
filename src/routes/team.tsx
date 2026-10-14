@@ -72,6 +72,7 @@ function TeamPage() {
     inviteMember,
     resendInvite,
     cancelInvite,
+    deleteMember,
     removeMember,
     restoreMember,
     updateMemberRole,
@@ -90,15 +91,21 @@ function TeamPage() {
   const [invitationActionId, setInvitationActionId] = useState<string | null>(null);
   const [pendingCancel, setPendingCancel] = useState<Member | null>(null);
   const [cancelError, setCancelError] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Member | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const deleteRequestRef = useRef(false);
   const [pendingRemove, setPendingRemove] = useState<Member | null>(null);
   const [removeError, setRemoveError] = useState<string | null>(null);
 
   const inviteRoles: InviteRole[] = can("manage-admins") ? ["Member", "Admin"] : ["Member"];
 
-  const orderedMembers = [...members].sort((a, b) => {
-    const rank = { invited: 0, active: 1, removed: 2 } as const;
-    return rank[a.status] - rank[b.status] || a.name.localeCompare(b.name);
-  });
+  const orderedMembers = members
+    .filter((member) => !member.deletedAt)
+    .sort((a, b) => {
+      const rank = { invited: 0, active: 1, removed: 2 } as const;
+      return rank[a.status] - rank[b.status] || a.name.localeCompare(b.name);
+    });
 
   const secondsFor = (id: string) =>
     entries.filter((entry) => entry.userId === id).reduce((sum, entry) => sum + entry.seconds, 0);
@@ -193,6 +200,27 @@ function TeamPage() {
       return;
     }
     toast.success(t("Access restored"), { description: member.email });
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete || deleteRequestRef.current) return;
+    deleteRequestRef.current = true;
+    setDeleteBusy(true);
+    setDeleteError(null);
+    try {
+      const result = await deleteMember(pendingDelete.id);
+      if (!result.success) {
+        setDeleteError(error(result.error));
+        return;
+      }
+      toast.success(t("Team membership deleted"));
+      setPendingDelete(null);
+    } catch {
+      setDeleteError(t("We couldn't delete this team membership"));
+    } finally {
+      deleteRequestRef.current = false;
+      setDeleteBusy(false);
+    }
   };
 
   const confirmRemove = () => {
@@ -356,9 +384,19 @@ function TeamPage() {
                             label: t("Restore access"),
                             icon: <PersonPlus className="size-4" />,
                           },
+                          {
+                            id: "delete",
+                            label: t("Delete team membership"),
+                            icon: <TrashBin className="size-4" />,
+                            tone: "danger",
+                          },
                         ]}
                         onAction={(key) => {
                           if (key === "restore") handleRestore(member);
+                          if (key === "delete") {
+                            setDeleteError(null);
+                            setPendingDelete(member);
+                          }
                         }}
                       />
                     </div>
@@ -384,9 +422,19 @@ function TeamPage() {
                             icon: <TrashBin className="size-4" />,
                             tone: "danger",
                           },
+                          {
+                            id: "delete",
+                            label: t("Delete team membership"),
+                            icon: <TrashBin className="size-4" />,
+                            tone: "danger",
+                          },
                         ]}
                         onAction={(key) => {
                           if (key === "role") manageRole(member);
+                          if (key === "delete") {
+                            setDeleteError(null);
+                            setPendingDelete(member);
+                          }
                           if (key === "remove") {
                             setRemoveError(null);
                             setPendingRemove(member);
@@ -648,6 +696,51 @@ function TeamPage() {
         </Modal.Backdrop>
       </Modal>
 
+      <Modal
+        isOpen={pendingDelete !== null}
+        onOpenChange={(open) => {
+          if (!open && !deleteRequestRef.current) {
+            setPendingDelete(null);
+            setDeleteError(null);
+          }
+        }}
+      >
+        <ModalTriggerRegistration />
+        <Modal.Backdrop>
+          <Modal.Container size="sm">
+            <Modal.Dialog className="team-modal">
+              <Modal.CloseTrigger isDisabled={deleteBusy} />
+              <ModalLayout.Header>{t("Permanently delete team membership?")}</ModalLayout.Header>
+              <ModalLayout.Body>
+                {deleteError ? (
+                  <FormAlert
+                    title={t("We couldn't delete this team membership")}
+                    description={deleteError}
+                  />
+                ) : null}
+                <Typography type="body-sm" color="muted">
+                  {t(
+                    "{name} will leave this team and lose workspace access. Their time entries and history will remain available. This membership cannot be restored; joining again requires accepting a new invitation.",
+                    { name: pendingDelete?.name ?? t("this member") },
+                  )}
+                </Typography>
+              </ModalLayout.Body>
+              <ModalLayout.Footer>
+                <Button slot="close" variant="secondary" isDisabled={deleteBusy}>
+                  {t("Cancel")}
+                </Button>
+                <Button
+                  variant="danger"
+                  isDisabled={deleteBusy}
+                  onPress={() => void confirmDelete()}
+                >
+                  {t("Delete team membership")}
+                </Button>
+              </ModalLayout.Footer>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
+      </Modal>
       <Modal
         isOpen={pendingRemove !== null}
         onOpenChange={(open) => {

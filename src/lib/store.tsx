@@ -818,6 +818,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       inviteMember,
       resendInvite,
       cancelInvite,
+      deleteMember,
       removeMember,
       restoreMember,
       updateMemberRole,
@@ -831,6 +832,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       activeMemberId,
       currentMember,
       setProjects,
+      setClients,
+      persistAccount,
     });
 
     const setTrello = (patch: Partial<TrelloState>): StoreResult => {
@@ -1120,6 +1123,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       inviteMember,
       resendInvite,
       cancelInvite,
+      deleteMember,
       removeMember,
       restoreMember,
       updateMemberRole,

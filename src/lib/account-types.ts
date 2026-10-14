@@ -30,6 +30,7 @@ export interface WorkspaceMembership {
   hourlyRate: number;
   currency: CurrencyCode;
   invitedAt?: string;
+  deletedAt?: string;
   joinedAt?: string;
 }
 

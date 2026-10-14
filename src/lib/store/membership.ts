@@ -13,6 +13,7 @@ export function membershipToMember(
     ...identity,
     role: membership.role,
     status: membership.status,
+    ...(membership.deletedAt ? { deletedAt: membership.deletedAt } : {}),
     ...(membership.invitedAt ? { invitedAt: membership.invitedAt } : {}),
   };
 }
@@ -34,6 +35,7 @@ export function membersToMemberships(
       userId: member.id,
       role: member.role,
       status: member.status,
+      ...(member.deletedAt ? { deletedAt: member.deletedAt } : {}),
       hourlyRate: billing?.hourlyRate ?? 0,
       currency: billing?.currency ?? defaultCurrencyForLocale(defaultLocale),
       ...(member.invitedAt ? { invitedAt: member.invitedAt } : {}),

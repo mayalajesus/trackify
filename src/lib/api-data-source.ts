@@ -130,6 +130,8 @@ export function createApiDataSource(): AccountDataSource {
         invitationId,
         emailRequestId: crypto.randomUUID(),
       }),
+    deleteMember: (workspaceId, memberId) =>
+      request<{ deletedAt: string }>("deleteMember", { workspaceId, memberId }),
     cancelInvitation: (workspaceId, invitationId) =>
       request<null>("cancelInvitation", { workspaceId, invitationId }),
     updateProfileName: (name) => request<null>("updateProfileName", { name }),

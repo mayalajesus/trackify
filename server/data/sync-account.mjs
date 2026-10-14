@@ -129,7 +129,7 @@ export async function syncAccount(client, user, config, account) {
     const existingWorkspace = await client.query(
       `select owner_id, name, status, ${
         hasLogoPath ? "logo_path" : "null::text as logo_path"
-      } from public.workspaces where id = $1`,
+      } from public.workspaces where id = $1 for update`,
       [workspaceId],
     );
     if (!existingWorkspace.rows[0]) {
@@ -229,6 +229,7 @@ export async function syncAccount(client, user, config, account) {
       continue;
     }
     const membershipByUserId = new Map();
+    const deletedMembershipIds = new Set();
     const protectedMembershipIds = new Set();
     for (const membership of memberships) {
       if (!membership || typeof membership.userId !== "string") {
@@ -245,10 +246,19 @@ export async function syncAccount(client, user, config, account) {
       const identity = identities.get(membership.userId);
       if (!identity) throw new DataApiError(400, "A workspace member profile is missing.");
       const existingMembership = await client.query(
-        `select role, status from public.workspace_members where workspace_id = $1 and user_id = $2`,
+        `select role, status, to_jsonb(workspace_members)->>'deleted_at' as deleted_at from public.workspace_members where workspace_id = $1 and user_id = $2`,
         [workspaceId, membership.userId],
       );
       const previousMembership = existingMembership.rows[0];
+      if (previousMembership?.deleted_at) {
+        deletedMembershipIds.add(membership.userId);
+        if (membership.status !== "removed" || membership.role !== previousMembership.role)
+          throw new DataApiError(
+            409,
+            "This team membership was permanently deleted. Refresh the team before continuing.",
+          );
+        protectedMembershipIds.add(membership.userId);
+      }
       if (!previousMembership && membership.userId !== user.id) {
         throw new DataApiError(
           403,
@@ -330,7 +340,7 @@ export async function syncAccount(client, user, config, account) {
       [workspaceId, (data.clients ?? []).map((item) => uuid(item.id))],
     );
     await client.query(
-      `delete from public.workspace_members where workspace_id = $1 and not (user_id = any($2::text[]))`,
+      `delete from public.workspace_members where workspace_id = $1 and not (user_id = any($2::text[])) and to_jsonb(workspace_members)->>'deleted_at' is null`,
       [workspaceId, memberships.map((item) => String(item.userId))],
     );
     for (const membership of memberships) {
@@ -379,7 +389,8 @@ export async function syncAccount(client, user, config, account) {
       }
       if (
         item.memberIds !== undefined &&
-        (!Array.isArray(item.memberIds) || item.memberIds.some((id) => !membershipByUserId.has(id)))
+        (!Array.isArray(item.memberIds) ||
+          item.memberIds.some((id) => !membershipByUserId.has(id) || deletedMembershipIds.has(id)))
       ) {
         throw new DataApiError(400, "Only workspace members can be assigned to a client.");
       }

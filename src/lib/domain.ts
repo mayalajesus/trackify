@@ -35,6 +35,7 @@ export interface Member {
   status: "active" | "invited" | "removed";
   initials: string;
   invitedAt?: string;
+  deletedAt?: string;
 }
 
 export interface TaskDetails {

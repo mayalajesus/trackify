@@ -981,6 +981,26 @@ const ptBR: Record<string, string> = {
   "Cancel invitation": "Cancelar convite",
   "Removing {name} revokes workspace access and removes them from current project assignments. Their tracked time and reports remain available. Restoring access later will not reassign projects automatically.":
     "Remover {name} revoga o acesso ao workspace e remove a pessoa das atribuições atuais de projetos. As horas e relatórios continuam disponíveis. Restaurar o acesso depois não reatribuirá projetos automaticamente.",
+  "Delete team membership": "Excluir vínculo com a equipe",
+  "Permanently delete team membership?": "Excluir vínculo definitivamente?",
+  "Team membership deleted": "Vínculo com a equipe excluído",
+  "We couldn't delete this team membership": "Não foi possível excluir o vínculo",
+  "{name} will leave this team and lose workspace access. Their time entries and history will remain available. This membership cannot be restored; joining again requires accepting a new invitation.":
+    "{name} sairá desta equipe e perderá o acesso ao workspace. Os registros de horas e o histórico serão preservados. Este vínculo não pode ser restaurado; para voltar, será necessário aceitar um novo convite.",
+  "Only Admins and the Owner can delete team memberships.":
+    "Somente administradores e o proprietário podem excluir vínculos com a equipe.",
+  "You cannot delete your own team membership.":
+    "Você não pode excluir seu próprio vínculo com a equipe.",
+  "You do not have permission to delete this team membership.":
+    "Você não tem permissão para excluir este vínculo com a equipe.",
+  "Team membership deletion requires the database migration.":
+    "A exclusão de vínculos requer a atualização do banco de dados.",
+  "Stop this member's timer before deleting their team membership.":
+    "Finalize o cronômetro deste membro antes de excluir o vínculo com a equipe.",
+  "This team membership was permanently deleted. Refresh the team before continuing.":
+    "Este vínculo foi excluído definitivamente. Atualize a equipe antes de continuar.",
+  "Save pending changes before deleting this team membership.":
+    "Salve as alterações pendentes antes de excluir o vínculo com a equipe.",
   "Keep member": "Manter membro",
   "Remove from team": "Remover da equipe",
   "Project not found": "Projeto não encontrado",

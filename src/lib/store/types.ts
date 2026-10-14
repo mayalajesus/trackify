@@ -106,6 +106,7 @@ export interface StoreValue {
   inviteMember: (email: string, role: Exclude<Role, "Owner">) => Promise<StoreResult>;
   resendInvite: (memberId: string) => Promise<StoreResult>;
   cancelInvite: (memberId: string) => Promise<StoreResult>;
+  deleteMember: (memberId: string) => Promise<StoreResult>;
   removeMember: (memberId: string) => StoreResult;
   restoreMember: (memberId: string) => StoreResult;
   updateMemberRole: (memberId: string, role: Exclude<Role, "Owner">) => StoreResult;

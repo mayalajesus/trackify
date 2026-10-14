@@ -98,6 +98,10 @@ export interface AccountDataSource {
     workspaceId: string,
     invitationId: string,
   ): Promise<DataSourceResult<InvitationLink>>;
+  deleteMember(
+    workspaceId: string,
+    memberId: string,
+  ): Promise<DataSourceResult<{ deletedAt: string }>>;
   cancelInvitation(workspaceId: string, invitationId: string): Promise<DataSourceResult<null>>;
   updateProfileName(name: string): Promise<DataSourceResult<null>>;
   uploadAvatar(avatarDataUrl: string): Promise<DataSourceResult<string>>;

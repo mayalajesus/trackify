@@ -13,6 +13,8 @@ export function createMemberActions({
   activeMemberId,
   currentMember,
   setProjects,
+  setClients,
+  persistAccount,
 }: {
   can: (permission: import("@/lib/permissions").Permission) => boolean;
   members: import("@/lib/domain").Member[];
@@ -22,6 +24,8 @@ export function createMemberActions({
   setAccount: React.Dispatch<React.SetStateAction<import("@/lib/account-types").PersistedAccount>>;
   activeMemberId: string;
   currentMember: import("@/lib/domain").Member | null;
+  persistAccount: () => Promise<boolean>;
+  setClients: React.Dispatch<React.SetStateAction<import("@/lib/domain").Client[]>>;
   setProjects: React.Dispatch<React.SetStateAction<import("@/lib/domain").Project[]>>;
 }) {
   const inviteMember = async (
@@ -42,7 +46,9 @@ export function createMemberActions({
         success: false,
         error: "This workspace has reached its limit of 50 members and invitations.",
       };
-    if (members.some((member) => member.email.toLowerCase() === normalizedEmail))
+    if (
+      members.some((member) => !member.deletedAt && member.email.toLowerCase() === normalizedEmail)
+    )
       return {
         success: false,
         error: "This email is already part of the team or has a pending invitation.",
@@ -107,7 +113,8 @@ export function createMemberActions({
     if (!can("manage-members"))
       return { success: false, error: "Only Admins and the Owner can remove members." };
     const member = members.find((candidate) => candidate.id === memberId);
-    if (!member) return { success: false, error: "This team member no longer exists." };
+    if (!member || member.deletedAt)
+      return { success: false, error: "This team member no longer exists." };
     if (memberId === activeMemberId && currentMember?.role === "Owner")
       return { success: false, error: "The Owner cannot remove their own account." };
     if (member.status !== "active")
@@ -135,11 +142,54 @@ export function createMemberActions({
     return { success: true };
   };
 
+  const deleteMember = async (memberId: string): Promise<StoreResult> => {
+    const member = members.find((item) => item.id === memberId);
+    if (
+      !can("manage-members") ||
+      !member ||
+      member.role === "Owner" ||
+      memberId === activeMemberId ||
+      member.status === "invited" ||
+      (member.role === "Admin" && !can("manage-admins"))
+    )
+      return {
+        success: false,
+        error: "You do not have permission to delete this team membership.",
+      };
+    if (!(await persistAccount()))
+      return {
+        success: false,
+        error: "Save pending changes before deleting this team membership.",
+      };
+    const response = await dataSource.deleteMember(activeWorkspaceId, memberId);
+    if (!response.success) return response;
+    setMembers((list) =>
+      list.map((item) =>
+        item.id === memberId
+          ? { ...item, status: "removed", deletedAt: response.data.deletedAt }
+          : item,
+      ),
+    );
+    setProjects((list) =>
+      list.map((item) => ({
+        ...item,
+        memberIds: (item.memberIds ?? []).filter((id) => id !== memberId),
+      })),
+    );
+    setClients((list) =>
+      list.map((item) => ({
+        ...item,
+        memberIds: (item.memberIds ?? []).filter((id) => id !== memberId),
+      })),
+    );
+    return { success: true };
+  };
+
   const restoreMember = (memberId: string): StoreResult => {
     if (!can("manage-members"))
       return { success: false, error: "Only Admins and the Owner can restore members." };
     const member = members.find((candidate) => candidate.id === memberId);
-    if (!member || member.status !== "removed")
+    if (!member || member.deletedAt || member.status !== "removed")
       return { success: false, error: "Only removed members can be restored." };
     if (member.role === "Admin" && !can("manage-admins"))
       return { success: false, error: "Only the Owner can restore Admins." };
@@ -153,7 +203,8 @@ export function createMemberActions({
 
   const updateMemberRole = (memberId: string, role: Exclude<Role, "Owner">): StoreResult => {
     const member = members.find((candidate) => candidate.id === memberId);
-    if (!member) return { success: false, error: "This team member no longer exists." };
+    if (!member || member.deletedAt)
+      return { success: false, error: "This team member no longer exists." };
     if (memberId === activeMemberId && currentMember?.role === "Owner")
       return { success: false, error: "The Owner cannot change their own role." };
     if (member.role === "Owner")
@@ -177,6 +228,7 @@ export function createMemberActions({
     inviteMember,
     resendInvite,
     cancelInvite,
+    deleteMember,
     removeMember,
     restoreMember,
     updateMemberRole,
