@@ -251,22 +251,25 @@ function AppShellContent({ children }: { children: ReactNode }) {
             collapsed ? "w-[65px]" : "w-56"
           }`}
         >
-          <div
-            className={`flex shrink-0 ${collapsed ? "flex-col items-center gap-3" : "h-8 items-center justify-between"}`}
-          >
-            <Link href="/tracker" aria-label={t("Trackify")} className="shrink-0">
+          <div className="sidebar-brand-header shrink-0" data-collapsed={collapsed}>
+            <Link href="/tracker" aria-label={t("Trackify")} className="sidebar-brand-link">
               <img
-                src={collapsed ? "/brand/trackify-mark.svg" : "/brand/trackify-logo.svg"}
-                alt="Trackify"
-                className={collapsed ? "h-8 w-auto" : "trackify-wordmark h-8 w-[149px]"}
+                src="/brand/trackify-mark.svg"
+                alt=""
+                aria-hidden="true"
+                className="trackify-mark sidebar-brand-symbol"
               />
+              <span className="sidebar-brand-name" aria-hidden="true">
+                <img src="/brand/trackify-wordmark.svg" alt="" className="trackify-wordmark" />
+              </span>
             </Link>
             <Button
               aria-label={t("Toggle sidebar")}
               isIconOnly
               size="sm"
               variant="ghost"
-              className="size-8 min-w-8 shrink-0 p-0"
+              className="sidebar-brand-toggle size-8 min-w-8 shrink-0 p-0"
+              aria-expanded={!collapsed}
               onPress={() => setCollapsed((c) => !c)}
             >
               <LayoutSideContentLeft aria-hidden="true" className="size-5" />
