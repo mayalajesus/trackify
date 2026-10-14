@@ -113,6 +113,8 @@ export function createApiDataSource(): AccountDataSource {
     syncAccount: (_userId, account) => request<null>("syncAccount", { account }),
     updatePreferences: (userId, patch) => request<null>("updatePreferences", { userId, patch }),
     createWorkspace: (input) => request<CreateWorkspaceResult>("createWorkspace", { ...input }),
+    deleteWorkspace: (workspaceId, confirmation) =>
+      request<PersistedAccount>("deleteWorkspace", { workspaceId, confirmation }),
     getActiveTimer: (_userId, workspaceId) =>
       request<TimerState | null>("getActiveTimer", { workspaceId }),
     saveActiveTimer: (_userId, timer) => request<TimerState>("saveActiveTimer", { timer }),

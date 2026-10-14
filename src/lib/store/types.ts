@@ -130,6 +130,7 @@ export interface StoreValue {
     patch: { name?: string; logoDataUrl?: string | null },
   ) => StoreResult;
   archiveWorkspace: (workspaceId: string) => StoreResult;
+  deleteWorkspace: (workspaceId: string, confirmation: string) => Promise<StoreResult>;
   restoreWorkspace: (workspaceId: string) => StoreResult;
   leaveWorkspace: (workspaceId: string) => StoreResult;
   signOut: () => StoreResult;

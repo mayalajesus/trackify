@@ -86,6 +86,10 @@ export interface AccountDataSource {
     patch: Partial<UserPreferences>,
   ): Promise<DataSourceResult<null>>;
   createWorkspace(input: CreateWorkspaceInput): Promise<DataSourceResult<CreateWorkspaceResult>>;
+  deleteWorkspace(
+    workspaceId: string,
+    confirmation: string,
+  ): Promise<DataSourceResult<PersistedAccount>>;
   getActiveTimer(userId: string, workspaceId: string): Promise<DataSourceResult<TimerState | null>>;
   saveActiveTimer(userId: string, timer: TimerState): Promise<DataSourceResult<TimerState>>;
   clearActiveTimer(userId: string, workspaceId: string): Promise<DataSourceResult<null>>;

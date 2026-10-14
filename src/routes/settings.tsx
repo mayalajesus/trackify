@@ -7,6 +7,7 @@ import { Label } from "@heroui/react/label";
 import { ListBox } from "@heroui/react/list-box";
 import { Select } from "@heroui/react/select";
 import { ThemeTabs } from "@/components/theme-tabs";
+import { DeleteWorkspaceSettings } from "@/components/delete-workspace-settings";
 import { TextField } from "@heroui/react/textfield";
 import { Modal } from "@heroui/react/modal";
 import { Typography } from "@heroui/react/typography";
@@ -673,6 +674,8 @@ function SettingsPage() {
           </div>
         ) : null}
       </Card>
+
+      <DeleteWorkspaceSettings key={currentWorkspace?.id} />
 
       <Modal isOpen={deletionOpen} onOpenChange={setDeletionOpen}>
         <ModalTriggerRegistration />

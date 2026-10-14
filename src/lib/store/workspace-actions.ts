@@ -1,7 +1,7 @@
 import type { PersistedAccount, WorkspaceData } from "../account-types";
 import { isCurrencyCode, type BillingPreference } from "../billing";
 import type { Member } from "../domain";
-import { initialPreferences, initialTimer } from "./defaults";
+import { initialPreferences, initialSettings, initialTimer, initialTrello } from "./defaults";
 import { membershipToMember, membersToMemberships } from "./membership";
 import { elapsedForTimer } from "./timer";
 import type { StoreResult } from "./types";
@@ -234,6 +234,88 @@ export function createWorkspaceActions({
       setTimerHydrated(false);
       setAccountError(null);
       return { success: true, id: created.workspace.id };
+    });
+    const tracked = request
+      .then(() => undefined)
+      .finally(() => {
+        if (accountSyncPromiseRef.current === tracked) accountSyncPromiseRef.current = null;
+        if (workspaceCreationRef.current?.promise === request) workspaceCreationRef.current = null;
+      });
+    accountSyncPromiseRef.current = tracked;
+    workspaceCreationRef.current = { scope: accountScope, promise: request };
+    return request;
+  };
+
+  const deleteWorkspace = async (
+    workspaceId: string,
+    confirmation: string,
+  ): Promise<StoreResult> => {
+    const target = account.workspaces.find((data) => data.workspace.id === workspaceId);
+    const membership = target?.memberships.find((item) => item.userId === activeMemberId);
+    if (
+      target?.workspace.ownerId !== activeMemberId ||
+      membership?.role !== "Owner" ||
+      membership.status !== "active"
+    )
+      return { success: false, error: "Only the workspace Owner can delete it." };
+    if (confirmation !== target.workspace.name)
+      return { success: false, error: "Enter the workspace name to confirm deletion." };
+    if (timerRef.current.status !== "idle")
+      return { success: false, error: "Stop all timers in this workspace before deleting it." };
+    if (workspaceCreationRef.current?.scope === accountScope)
+      return { success: false, error: "Wait for workspace creation to finish." };
+    const request = persistAccount().then(async (saved): Promise<StoreResult> => {
+      if (!saved || accountScopeRef.current !== accountScope)
+        return { success: false, error: "Could not save your pending changes." };
+      const result = await dataSource.deleteWorkspace(workspaceId, confirmation);
+      if (accountScopeRef.current !== accountScope)
+        return { success: false, error: "Choose an active account." };
+      if (!result.success) return { success: false, error: result.error };
+      // Keep unrelated edits made during the request, while dropping the deleted
+      // workspace from both snapshots so it cannot be sent by the next sync.
+      const removeDeleted = (snapshot: PersistedAccount): PersistedAccount => ({
+        ...snapshot,
+        workspaces: snapshot.workspaces.filter((data) => data.workspace.id !== workspaceId),
+        preferencesByUserId: {
+          ...snapshot.preferencesByUserId,
+          [activeMemberId]: {
+            ...(snapshot.preferencesByUserId[activeMemberId] ?? initialPreferences),
+            activeWorkspaceId: null,
+          },
+        },
+      });
+      const next = removeDeleted(accountForSyncRef.current);
+      syncedAccountRef.current = removeDeleted(
+        syncedAccountRef.current ?? accountForSyncRef.current,
+      );
+      accountForSyncRef.current = next;
+      accountRef.current = next;
+      setAccount(next);
+      const remaining = next.workspaces.find(
+        (data) =>
+          data.workspace.status === "active" &&
+          data.memberships.some(
+            (item) => item.userId === activeMemberId && item.status === "active",
+          ),
+      );
+      setActiveWorkspaceId(remaining?.workspace.id ?? "");
+      setEntries(remaining?.entries ?? []);
+      setProjects(remaining?.projects ?? []);
+      setClients(remaining?.clients ?? []);
+      setMembers(
+        remaining?.memberships
+          .map((item) => membershipToMember(item, next.identities))
+          .filter((member): member is Member => member !== null) ?? [],
+      );
+      setSettingsState(remaining?.settings ?? initialSettings);
+      setTrelloState(remaining?.trello ?? initialTrello);
+      timerRevisionRef.current += 1;
+      timerRef.current = initialTimer;
+      setTimer(initialTimer);
+      setElapsed(0);
+      setTimerHydrated(false);
+      setAccountError(null);
+      return { success: true };
     });
     const tracked = request
       .then(() => undefined)
@@ -507,6 +589,7 @@ export function createWorkspaceActions({
     updateWorkspace,
     setWorkspaceBilling,
     archiveWorkspace,
+    deleteWorkspace,
     restoreWorkspace,
     leaveWorkspace,
   };

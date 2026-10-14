@@ -1048,6 +1048,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updateWorkspace,
       setWorkspaceBilling,
       archiveWorkspace,
+      deleteWorkspace,
       restoreWorkspace,
       leaveWorkspace,
     } = createWorkspaceActions({
@@ -1217,6 +1218,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setWorkspaceBilling,
       updateWorkspace,
       archiveWorkspace,
+      deleteWorkspace,
       restoreWorkspace,
       leaveWorkspace,
       signOut,

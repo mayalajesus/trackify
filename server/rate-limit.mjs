@@ -15,6 +15,7 @@ const READ_OPERATIONS = new Set([
 ]);
 const SENSITIVE_OPERATIONS = new Set([
   "createWorkspace",
+  "deleteWorkspace",
   "inviteMember",
   "createInvitationLink",
   "resendInvitation",

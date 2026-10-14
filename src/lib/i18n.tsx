@@ -30,6 +30,22 @@ const ptBR: Record<string, string> = {
   "Edit start time": "Editar hora de início",
   "Starting time": "Hora de início",
   Save: "Salvar",
+  "Delete workspace": "Excluir workspace",
+  "Delete workspace?": "Excluir workspace?",
+  "Workspace deleted.": "Workspace excluído.",
+  "Could not delete workspace": "Não foi possível excluir o workspace",
+  "Could not delete the workspace. Try again.":
+    "Não foi possível excluir o workspace. Tente novamente.",
+  "Only the workspace Owner can delete it.": "Somente o proprietário pode excluir o workspace.",
+  "Enter the workspace name to confirm deletion.":
+    "Digite o nome do workspace para confirmar a exclusão.",
+  "Stop all timers in this workspace before deleting it.":
+    "Finalize todos os cronômetros deste workspace antes de excluí-lo.",
+  "To confirm, type the workspace name:": "Para confirmar, digite o nome do workspace:",
+  "Permanently delete this workspace and its projects, clients and time entries for all members. User accounts and other workspaces will be kept.":
+    "Exclua definitivamente este workspace e seus projetos, clientes e registros de horas de todos os membros. As contas dos usuários e outros workspaces serão mantidos.",
+  "This permanently deletes projects, clients, invitations and time entries for everyone in this workspace. This action cannot be undone.":
+    "Os projetos, clientes, convites e registros de horas de todos neste workspace serão excluídos definitivamente. Esta ação não pode ser desfeita.",
   "Enter a valid start time before the current time.":
     "Informe uma hora de início válida, anterior ao horário atual.",
   "Only the creator can change this shared time entry.":

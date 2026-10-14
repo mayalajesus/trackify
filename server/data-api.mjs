@@ -45,6 +45,7 @@ import {
   uuid,
 } from "./data/validation.mjs";
 import { createWorkspace } from "./data/workspaces.mjs";
+import { deleteWorkspace } from "./data/delete-workspace.mjs";
 import { enforceExtensionOperation, isAllowedExtensionOrigin } from "./extension-origin.mjs";
 import {
   captureServerError,
@@ -193,6 +194,18 @@ async function operation(request, user, config, body) {
         const accepted = await acceptInvitation(client, user, config, body);
         await client.query("commit");
         return accepted;
+      } catch (error) {
+        await client.query("rollback");
+        throw error;
+      }
+    }
+    if (body.operation === "deleteWorkspace") {
+      await client.query("begin");
+      try {
+        await deleteWorkspace(client, user, body);
+        const account = await loadAccount(client, user, config);
+        await client.query("commit");
+        return account;
       } catch (error) {
         await client.query("rollback");
         throw error;
