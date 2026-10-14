@@ -437,7 +437,11 @@ function ProjectsPage() {
                 <Button slot="close" variant="secondary">
                   {t("Cancel")}
                 </Button>
-                <Button variant="secondary" className="text-[#9C5D0F]" onPress={archiveProject}>
+                <Button
+                  variant="primary"
+                  className="project-archive-button"
+                  onPress={archiveProject}
+                >
                   {t("Archive project")}
                 </Button>
               </ModalLayout.Footer>

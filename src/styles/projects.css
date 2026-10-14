@@ -1,4 +1,18 @@
 /* DEV 629:2984. The project frame overrides the smaller UI Kit switch. */
+.button.project-archive-button {
+  background-color: #9c5d0f;
+  color: #ffffff;
+}
+.button.project-archive-button:active,
+.button.project-archive-button[data-pressed="true"] {
+  background-color: #824d0c;
+}
+@media (hover: hover) {
+  .button.project-archive-button:hover,
+  .button.project-archive-button[data-hovered="true"] {
+    background-color: #824d0c;
+  }
+}
 .project-form-modal {
   width: 384px;
   max-width: 100%;
