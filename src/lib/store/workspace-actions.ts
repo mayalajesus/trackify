@@ -407,10 +407,13 @@ export function createWorkspaceActions({
       return { success: false, error: "Only the workspace Owner can archive it." };
     if (target.workspace.status === "archived")
       return { success: false, error: "This workspace is already archived." };
-    if (timerRef.current.status !== "idle")
+    if (
+      timerRef.current.status !== "idle" &&
+      (timerRef.current.workspaceId ?? activeWorkspaceId) === workspaceId
+    )
       return {
         success: false,
-        error: "Pause or stop the active timer before archiving a workspace.",
+        error: "Stop the timer in this workspace before archiving it.",
       };
 
     const isCurrentWorkspace = workspaceId === activeWorkspaceId;

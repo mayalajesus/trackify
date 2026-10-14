@@ -1188,6 +1188,9 @@ const ptBR: Record<string, string> = {
   "Workspace created": "Workspace criado",
   "Workspace updated": "Workspace atualizado",
   "Workspace archived": "Workspace arquivado",
+  "Stop the timer in this workspace before archiving it.":
+    "Finalize o cronômetro deste workspace antes de arquivá-lo.",
+  "Could not complete the workspace action": "Não foi possível concluir a ação no workspace",
   "Workspace restored": "Workspace restaurado",
   "Left workspace": "Você saiu do workspace",
   "Archive workspace?": "Arquivar workspace?",

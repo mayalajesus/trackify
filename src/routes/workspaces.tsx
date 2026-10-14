@@ -130,8 +130,13 @@ function WorkspacesPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [pageError, setPageError] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<Confirmation>(null);
+  const [confirmationError, setConfirmationError] = useState<string | null>(null);
   const [pendingWorkspaceId, setPendingWorkspaceId] = useState<string | null>(null);
   const [switchOpen, setSwitchOpen] = useState(false);
+
+  useEffect(() => {
+    setConfirmationError(null);
+  }, [confirmation]);
 
   const owned = workspaces.filter((workspace) => workspace.isOwned);
   const shared = workspaces.filter((workspace) => !workspace.isOwned);
@@ -304,6 +309,7 @@ function WorkspacesPage() {
 
   const confirmWorkspaceAction = () => {
     if (!confirmation) return;
+    setConfirmationError(null);
     const result =
       confirmation.kind === "archive"
         ? archiveWorkspace(confirmation.workspace.id)
@@ -311,7 +317,7 @@ function WorkspacesPage() {
           ? restoreWorkspace(confirmation.workspace.id)
           : leaveWorkspace(confirmation.workspace.id);
     if (!result.success) {
-      setPageError(error(result.error));
+      setConfirmationError(error(result.error));
       return;
     }
     toast.success(
@@ -323,6 +329,7 @@ function WorkspacesPage() {
             : "Left workspace",
       ),
     );
+    setPageError(null);
     setConfirmation(null);
   };
 
@@ -546,6 +553,12 @@ function WorkspacesPage() {
                     : t("Leave workspace?")}
               </ModalLayout.Header>
               <ModalLayout.Body>
+                {confirmationError ? (
+                  <FormAlert
+                    title={t("Could not complete the workspace action")}
+                    description={confirmationError}
+                  />
+                ) : null}
                 <Typography type="body-sm" color="muted">
                   {confirmation?.kind === "archive"
                     ? isArchivingCurrent
