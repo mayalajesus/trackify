@@ -1,4 +1,5 @@
 import type { QueryClient } from "./data-api.mjs";
+export function taskDetailsValue(value: unknown): import("../src/lib/domain").TaskDetails | null;
 
 export function handleTaskAction(
   client: QueryClient,

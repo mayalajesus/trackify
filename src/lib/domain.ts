@@ -39,6 +39,7 @@ export interface Member {
 }
 
 export interface TaskDetails {
+  description?: string;
   id: string;
   urgent: boolean;
   trelloCard?: { id: string; name: string; url: string; board: string } | null;

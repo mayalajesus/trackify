@@ -242,6 +242,45 @@ export function createTimerActions({
     return { success: true };
   };
 
+  const setTimerStart = (date: string, clock: string): StoreResult => {
+    const current = timerRef.current;
+    if (!can("track-own-time") || current.status === "idle" || !current.startedDate)
+      return { success: false, error: "Your account cannot update the active timer." };
+    if (current.collaborationOwnerId && current.collaborationOwnerId !== activeMemberId)
+      return { success: false, error: "Only the creator can change this shared time entry." };
+    const now = Date.now();
+    const start = dateTimeToTimestamp(date, clock, 0, preferences.timezone);
+    const previous = dateTimeToTimestamp(
+      current.startedDate,
+      current.startClock,
+      0,
+      preferences.timezone,
+    );
+    if (start === null || previous === null)
+      return { success: false, error: "Enter a valid start time before the current time." };
+    const seconds = Math.floor(elapsedForTimer(current, now) + (previous - start) / 1000);
+    if (
+      !Number.isFinite(start) ||
+      !Number.isFinite(seconds) ||
+      start > now ||
+      seconds < 0 ||
+      seconds > 3599999
+    )
+      return { success: false, error: "Enter a valid start time before the current time." };
+    const next = {
+      ...current,
+      startedDate: date,
+      startClock: clock,
+      accumulated: seconds,
+      startedAt: current.status === "running" ? now : null,
+    };
+    timerRevisionRef.current += 1;
+    timerRef.current = next;
+    setTimer(next);
+    setElapsed(seconds);
+    return { success: true };
+  };
+
   const pauseTimer = (effectiveAt?: number) => {
     const current = timerRef.current;
     if (current.status !== "running") return;
@@ -303,6 +342,9 @@ export function createTimerActions({
         userId: activeMemberId,
         projectId: current.projectId,
         task: current.task,
+        ...(current.taskDetails?.description
+          ? { description: current.taskDetails.description }
+          : {}),
         billable: billableForProject(current.projectId),
         ...(current.taskDetails ? { taskDetails: current.taskDetails } : {}),
         hourlyRate: current.hourlyRate ?? workspaceBilling.hourlyRate,
@@ -334,6 +376,7 @@ export function createTimerActions({
     startTimerFromTask,
     updateTimer,
     setTimerElapsed,
+    setTimerStart,
     pauseTimer,
     resumeTimer,
     stopTimer,

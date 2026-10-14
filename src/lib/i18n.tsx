@@ -27,6 +27,11 @@ const ptBR: Record<string, string> = {
   "Start column": "Início",
   "Collaboration started": "Colaboração iniciada. Seu contador está em andamento.",
   "Collaboration accepted": "Colaboração aceita.",
+  "Edit start time": "Editar hora de início",
+  "Starting time": "Hora de início",
+  Save: "Salvar",
+  "Enter a valid start time before the current time.":
+    "Informe uma hora de início válida, anterior ao horário atual.",
   "Only the creator can change this shared time entry.":
     "Somente quem criou a tarefa pode alterar ou excluir este registro compartilhado.",
   "If the invited task is still running, stop your timer before accepting.":

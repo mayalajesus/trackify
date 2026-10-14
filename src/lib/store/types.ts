@@ -91,6 +91,7 @@ export interface StoreValue {
     billable?: boolean;
   }) => StoreResult;
   setTimerElapsed: (seconds: number) => StoreResult;
+  setTimerStart: (date: string, clock: string) => StoreResult;
   pauseTimer: (effectiveAt?: number) => void;
   resumeTimer: () => StoreResult;
   stopTimer: () => StoreResult;

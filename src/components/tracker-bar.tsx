@@ -24,6 +24,9 @@ import { ProjectFormModal, type CreatedProjectSelection } from "@/components/pro
 import { ProjectSelect } from "@/components/project-select";
 import { TimerActionButton } from "@/components/timer-action-button";
 import { TimerDurationEditor } from "@/components/timer-duration-editor";
+import { TimerStartEditor } from "@/components/timer-start-editor";
+import { TimerNoteModal } from "@/components/timer-note-modal";
+import { Comment } from "@gravity-ui/icons";
 import { useI18n } from "@/lib/i18n";
 import { useStore, useTimerTicker } from "@/lib/store";
 import { focusTimerTaskInput } from "@/lib/timer-input";
@@ -68,6 +71,7 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
     urgent: false,
   }));
   const [taskModal, setTaskModal] = useState<"members" | "trello" | null>(null);
+  const [noteOpen, setNoteOpen] = useState(false);
   const active = timer.status !== "idle";
   const details = active ? (timer.taskDetails ?? taskDetails) : taskDetails;
   const changeDetails = (next: TaskDetails) => {
@@ -77,6 +81,7 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
   useEffect(() => {
     setTaskDetails({ id: crypto.randomUUID(), urgent: false });
     setTaskModal(null);
+    setNoteOpen(false);
   }, [activeWorkspaceId]);
   const taskSuggestions = useMemo(() => {
     const uniqueTasks = new Map<string, string>();
@@ -301,6 +306,17 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
               ariaLabel={t("Task actions")}
               orientation="vertical"
               items={[
+                ...(active
+                  ? [
+                      {
+                        id: "note",
+                        icon: <Comment className="size-4" />,
+                        label: t(
+                          timer.taskDetails?.description ? "Edit description" : "Add a note",
+                        ),
+                      },
+                    ]
+                  : []),
                 { id: "members", label: t("Add members"), icon: <PersonPlus className="size-4" /> },
                 {
                   id: "trello",
@@ -309,6 +325,10 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
                 },
               ]}
               onAction={(key) => {
+                if (key === "note") {
+                  setNoteOpen(true);
+                  return;
+                }
                 if (!currentTask.task.trim()) {
                   focusTimerTaskInput(t("A task is required."));
                   return;
@@ -321,17 +341,27 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
               }}
             />
           </div>
+          {noteOpen && active ? (
+            <TimerNoteModal
+              key={timer.taskDetails?.id ?? "timer"}
+              onClose={() => setNoteOpen(false)}
+            />
+          ) : null}
           <Separator orientation="vertical" className="hidden h-6 lg:block" />
 
           <div className="tracker-time-group flex items-center gap-1.5 justify-end">
-            <TimerDurationEditor
-              elapsed={elapsed}
-              isReadOnly={!active}
-              onElapsedChange={(seconds) => {
-                const result = setTimerElapsed(seconds);
-                setTimerError(result.success ? null : result.error);
-              }}
-            />
+            {active ? (
+              <TimerStartEditor />
+            ) : (
+              <TimerDurationEditor
+                elapsed={elapsed}
+                isReadOnly={!active}
+                onElapsedChange={(seconds) => {
+                  const result = setTimerElapsed(seconds);
+                  setTimerError(result.success ? null : result.error);
+                }}
+              />
+            )}
 
             <Toolbar aria-label={t("Timer")} className="shrink-0 gap-1">
               <TimerActionButton

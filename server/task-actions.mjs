@@ -10,6 +10,11 @@ export function taskDetailsValue(value) {
   )
     throw new DataApiError(400, "Invalid task details.");
   const result = { id: value.id, urgent: value.urgent };
+  if (value.description !== undefined) {
+    if (typeof value.description !== "string" || value.description.length > 10_000)
+      throw new DataApiError(400, "Invalid task details.");
+    result.description = value.description;
+  }
   if (value.trelloCard != null) {
     const card = value.trelloCard;
     if (
