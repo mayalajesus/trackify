@@ -30,6 +30,7 @@ export interface ProjectSelectProps {
   variant?: "primary" | "secondary";
   listClassName?: string;
   showClientName?: boolean;
+  showClientNameInOptions?: boolean;
   trackerStyle?: boolean;
   groupByClient?: boolean;
   onCreateProject?: (initialName: string) => void;
@@ -48,6 +49,7 @@ export function ProjectSelect({
   variant = "secondary",
   listClassName = "max-h-72 overflow-y-auto",
   showClientName = false,
+  showClientNameInOptions = showClientName,
   trackerStyle = false,
   groupByClient = false,
   onCreateProject,
@@ -85,7 +87,7 @@ export function ProjectSelect({
     >
       <span className="flex min-w-0 flex-1 flex-col">
         <ProjectLabel project={project} label={project.name} />
-        {showClientName && !groupByClient ? (
+        {showClientNameInOptions && !groupByClient ? (
           <span className="truncate text-xs leading-4 text-muted">
             {clientNameFor(project.clientId)}
           </span>
@@ -133,6 +135,8 @@ export function ProjectSelect({
                   {clientNameFor(selectedProject.clientId)}
                 </span>
               </span>
+            ) : showClientNameInOptions && selectedProject ? (
+              <ProjectLabel project={selectedProject} label={selectedProject.name} />
             ) : (
               defaultChildren
             )

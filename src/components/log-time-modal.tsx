@@ -270,6 +270,7 @@ export function LogTimeModal({
                   <Label>{t("Project")}</Label>
                   <ProjectSelect
                     trackerStyle
+                    showClientNameInOptions={Boolean(entry)}
                     ariaLabel={t("Project")}
                     value={projectId ?? "none"}
                     variant="secondary"

@@ -734,6 +734,8 @@ export function TrackerEntryRow({
         {activeField === "project" ? (
           <div data-tracker-field="project">
             <ProjectSelect
+              trackerStyle
+              showClientNameInOptions
               ariaLabel={t("Project")}
               value={draft.projectId ?? "none"}
               allowArchivedId={entry.projectId}
