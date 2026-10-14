@@ -24,7 +24,11 @@ export function TimerActionButton({ status, onPress }: TimerActionButtonProps) {
         className="size-9 min-h-9 min-w-9 shrink-0"
         onPress={onPress}
       >
-        {isRunning ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
+        {isRunning ? (
+          <Pause aria-hidden="true" className="text-foreground" />
+        ) : (
+          <Play aria-hidden="true" />
+        )}
       </Button>
     </IconTooltip>
   );

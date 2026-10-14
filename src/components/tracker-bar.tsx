@@ -50,6 +50,7 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
   const { elapsed } = useTimerTicker();
   const { locale, t, error } = useI18n();
   const [task, setTask] = useState("");
+  const [taskInputVersion, setTaskInputVersion] = useState(0);
   const taskInputRef = useRef<HTMLInputElement>(null);
   const projectTriggerRef = useRef<HTMLDivElement>(null);
   const [projectValidationVisible, setProjectValidationVisible] = useState(false);
@@ -162,6 +163,7 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
           className="grid w-full max-w-full grid-cols-1 items-center gap-3 lg:grid-cols-[minmax(10rem,1fr)_auto_minmax(10rem,15rem)_auto_auto_auto]"
         >
           <ComboBox
+            key={taskInputVersion}
             isRequired
             allowsCustomValue
             className="min-w-0"
@@ -201,6 +203,7 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
             <ComboBox.Popover className="max-h-60">
               <ListBox
                 aria-label={t("Tasks")}
+                className="max-h-60 overflow-y-auto"
                 renderEmptyState={() => <EmptyState>{t("No tasks found")}</EmptyState>}
               >
                 {taskSuggestions.map((suggestion) => (
@@ -218,6 +221,7 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
             <Label className="sr-only">{t("Project")}</Label>
             <ProjectSelect
               trackerStyle
+              groupByClient
               required
               triggerRef={projectTriggerRef}
               validationMessage={
@@ -387,6 +391,8 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
                           });
                         }
                         setTaskDetails({ id: crypto.randomUUID(), urgent: false });
+                        // Reset the combobox's internal selection/open state along with the draft.
+                        setTaskInputVersion((version) => version + 1);
                         setTask("");
                         setTimerError(null);
                         setActiveTask("");

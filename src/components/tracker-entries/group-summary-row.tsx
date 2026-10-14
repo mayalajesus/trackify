@@ -135,7 +135,7 @@ export function TrackerGroupSummaryRow({
                   <Thunderbolt className="size-3.5 shrink-0 text-danger" aria-label={t("Urgent")} />
                 ) : null}
                 <ChevronDown
-                  className={`ml-1 size-4 shrink-0 ${isExpanded ? "" : "-rotate-90"}`.trim()}
+                  className={`ml-1 size-4 shrink-0 ${isExpanded ? "rotate-180" : ""}`.trim()}
                   aria-hidden="true"
                 />
               </Button>

@@ -898,6 +898,7 @@ const ptBR: Record<string, string> = {
   "End time": "Horário final",
   "Start time: {time}": "Horário inicial: {time}",
   "Add a note": "Adicionar uma observação",
+  "Click to add a note": "Clique para inserir uma observação",
   "Edit description": "Editar descrição",
   "Add description": "Adicionar descrição",
   "H:MM": "H:MM",

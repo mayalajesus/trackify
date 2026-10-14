@@ -334,7 +334,7 @@
   min-height: 28px;
 }
 .tracker-entries-table .table__cell:last-child {
-  padding-inline: 2px;
+  padding-inline: 12px;
 }
 .tracker-entries-table [data-tracker-group] .table__cell:last-child > .surface {
   padding-inline: 0;

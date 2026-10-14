@@ -30,6 +30,7 @@ import {
   LayoutColumns,
   PersonPlus,
   Play,
+  Plus,
   Star,
   Thunderbolt,
   TrashBin,
@@ -711,13 +712,18 @@ export function TrackerEntryRow({
                 data-tracker-field="description"
                 onPress={() => onActivate("description")}
               >
-                {entry.description || ""}
+                {entry.description || (
+                  <span className="flex min-w-0 items-center gap-1 text-muted">
+                    <Plus aria-hidden="true" className="size-3 shrink-0" />
+                    <span className="truncate">{t("Click to add a note")}</span>
+                  </span>
+                )}
               </Button>
               <Tooltip.Content
                 showArrow
                 className="max-w-[min(32rem,calc(100vw-2rem))] whitespace-pre-wrap break-words"
               >
-                {entry.description || t("Add description")}
+                {entry.description || t("Click to add a note")}
               </Tooltip.Content>
             </Tooltip>
           )}

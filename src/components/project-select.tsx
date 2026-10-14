@@ -2,6 +2,7 @@ import { Autocomplete } from "@heroui/react/autocomplete";
 import { Button } from "@heroui/react/button";
 import { EmptyState } from "@heroui/react/empty-state";
 import { ListBox } from "@heroui/react/list-box";
+import { Header } from "@heroui/react/header";
 import { SearchField } from "@heroui/react/search-field";
 import { Separator } from "@heroui/react/separator";
 import { Tooltip } from "@heroui/react/tooltip";
@@ -11,6 +12,8 @@ import { useId, useMemo, useRef, useState, type RefObject } from "react";
 import { ProjectLabel } from "@/components/project-color";
 import { useStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
+import { groupProjectsByClient } from "@/lib/project-groups";
+import type { Project } from "@/lib/domain";
 
 export type ProjectSelectValue = "all" | "none" | string;
 
@@ -28,6 +31,7 @@ export interface ProjectSelectProps {
   listClassName?: string;
   showClientName?: boolean;
   trackerStyle?: boolean;
+  groupByClient?: boolean;
   onCreateProject?: (initialName: string) => void;
 }
 
@@ -45,10 +49,11 @@ export function ProjectSelect({
   listClassName = "max-h-72 overflow-y-auto",
   showClientName = false,
   trackerStyle = false,
+  groupByClient = false,
   onCreateProject,
 }: ProjectSelectProps) {
   const { projects, clients, canTrackProject } = useStore();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { contains } = useFilter({ sensitivity: "base" });
   const [isOpen, setIsOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -69,6 +74,26 @@ export function ProjectSelect({
   const clientNameFor = (clientId: string) =>
     clients.find((client) => client.id === clientId)?.name ?? t("Unknown client");
   const selectedProject = availableProjects.find((project) => project.id === value);
+  const projectGroups = groupByClient
+    ? groupProjectsByClient(availableProjects, clients, locale, t("Unknown client"))
+    : [];
+  const renderProject = (project: Project) => (
+    <ListBox.Item
+      key={project.id}
+      id={project.id}
+      textValue={`${project.name} ${clientNameFor(project.clientId)}`}
+    >
+      <span className="flex min-w-0 flex-1 flex-col">
+        <ProjectLabel project={project} label={project.name} />
+        {showClientName && !groupByClient ? (
+          <span className="truncate text-xs leading-4 text-muted">
+            {clientNameFor(project.clientId)}
+          </span>
+        ) : null}
+      </span>
+      <ListBox.ItemIndicator />
+    </ListBox.Item>
+  );
 
   return (
     <Autocomplete
@@ -172,23 +197,14 @@ export function ProjectSelect({
                 </ListBox.Item>
               ) : null}
 
-              {availableProjects.map((project) => (
-                <ListBox.Item
-                  key={project.id}
-                  id={project.id}
-                  textValue={`${project.name} ${clientNameFor(project.clientId)}`}
-                >
-                  <span className="flex min-w-0 flex-1 flex-col">
-                    <ProjectLabel project={project} label={project.name} />
-                    {showClientName ? (
-                      <span className="truncate text-xs leading-4 text-muted">
-                        {clientNameFor(project.clientId)}
-                      </span>
-                    ) : null}
-                  </span>
-                  <ListBox.ItemIndicator />
-                </ListBox.Item>
-              ))}
+              {groupByClient
+                ? projectGroups.map((group) => (
+                    <ListBox.Section key={group.id} id={`client-${group.id}`}>
+                      <Header>{group.name}</Header>
+                      {group.projects.map(renderProject)}
+                    </ListBox.Section>
+                  ))
+                : availableProjects.map(renderProject)}
             </ListBox>
           </Autocomplete.Filter>
           {onCreateProject ? (
