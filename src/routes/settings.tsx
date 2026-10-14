@@ -578,6 +578,8 @@ function SettingsPage() {
         </div>
       </Card>
 
+      <DeleteWorkspaceSettings key={currentWorkspace?.id} />
+
       <Card id="privacy" className="scroll-mt-24 space-y-4 p-4">
         <div className="space-y-1">
           <Typography type="h2" weight="semibold">
@@ -674,8 +676,6 @@ function SettingsPage() {
           </div>
         ) : null}
       </Card>
-
-      <DeleteWorkspaceSettings key={currentWorkspace?.id} />
 
       <Modal isOpen={deletionOpen} onOpenChange={setDeletionOpen}>
         <ModalTriggerRegistration />
