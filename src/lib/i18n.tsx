@@ -152,6 +152,7 @@ const ptBR: Record<string, string> = {
   "Search…": "Buscar…",
   "Search workspace": "Buscar no workspace",
   "Search projects": "Buscar projetos",
+  "Search clients": "Buscar clientes",
   "All projects": "Todos os projetos",
   "No project": "Sem projeto",
   "No client": "Sem cliente",

@@ -1,4 +1,5 @@
 import { Avatar } from "@heroui/react/avatar";
+import { Autocomplete } from "@heroui/react/autocomplete";
 import { Button } from "@heroui/react/button";
 import { Dropdown } from "@heroui/react/dropdown";
 import { EmptyState } from "@heroui/react/empty-state";
@@ -10,7 +11,6 @@ import { ListBox } from "@heroui/react/list-box";
 import { Modal } from "@heroui/react/modal";
 import { useFilter } from "@heroui/react/rac";
 import { SearchField } from "@heroui/react/search-field";
-import { Select } from "@heroui/react/select";
 import { Tag } from "@heroui/react/tag";
 import { TagGroup } from "@heroui/react/tag-group";
 import { TextField } from "@heroui/react/textfield";
@@ -54,6 +54,7 @@ export function ProjectFormModal({
   const { contains } = useFilter({ sensitivity: "base" });
   const [name, setName] = useState("");
   const [clientId, setClientId] = useState("");
+  const [clientQuery, setClientQuery] = useState("");
   const [projectColor, setProjectColor] = useState(defaultProjectColor);
   const [projectBillable, setProjectBillable] = useState(false);
   const [assignedMemberIds, setAssignedMemberIds] = useState<string[]>([]);
@@ -65,6 +66,7 @@ export function ProjectFormModal({
 
     setName(project?.name ?? initialName);
     setClientId(project?.clientId ?? "");
+    setClientQuery("");
     setProjectColor(projectColorValue(project?.color));
     setProjectBillable(project?.billable ?? false);
     setAssignedMemberIds(project?.memberIds ?? []);
@@ -95,6 +97,7 @@ export function ProjectFormModal({
 
   const setOpen = (open: boolean) => {
     if (!open) {
+      setClientQuery("");
       setMemberQuery("");
       setFormError(null);
     }
@@ -194,40 +197,67 @@ export function ProjectFormModal({
 
                 <ProjectColorPicker value={projectColor} onChange={setProjectColor} />
 
-                <Select
+                <Autocomplete
                   isRequired
                   fullWidth
                   name="project-client"
                   variant="secondary"
                   placeholder={t("Select a client")}
                   value={clientId || null}
+                  onOpenChange={(open) => {
+                    if (!open) setClientQuery("");
+                  }}
                   onChange={(value) => {
                     setClientId(value === null ? "" : String(value));
                     setFormError(null);
                   }}
                 >
                   <Label>{t("Client")}</Label>
-                  <Select.Trigger>
-                    <Select.Value />
-                    <Select.Indicator />
-                  </Select.Trigger>
-                  <Select.Popover>
-                    <ListBox aria-label={t("Clients")}>
-                      {clients
-                        .filter(
-                          (client) =>
-                            (client.status ?? "active") === "active" || client.id === clientId,
-                        )
-                        .map((client) => (
-                          <ListBox.Item key={client.id} id={client.id} textValue={client.name}>
-                            <Label>{client.name}</Label>
-                            <ListBox.ItemIndicator />
-                          </ListBox.Item>
-                        ))}
-                    </ListBox>
-                  </Select.Popover>
+                  <Autocomplete.Trigger>
+                    <Autocomplete.Value />
+                    <Autocomplete.Indicator />
+                  </Autocomplete.Trigger>
+                  <Autocomplete.Popover className="w-[var(--trigger-width)] max-w-[calc(100vw-2rem)] min-w-0">
+                    <div className="flex flex-col gap-2 p-2">
+                      <Autocomplete.Filter
+                        filter={contains}
+                        inputValue={clientQuery}
+                        onInputChange={setClientQuery}
+                      >
+                        <SearchField
+                          autoFocus
+                          aria-label={t("Search clients")}
+                          name="project-client-search"
+                          variant="secondary"
+                        >
+                          <SearchField.Group>
+                            <SearchField.SearchIcon />
+                            <SearchField.Input placeholder={`${t("Search clients")}...`} />
+                            <SearchField.ClearButton />
+                          </SearchField.Group>
+                        </SearchField>
+                        <ListBox
+                          aria-label={t("Clients")}
+                          className="max-h-64 overflow-y-auto"
+                          renderEmptyState={() => <EmptyState>{t("No results")}</EmptyState>}
+                        >
+                          {clients
+                            .filter(
+                              (client) =>
+                                (client.status ?? "active") === "active" || client.id === clientId,
+                            )
+                            .map((client) => (
+                              <ListBox.Item key={client.id} id={client.id} textValue={client.name}>
+                                <Label>{client.name}</Label>
+                                <ListBox.ItemIndicator />
+                              </ListBox.Item>
+                            ))}
+                        </ListBox>
+                      </Autocomplete.Filter>
+                    </div>
+                  </Autocomplete.Popover>
                   <FieldError>{t("Choose an existing client for this project.")}</FieldError>
-                </Select>
+                </Autocomplete>
 
                 <div className="project-form-members space-y-2">
                   <Label>{t("Project members")}</Label>

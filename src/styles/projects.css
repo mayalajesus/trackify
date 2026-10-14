@@ -28,14 +28,17 @@
   line-height: 20px;
 }
 .project-form-modal .textfield,
+.project-form-modal .autocomplete,
 .project-form-modal .select {
   gap: 4px;
 }
 .project-form-modal .textfield > .label,
+.project-form-modal .autocomplete > .label,
 .project-form-modal .select > .label {
   line-height: 16px;
 }
 .project-form-modal .input,
+.project-form-modal .autocomplete__trigger,
 .project-form-modal .select__trigger,
 .project-form-modal .project-form-members-trigger {
   height: 36px;
@@ -51,6 +54,18 @@
 }
 .project-form-modal .project-form-members > .label {
   display: block;
+}
+.project-form-modal .autocomplete__trigger {
+  align-items: center;
+  padding-inline-end: 28px;
+}
+.project-form-modal .autocomplete__value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: inherit;
+  line-height: inherit;
 }
 .project-form-modal .project-form-members-trigger {
   height: 28px;
@@ -121,6 +136,8 @@
   min-width: 24px;
 }
 :where(.light, [data-theme="light"]) .project-form-modal .input::placeholder,
+:where(.light, [data-theme="light"]) .project-form-modal .autocomplete__value[data-placeholder],
+:where(.light, [data-theme="light"]) .project-form-modal .autocomplete__indicator,
 :where(.light, [data-theme="light"]) .project-form-modal .select__value[data-placeholder],
 :where(.light, [data-theme="light"]) .project-form-modal .select__indicator,
 :where(.light, [data-theme="light"]) .project-form-modal .project-form-members-trigger {
