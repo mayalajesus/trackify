@@ -640,7 +640,20 @@
   border-radius: 18px;
 }
 .tracker-invitation-modal {
+  width: 480px;
   padding: 18px;
+}
+.tracker-invitation-modal .modal__footer > .button {
+  white-space: nowrap;
+}
+.tracker-invitation-modal .tracker-invitation-decline {
+  color: var(--foreground);
+}
+@media (max-width: 480px) {
+  .tracker-invitation-modal .modal__footer {
+    grid-auto-flow: row;
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 .tracker-command-menu {
   width: 384px;

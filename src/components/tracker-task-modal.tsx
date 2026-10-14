@@ -435,7 +435,7 @@ export function TaskInvitationInbox() {
     <Modal isOpen={Boolean(invitation)}>
       <ModalTriggerRegistration />
       <Modal.Backdrop>
-        <Modal.Container size="sm">
+        <Modal.Container size="md">
           <Modal.Dialog className="tracker-invitation-modal">
             <Modal.CloseTrigger
               isDisabled={busy}
@@ -462,6 +462,7 @@ export function TaskInvitationInbox() {
             <ModalLayout.Footer>
               <Button
                 variant="secondary"
+                className="tracker-invitation-decline"
                 isDisabled={busy}
                 onPress={() => void respond("declined")}
               >
@@ -469,7 +470,7 @@ export function TaskInvitationInbox() {
               </Button>
               {timer.status !== "idle" ? (
                 <Button
-                  variant="tertiary"
+                  variant="outline"
                   isDisabled={busy}
                   onPress={() => {
                     if (invitation) setDismissed((items) => [...items, invitation.id]);
@@ -478,7 +479,12 @@ export function TaskInvitationInbox() {
                   {t("Later")}
                 </Button>
               ) : null}
-              <Button isDisabled={busy} isPending={busy} onPress={() => void respond("accepted")}>
+              <Button
+                variant="primary"
+                isDisabled={busy}
+                isPending={busy}
+                onPress={() => void respond("accepted")}
+              >
                 {t("Accept invitation")}
               </Button>
             </ModalLayout.Footer>
