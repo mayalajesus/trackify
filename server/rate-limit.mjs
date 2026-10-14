@@ -11,6 +11,7 @@ const READ_OPERATIONS = new Set([
   "loadReportEntries",
   "getActiveTimer",
   "getAccountDeletionStatus",
+  "listTaskInvitationResponses",
 ]);
 const SENSITIVE_OPERATIONS = new Set([
   "createWorkspace",

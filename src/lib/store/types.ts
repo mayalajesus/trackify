@@ -14,6 +14,7 @@ import { type TimerTaskPreset } from "../timer-start";
 export type TimerStatus = "idle" | "running" | "paused";
 
 export interface TimerState {
+  collaborationOwnerId?: string;
   taskDetails?: import("../domain").TaskDetails;
   status: TimerStatus;
   workspaceId: string | null;

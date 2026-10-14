@@ -1,4 +1,5 @@
 import { DataApiError } from "./data-api-error.mjs";
+import { timeEntryFromRow } from "./data/entries.mjs";
 
 export function taskDetailsValue(value) {
   if (value == null) return null;
@@ -46,6 +47,16 @@ export async function handleTaskAction(
 ) {
   const workspaceId = uuid(body.workspaceId);
   await requireWorkspaceAccess(client, user.id, workspaceId);
+  if (body.operation === "listTaskInvitationResponses") {
+    const result = await client.query(
+      `select i.id::text,i.task,i.status,p.name as "recipientName"
+       from public.task_invitations i join public.profiles p on p.id=i.recipient_id
+       where i.workspace_id=$1 and i.invited_by=$2
+       order by i.created_at desc,i.id desc limit 200`,
+      [workspaceId, user.id],
+    );
+    return result.rows;
+  }
   if (body.operation === "listTaskParticipants") {
     const result = await client.query(
       `with visible_tasks as (
@@ -121,6 +132,8 @@ export async function handleTaskAction(
     throw new DataApiError(400, "Choose a valid invitation response.");
   await client.query("begin");
   try {
+    // Serialize acceptance with the owner's stop operation before locking the invitation.
+    await client.query("select id from public.workspaces where id=$1 for update", [workspaceId]);
     const found = await client.query(
       `select * from public.task_invitations where id=$1 and workspace_id=$2 and recipient_id=$3 and status='pending' and expires_at>now() for update`,
       [uuid(body.invitationId), workspaceId, user.id],
@@ -128,17 +141,46 @@ export async function handleTaskAction(
     const invitation = found.rows[0];
     if (!invitation) throw new DataApiError(409, "This task invitation is no longer available.");
     let acceptedTimer = null;
+    let acceptedEntries = [];
     if (body.response === "accepted") {
-      await requireProject(client, workspaceId, invitation.project_id, user.id);
       await requireWorkspaceAccess(client, invitation.invited_by, workspaceId);
-      const started = await client.query(
-        `insert into public.active_timers
+      const source = await client.query(
+        `select * from public.active_timers
+         where workspace_id=$1 and user_id=$2 and task_details->>'id'=$3
+         for update`,
+        [workspaceId, invitation.invited_by, String(invitation.task_id)],
+      );
+      const sourceTimer = source.rows[0];
+      if (!sourceTimer) {
+        const saved = await client.query(
+          `insert into public.time_entries
+            (workspace_id,user_id,date,start_time,end_time,end_date,start_at,end_at,duration_seconds,
+             project_id,task,description,billable,hourly_rate,currency,task_details,shared_source_entry_id)
+           select e.workspace_id,$3,e.date,e.start_time,e.end_time,e.end_date,e.start_at,e.end_at,e.duration_seconds,
+             e.project_id,e.task,e.description,e.billable,
+             coalesce(wm.hourly_rate,up.hourly_rate,0),
+             coalesce(c.currency,wm.currency,up.currency,'USD'),e.task_details,e.id
+           from public.time_entries e
+           join public.workspace_members wm on wm.workspace_id=e.workspace_id and wm.user_id=$3 and wm.status='active'
+           left join public.projects p on p.id=e.project_id and p.workspace_id=e.workspace_id
+           left join public.clients c on c.id=p.client_id and c.workspace_id=e.workspace_id
+           left join public.user_preferences up on up.user_id=$3
+           where e.workspace_id=$1 and e.user_id=$2 and e.task_details->>'id'=$4
+           returning *, id::text,date::text,start_time::text,end_time::text,end_date::text,project_id::text`,
+          [workspaceId, invitation.invited_by, user.id, String(invitation.task_id)],
+        );
+        if (!saved.rowCount)
+          throw new DataApiError(409, "The original task timer is no longer active.");
+        acceptedEntries = saved.rows.map(timeEntryFromRow);
+      } else {
+        await requireProject(client, workspaceId, sourceTimer.project_id, user.id);
+        const started = await client.query(
+          `insert into public.active_timers
           (user_id, workspace_id, status, task, project_id, billable, started_at,
            started_date, accumulated_seconds, start_clock, hourly_rate, currency, task_details)
-         select $1, $2, 'running', $3, p.id,
-           p.billable or coalesce(c.billable, false), now(),
-           (now() at time zone coalesce(up.timezone, 'UTC'))::date, 0,
-           (now() at time zone coalesce(up.timezone, 'UTC'))::time,
+         select $1, $2, $6, $3, p.id,
+           p.billable or coalesce(c.billable, false), $7::timestamptz,
+           $8::date, $9::integer, $10::time,
            coalesce(wm.hourly_rate, up.hourly_rate, 0),
            coalesce(c.currency, wm.currency, up.currency, 'USD'), $5
          from public.projects p
@@ -148,11 +190,26 @@ export async function handleTaskAction(
          where p.id=$4 and p.workspace_id=$2
          on conflict (user_id, workspace_id) do nothing
          returning *, workspace_id::text, project_id::text, started_date::text, start_clock::text`,
-        [user.id, workspaceId, invitation.task, invitation.project_id, invitation.task_details],
-      );
-      if (!started.rowCount)
-        throw new DataApiError(409, "Stop the active timer before accepting a task invitation.");
-      acceptedTimer = timerFromRow(started.rows[0]);
+          [
+            user.id,
+            workspaceId,
+            sourceTimer.task,
+            sourceTimer.project_id,
+            sourceTimer.task_details,
+            sourceTimer.status,
+            sourceTimer.started_at,
+            sourceTimer.started_date,
+            sourceTimer.accumulated_seconds,
+            sourceTimer.start_clock,
+          ],
+        );
+        if (!started.rowCount)
+          throw new DataApiError(409, "Stop the active timer before accepting a task invitation.");
+        acceptedTimer = {
+          ...timerFromRow(started.rows[0]),
+          collaborationOwnerId: invitation.invited_by,
+        };
+      }
     }
     await client.query("update public.task_invitations set status=$2 where id=$1", [
       invitation.id,
@@ -161,6 +218,7 @@ export async function handleTaskAction(
     await client.query("commit");
     return {
       timer: acceptedTimer,
+      entries: acceptedEntries,
       task: invitation.task,
       projectId: invitation.project_id,
       taskDetails: invitation.task_details,

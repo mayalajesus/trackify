@@ -70,7 +70,7 @@ export function createTimerActions({
   setEntries: React.Dispatch<React.SetStateAction<import("@/lib/domain").TimeEntry[]>>;
 }) {
   const acceptTaskInvitation = async (invitationId: string): Promise<StoreResult> => {
-    if (acceptingTaskRef.current || timerRef.current.status !== "idle")
+    if (acceptingTaskRef.current)
       return {
         success: false,
         error: "Stop the active timer before accepting a task invitation.",
@@ -80,24 +80,34 @@ export function createTimerActions({
       await timerSyncPromiseRef.current;
       if (
         accountScopeRef.current !== accountScope ||
-        timerWorkspaceRef.current !== activeWorkspaceId ||
-        timerRef.current.status !== "idle"
+        timerWorkspaceRef.current !== activeWorkspaceId
       )
         return {
           success: false,
           error: "Stop the active timer before accepting a task invitation.",
         };
-      const result = await request<{ timer: TimerState }>("respondTaskInvitation", {
-        workspaceId: activeWorkspaceId,
-        invitationId,
-        response: "accepted",
-      });
+      const result = await request<{ timer: TimerState | null; entries?: TimeEntry[] }>(
+        "respondTaskInvitation",
+        {
+          workspaceId: activeWorkspaceId,
+          invitationId,
+          response: "accepted",
+        },
+      );
       if (!result.success) return result;
       if (
         accountScopeRef.current !== accountScope ||
         timerWorkspaceRef.current !== activeWorkspaceId
       )
         return { success: true };
+      if (!result.data.timer) {
+        const received = result.data.entries ?? [];
+        setEntries((entries) => [
+          ...entries.filter((entry) => !received.some((item) => item.id === entry.id)),
+          ...received,
+        ]);
+        return { success: true };
+      }
       timerRevisionRef.current += 1;
       timerRef.current = result.data.timer;
       persistedTimerRef.current = {
@@ -261,6 +271,8 @@ export function createTimerActions({
 
   const stopTimer = (): StoreResult => {
     const current = timerRef.current;
+    if (current.collaborationOwnerId && current.collaborationOwnerId !== activeMemberId)
+      return { success: false, error: "Only the person who started this shared task can stop it." };
     if (current.status === "idle" || current.workspaceId !== activeWorkspaceId)
       return { success: false, error: "There is no active timer to stop." };
     const details = validateTimerDetails(current.task, current.projectId);

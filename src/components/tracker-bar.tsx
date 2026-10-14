@@ -35,6 +35,7 @@ export interface TrackerBarHandle {
 export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
   const {
     timer,
+    currentMember,
     activeWorkspaceId,
     entries,
     projects,
@@ -373,7 +374,16 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
                 >
                   <IconTooltip>
                     <ToggleButton
-                      aria-label={t("Stop")}
+                      aria-label={t(
+                        timer.collaborationOwnerId &&
+                          timer.collaborationOwnerId !== currentMember?.id
+                          ? "Only the person who started this shared task can stop it."
+                          : "Stop",
+                      )}
+                      isDisabled={Boolean(
+                        timer.collaborationOwnerId &&
+                        timer.collaborationOwnerId !== currentMember?.id,
+                      )}
                       className="size-9 min-h-9 min-w-9 bg-danger text-danger-foreground data-[hovered=true]:bg-danger/90"
                       isIconOnly
                       isSelected={false}

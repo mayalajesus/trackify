@@ -64,7 +64,9 @@ describe("production security hardening", () => {
   });
 
   it("synchronizes only the authenticated user's entries", async () => {
-    const query = vi.fn().mockResolvedValue({ rowCount: 1 });
+    const query = vi.fn(async (sql: string, _values?: unknown[]) => ({
+      rowCount: sql.startsWith("select 1 from public.task_invitations") ? 0 : 1,
+    }));
     await syncEntries({ query }, userId, workspaceId, [
       ownEntry,
       {
@@ -74,9 +76,11 @@ describe("production security hardening", () => {
       },
     ]);
 
-    expect(query).toHaveBeenCalledTimes(2);
+    expect(query).toHaveBeenCalledTimes(4);
     expect(query.mock.calls[0]?.[1]).toEqual([workspaceId, userId, [entryId]]);
-    expect(query.mock.calls[1]?.[0]).toContain("time_entries.user_id = excluded.user_id");
+    expect(query.mock.calls[2]?.[0]).toContain("time_entries.user_id = excluded.user_id");
+    expect(query.mock.calls[2]?.[1]?.slice(0, 3)).toEqual([entryId, workspaceId, userId]);
+    expect(query.mock.calls[3]?.[1]).toEqual([workspaceId, userId]);
   });
 
   it("rejects an entry identifier already owned by another scope", async () => {

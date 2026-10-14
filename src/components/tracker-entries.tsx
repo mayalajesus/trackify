@@ -69,6 +69,11 @@ export function TrackerEntries({ days }: { days: TrackerDay[] }) {
 
   const confirmDelete = () => {
     if (!pendingDelete) return;
+    if (pendingDelete.some((entry) => entry.sharedSourceEntryId)) {
+      toast.danger(t("Only the creator can change this shared time entry."));
+      setPendingDelete(null);
+      return;
+    }
     const deletedEntries = pendingDelete;
     deletedEntries.forEach((entry) => deleteEntry(entry.id));
     setPendingDelete(null);

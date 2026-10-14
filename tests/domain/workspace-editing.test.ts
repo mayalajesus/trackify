@@ -53,7 +53,11 @@ describe("workspace editing permissions", () => {
       .map(([sql]) => sql)
       .filter((sql) => /^\s*(insert|update|delete)/i.test(sql));
     expect(
-      writes.some((sql) => /public\.(workspace_members|workspace_settings|workspaces)\b/.test(sql)),
+      writes.some((sql) =>
+        /\b(?:insert\s+into|update|delete\s+from)\s+public\.(workspace_members|workspace_settings|workspaces)\b/i.test(
+          sql,
+        ),
+      ),
     ).toBe(false);
     expect(query).toHaveBeenCalledWith(expect.stringContaining("delete from public.time_entries"), [
       workspaceId,

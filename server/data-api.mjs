@@ -29,7 +29,13 @@ import {
 import { ensureProfile } from "./data/profile.mjs";
 import { deleteMember } from "./data/members.mjs";
 import { syncAccount } from "./data/sync-account.mjs";
-import { timerFromRow } from "./data/timer.mjs";
+import {
+  timerFromRow,
+  timerWithOwner,
+  syncSharedTimers,
+  clearOwnTimer,
+  requireSharedTimerSource,
+} from "./data/timer.mjs";
 import {
   dateValue,
   MAX_INTEGER_SECONDS,
@@ -141,6 +147,7 @@ async function operation(request, user, config, body) {
       [
         "inviteToTask",
         "listTaskInvitations",
+        "listTaskInvitationResponses",
         "respondTaskInvitation",
         "listTaskParticipants",
       ].includes(body.operation)
@@ -233,7 +240,9 @@ async function operation(request, user, config, body) {
         `select user_id, workspace_id::text, status, task, project_id::text, billable, started_at, started_date::text, accumulated_seconds, start_clock::text, hourly_rate, currency, task_details from public.active_timers where user_id = $1 and workspace_id = $2`,
         [user.id, workspaceId],
       );
-      return result.rows[0] ? timerFromRow(result.rows[0]) : null;
+      return result.rows[0]
+        ? await timerWithOwner(client, user.id, workspaceId, result.rows[0])
+        : null;
     }
     if (body.operation === "saveActiveTimer") {
       const timer = body.timer;
@@ -282,35 +291,67 @@ async function operation(request, user, config, body) {
           throw new DataApiError(400, "This project cannot be used for a timer.");
         }
       }
-      const result = await client.query(
-        `insert into public.active_timers (user_id, workspace_id, status, task, project_id, billable, started_at, started_date, accumulated_seconds, start_clock, hourly_rate, currency, task_details) values ($1, $2, $3, $4, $5,
+      await client.query("begin");
+      try {
+        await client.query("select id from public.workspaces where id=$1 for update", [
+          workspaceId,
+        ]);
+        const sharedTimer = await client.query(
+          `select t.*,t.workspace_id::text,t.project_id::text,t.started_date::text,t.start_clock::text
+             from public.active_timers t where t.workspace_id=$1 and t.user_id=$2
+             and exists (select 1 from public.task_invitations i where i.workspace_id=t.workspace_id
+               and i.recipient_id=t.user_id and i.status='accepted' and i.invited_by<>t.user_id
+               and i.task_id::text=t.task_details->>'id')`,
+          [workspaceId, user.id],
+        );
+        if (sharedTimer.rows[0]) {
+          const canonical = await timerWithOwner(client, user.id, workspaceId, sharedTimer.rows[0]);
+          await client.query("commit");
+          return canonical;
+        }
+        await requireSharedTimerSource(client, user.id, workspaceId, timer.taskDetails?.id);
+        const result = await client.query(
+          `insert into public.active_timers (user_id, workspace_id, status, task, project_id, billable, started_at, started_date, accumulated_seconds, start_clock, hourly_rate, currency, task_details) values ($1, $2, $3, $4, $5,
           coalesce((select p.billable or coalesce(c.billable, false) from public.projects p
             left join public.clients c on c.id = p.client_id and c.workspace_id = p.workspace_id
-            where p.id = $5 and p.workspace_id = $2), false), $6, $7, $8, $9, $10, $11, $12) on conflict (user_id, workspace_id) do update set status = excluded.status, task = excluded.task, project_id = excluded.project_id, billable = excluded.billable, started_at = excluded.started_at, started_date = excluded.started_date, accumulated_seconds = excluded.accumulated_seconds, start_clock = excluded.start_clock, hourly_rate = excluded.hourly_rate, currency = excluded.currency, task_details = excluded.task_details, updated_at = now() returning user_id, workspace_id::text, status, task, project_id::text, billable, started_at, started_date::text, accumulated_seconds, start_clock::text, hourly_rate, currency, task_details`,
-        [
-          user.id,
-          workspaceId,
-          timer.status,
-          task,
-          timer.projectId ? uuid(timer.projectId) : null,
-          startedAt,
-          timer.startedDate ? dateValue(timer.startedDate) : null,
-          Math.floor(accumulated),
-          timeValue(timer.startClock),
-          hourlyRate,
-          optionalCurrency(timer.currency),
-          taskDetailsValue(timer.taskDetails),
-        ],
-      );
-      return timerFromRow(result.rows[0]);
+            where p.id = $5 and p.workspace_id = $2), false), $6, $7, $8, $9, $10, $11, $12) on conflict (user_id, workspace_id) do update set status = excluded.status, task = excluded.task, project_id = excluded.project_id, billable = excluded.billable, started_at = excluded.started_at, started_date = excluded.started_date, accumulated_seconds = excluded.accumulated_seconds, start_clock = excluded.start_clock, hourly_rate = excluded.hourly_rate, currency = excluded.currency, task_details = excluded.task_details, updated_at = now()
+        where active_timers.task_details->>'id' = excluded.task_details->>'id'
+          or not exists (
+            select 1 from public.task_invitations i
+            where i.workspace_id=active_timers.workspace_id and i.recipient_id=active_timers.user_id
+              and i.task_id::text=active_timers.task_details->>'id' and i.status='accepted'
+              and i.invited_by<>active_timers.user_id
+          ) returning user_id, workspace_id::text, status, task, project_id::text, billable, started_at, started_date::text, accumulated_seconds, start_clock::text, hourly_rate, currency, task_details`,
+          [
+            user.id,
+            workspaceId,
+            timer.status,
+            task,
+            timer.projectId ? uuid(timer.projectId) : null,
+            startedAt,
+            timer.startedDate ? dateValue(timer.startedDate) : null,
+            Math.floor(accumulated),
+            timeValue(timer.startClock),
+            hourlyRate,
+            optionalCurrency(timer.currency),
+            taskDetailsValue(timer.taskDetails),
+          ],
+        );
+        if (!result.rows[0])
+          throw new DataApiError(403, "Only the person who started this shared task can stop it.");
+        const saved = await timerWithOwner(client, user.id, workspaceId, result.rows[0]);
+        await syncSharedTimers(client, user.id, workspaceId);
+        await client.query("commit");
+        return saved;
+      } catch (error) {
+        await client.query("rollback");
+        throw error;
+      }
     }
     if (body.operation === "clearActiveTimer") {
       const workspaceId = uuid(body.workspaceId);
       await requireWorkspaceAccess(client, user.id, workspaceId, true);
-      await client.query(
-        `delete from public.active_timers where user_id = $1 and workspace_id = $2`,
-        [user.id, workspaceId],
-      );
+      await clearOwnTimer(client, user.id, workspaceId);
       return null;
     }
     throw new DataApiError(400, "Unsupported data operation.");

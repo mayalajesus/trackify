@@ -1,4 +1,5 @@
 import { TaskInvitationInbox } from "@/components/tracker-task-modal";
+import { TaskInvitationNotifications } from "@/components/task-invitation-notifications";
 import { Button } from "@heroui/react/button";
 import { Card } from "@heroui/react/card";
 import { Description } from "@heroui/react/description";
@@ -240,6 +241,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
   return (
     <>
       <TaskInvitationInbox />
+      <TaskInvitationNotifications />
       <Link className="sr-only" href="#main-content">
         {t("Skip to content")}
       </Link>

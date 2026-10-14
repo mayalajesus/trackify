@@ -26,6 +26,11 @@ const ptBR: Record<string, string> = {
   "Delete {count} entries for “{task}”?": "Excluir os {count} registros de “{task}”?",
   "Start column": "Início",
   "Collaboration started": "Colaboração iniciada. Seu contador está em andamento.",
+  "Collaboration accepted": "Colaboração aceita.",
+  "Only the creator can change this shared time entry.":
+    "Somente quem criou a tarefa pode alterar ou excluir este registro compartilhado.",
+  "If the invited task is still running, stop your timer before accepting.":
+    "Se a tarefa do convite ainda estiver em andamento, pare seu contador antes de aceitar.",
   "Wait for the task invitation to finish.": "Aguarde a conclusão do aceite do convite.",
   Later: "Mais tarde",
   "Unable to save Trello link": "Não foi possível salvar o vínculo com o Trello",
@@ -898,6 +903,15 @@ const ptBR: Record<string, string> = {
   "End time": "Horário final",
   "Start time: {time}": "Horário inicial: {time}",
   "Add a note": "Adicionar uma observação",
+  "{name} accepted the collaboration": "{name} aceitou a colaboração",
+  "{name} declined the collaboration": "{name} recusou a colaboração",
+  "Collaboration declined": "Colaboração recusada",
+  "Save the shared task hours before stopping its participants.":
+    "Salve as horas da tarefa em conjunto antes de finalizar os participantes.",
+  "Only the person who started this shared task can stop it.":
+    "Somente quem iniciou esta tarefa em conjunto pode finalizá-la.",
+  "The original task timer is no longer active.":
+    "O cronômetro original desta tarefa não está mais ativo.",
   "Click to add a note": "Clique para inserir uma observação",
   "Edit description": "Editar descrição",
   "Add description": "Adicionar descrição",

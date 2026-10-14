@@ -523,6 +523,83 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [accountScope, activeMemberId, activeWorkspaceId, dataSource, hydrated, authenticatedUserId]);
 
   useEffect(() => {
+    if (!timerHydrated || !authenticatedUserId || !activeWorkspaceId || !timer.collaborationOwnerId)
+      return;
+    let cancelled = false;
+    let checking = false;
+    const checkSharedTimer = async () => {
+      if (
+        checking ||
+        cancelled ||
+        document.visibilityState !== "visible" ||
+        timerSyncPromiseRef.current
+      )
+        return;
+      checking = true;
+      const revision = timerRevisionRef.current;
+      try {
+        const result = await dataSource.getActiveTimer(authenticatedUserId, activeWorkspaceId);
+        if (
+          cancelled ||
+          accountScopeRef.current !== accountScope ||
+          timerRevisionRef.current !== revision ||
+          !result.success
+        )
+          return;
+        if (result.data) {
+          if (JSON.stringify(timerRef.current) !== JSON.stringify(result.data)) {
+            persistedTimerRef.current = {
+              scope: accountScope,
+              workspaceId: activeWorkspaceId,
+              value: JSON.stringify(result.data),
+            };
+            timerRevisionRef.current += 1;
+            timerRef.current = result.data;
+            setTimer(result.data);
+            setElapsed(elapsedForTimer(result.data));
+          }
+          return;
+        }
+        // Refresh the entries before replacing the local timer. Do not turn the
+        // new server entry into a stale client-side deletion on the next save.
+        if (!(await refreshAccount()) || cancelled || timerRevisionRef.current !== revision) return;
+        persistedTimerRef.current = {
+          scope: accountScope,
+          workspaceId: activeWorkspaceId,
+          value: JSON.stringify(initialTimer),
+        };
+        timerRevisionRef.current += 1;
+        timerRef.current = initialTimer;
+        setTimer(initialTimer);
+        setElapsed(0);
+        setTimerPersistenceError(null);
+      } finally {
+        checking = false;
+      }
+    };
+    const check = () => {
+      void checkSharedTimer();
+    };
+    const interval = window.setInterval(check, 3000);
+    window.addEventListener("focus", check);
+    document.addEventListener("visibilitychange", check);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+      window.removeEventListener("focus", check);
+      document.removeEventListener("visibilitychange", check);
+    };
+  }, [
+    timerHydrated,
+    authenticatedUserId,
+    activeWorkspaceId,
+    timer.collaborationOwnerId,
+    accountScope,
+    dataSource,
+    refreshAccount,
+  ]);
+
+  useEffect(() => {
     if (!hydrated || !timerHydrated || !authenticatedUserId || !activeWorkspaceId) return;
     // Let users complete older timers in the editor before persisting them.
     if (timer.status !== "idle" && !validateTimerDetails(timer.task, timer.projectId).success)

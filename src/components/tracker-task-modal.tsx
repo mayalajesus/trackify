@@ -427,7 +427,8 @@ export function TaskInvitationInbox() {
       setFailure(t(result.error));
       return;
     }
-    if (response === "accepted") toast.success(t("Collaboration started"));
+    if (response === "accepted") toast.success(t("Collaboration accepted"));
+    else toast.info(t("Collaboration declined"));
     setInvitations((current) => current.filter((i) => i.id !== invitation.id));
   };
   return (
@@ -454,7 +455,7 @@ export function TaskInvitationInbox() {
               </p>
               {timer.status !== "idle" ? (
                 <p className="text-sm text-muted">
-                  {t("Stop the active timer before accepting a task invitation.")}
+                  {t("If the invited task is still running, stop your timer before accepting.")}
                 </p>
               ) : null}
             </ModalLayout.Body>
@@ -477,11 +478,7 @@ export function TaskInvitationInbox() {
                   {t("Later")}
                 </Button>
               ) : null}
-              <Button
-                isDisabled={timer.status !== "idle"}
-                isPending={busy}
-                onPress={() => void respond("accepted")}
-              >
+              <Button isDisabled={busy} isPending={busy} onPress={() => void respond("accepted")}>
                 {t("Accept invitation")}
               </Button>
             </ModalLayout.Footer>

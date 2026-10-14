@@ -45,6 +45,7 @@ export interface TaskDetails {
 }
 
 export interface TimeEntry {
+  sharedSourceEntryId?: string;
   taskDetails?: TaskDetails;
   id: string;
   date: string;

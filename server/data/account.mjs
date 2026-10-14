@@ -104,7 +104,7 @@ export async function loadAccount(client, user, config) {
     [workspaceIds],
   );
   const entries = await client.query(
-    `select id::text, workspace_id::text, date::text, start_time::text, end_time::text, end_date::text, start_at, end_at, duration_seconds, user_id, project_id::text, task, description, billable, hourly_rate, currency, task_details
+    `select id::text, workspace_id::text, date::text, start_time::text, end_time::text, end_date::text, start_at, end_at, duration_seconds, user_id, project_id::text, task, description, billable, hourly_rate, currency, task_details, shared_source_entry_id
        from public.time_entries e
       where e.workspace_id = any($1::uuid[])
         and (

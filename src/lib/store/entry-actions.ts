@@ -71,6 +71,8 @@ export function createEntryActions({
   const updateEntry = (id: string, patch: Partial<Omit<TimeEntry, "id">>): StoreResult => {
     const current = entries.find((entry) => entry.id === id);
     if (!current) return { success: false, error: "This time entry no longer exists." };
+    if (current.sharedSourceEntryId)
+      return { success: false, error: "Only the creator can change this shared time entry." };
     if (!can("manage-own-entries") || current.userId !== activeMemberId)
       return { success: false, error: "You can only edit your own time entries." };
     if (patch.userId !== undefined && patch.userId !== current.userId)
@@ -119,6 +121,8 @@ export function createEntryActions({
   const deleteEntry = (id: string): StoreResult => {
     const entry = entries.find((candidate) => candidate.id === id);
     if (!entry) return { success: false, error: "This time entry no longer exists." };
+    if (entry.sharedSourceEntryId)
+      return { success: false, error: "Only the creator can change this shared time entry." };
     if (!can("manage-own-entries") || entry.userId !== activeMemberId)
       return { success: false, error: "You can only delete your own time entries." };
     setEntries((list) => list.filter((candidate) => candidate.id !== id));
