@@ -16,24 +16,26 @@ import { ModalTriggerRegistration } from "@/components/overlay-trigger-registrat
 function WorkspaceLogo({
   workspace,
   enlarged = false,
+  selected = false,
 }: {
   workspace: WorkspaceSummary;
   enlarged?: boolean;
+  selected?: boolean;
 }) {
   return (
     <Avatar
       aria-hidden="true"
-      className={`${enlarged ? "size-10" : "size-4"} shrink-0 overflow-hidden rounded-full`}
+      className={`${enlarged ? "size-10" : selected ? "size-7" : "size-4"} shrink-0 overflow-hidden rounded-full`}
       size="sm"
     >
       {workspace.logoDataUrl ? (
         <Avatar.Image
           alt=""
           src={workspace.logoDataUrl}
-          className={enlarged ? "size-full object-cover" : "object-contain"}
+          className={enlarged || selected ? "size-full object-cover" : "object-contain"}
         />
       ) : null}
-      <Avatar.Fallback className={enlarged ? undefined : "bg-transparent"}>
+      <Avatar.Fallback className={enlarged || selected ? undefined : "bg-transparent"}>
         <Layers3Diagonal className="size-4" />
       </Avatar.Fallback>
     </Avatar>
@@ -128,7 +130,7 @@ export function WorkspaceSwitcher({
   );
   const triggerContent = (
     <>
-      <WorkspaceLogo workspace={currentSummary} enlarged={collapsed} />
+      <WorkspaceLogo workspace={currentSummary} enlarged={collapsed} selected />
       {!collapsed ? (
         <span className="flex min-w-0 flex-1 items-center">
           <Typography type="body-sm" weight="semibold" truncate className="min-w-0 flex-1">
@@ -203,7 +205,7 @@ export function WorkspaceSwitcher({
             className={
               collapsed
                 ? "flex size-10 min-h-10 min-w-10 items-center justify-center p-0"
-                : "flex h-9 min-w-0 w-full items-center gap-2.5 rounded-[22px] px-3 py-0"
+                : "flex h-9 min-w-0 w-full items-center gap-2 rounded-[22px] pl-1 pr-3 py-0"
             }
           >
             {triggerContent}
