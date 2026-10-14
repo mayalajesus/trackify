@@ -39,6 +39,7 @@ import { formatDuration } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
 import type { Client } from "@/lib/domain";
 import { useStore } from "@/lib/store";
+import { sortClientsByName } from "@/lib/client-order";
 import { clientCurrencyOptions, defaultCurrencyForLocale, type CurrencyCode } from "@/lib/billing";
 
 export const Route = createFileRoute("/clients")({
@@ -74,7 +75,7 @@ function ClientsPage() {
   const [editingClientId, setEditingClientId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
-  const [billable, setBillable] = useState(false);
+  const [billable, setBillable] = useState(true);
   const [contractedHours, setContractedHours] = useState("");
   const parsedContractedHours = Number(contractedHours.replace(",", "."));
   const validContractedHours =
@@ -104,7 +105,7 @@ function ClientsPage() {
     setEditingClientId(null);
     setName("");
     setContact("");
-    setBillable(false);
+    setBillable(true);
     setContractedHours("");
     setCurrency(defaultCurrency);
     setFormError(null);
@@ -232,7 +233,7 @@ function ClientsPage() {
             <Table.Column aria-label={t("Actions")}>{""}</Table.Column>
           </Table.Header>
           <Table.Body>
-            {clients
+            {sortClientsByName(clients, locale)
               .filter((client) => (client.status === "archived") === showArchived)
               .map((client) => (
                 <Table.Row key={client.id}>
