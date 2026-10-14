@@ -49,8 +49,7 @@ export function ProjectFormModal({
   onOpenChange,
   onCreated,
 }: ProjectFormModalProps) {
-  const { clients, members, preferencesByUserId, today, currentUserId, addProject, updateProject } =
-    useStore();
+  const { clients, members, preferencesByUserId, today, addProject, updateProject } = useStore();
   const { t, error } = useI18n();
   const { contains } = useFilter({ sensitivity: "base" });
   const [name, setName] = useState("");
@@ -68,10 +67,10 @@ export function ProjectFormModal({
     setClientId(project?.clientId ?? "");
     setProjectColor(projectColorValue(project?.color));
     setProjectBillable(project?.billable ?? false);
-    setAssignedMemberIds(project?.memberIds ?? [currentUserId]);
+    setAssignedMemberIds(project?.memberIds ?? []);
     setMemberQuery("");
     setFormError(null);
-  }, [currentUserId, initialName, isOpen, project]);
+  }, [initialName, isOpen, project]);
 
   const activeMembers = useMemo(
     () => members.filter((member) => member.status === "active"),
@@ -88,12 +87,11 @@ export function ProjectFormModal({
     return activeMembers
       .filter(
         (member) =>
-          member.id !== currentUserId &&
           !assignedMemberIdSet.has(member.id) &&
           (query.length === 0 || contains(member.name, query) || contains(member.email, query)),
       )
       .slice(0, 50);
-  }, [activeMembers, assignedMemberIdSet, contains, currentUserId, memberQuery]);
+  }, [activeMembers, assignedMemberIdSet, contains, memberQuery]);
 
   const setOpen = (open: boolean) => {
     if (!open) {
@@ -302,7 +300,6 @@ export function ProjectFormModal({
                         size="sm"
                         onRemove={(keys) => {
                           const removedIds = new Set(Array.from(keys, String));
-                          removedIds.delete(currentUserId);
                           setAssignedMemberIds((current) =>
                             current.filter((id) => !removedIds.has(id)),
                           );
@@ -330,8 +327,6 @@ export function ProjectFormModal({
                               <span className="max-w-40 truncate">{member.name}</span>
                               <Tag.RemoveButton
                                 aria-label={t("Remove {name}", { name: member.name })}
-                                {...(member.id === currentUserId ? { className: "hidden" } : {})}
-                                isDisabled={member.id === currentUserId}
                               />
                             </Tag>
                           )}

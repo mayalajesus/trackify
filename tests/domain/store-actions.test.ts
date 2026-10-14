@@ -4,7 +4,7 @@ import { createProjectActions } from "../../src/lib/store/project-actions";
 import { initialPreferences, initialTimer } from "../../src/lib/store/defaults";
 import { makeSeedAccount } from "../../src/lib/store/seed-account";
 import { shareAccountReferences } from "../../src/lib/store/references";
-import type { Client } from "../../src/lib/domain";
+import type { Client, Project } from "../../src/lib/domain";
 
 function clientContext() {
   const workspace = makeSeedAccount().workspaces[0]!;
@@ -20,6 +20,41 @@ function clientContext() {
 }
 
 describe("store actions preserve domain restrictions", () => {
+  it("creates a project without assigning its creator and allows removing every member", () => {
+    const account = makeSeedAccount();
+    const workspace = account.workspaces[0]!;
+    const setProjects = vi.fn();
+    const setAccount = vi.fn();
+    const context = {
+      can: () => true,
+      clients: workspace.clients,
+      projects: workspace.projects,
+      members: [],
+      activeMemberId: "u1",
+      activeWorkspaceId: workspace.workspace.id,
+      entries: workspace.entries,
+      timerRef: { current: initialTimer },
+      setProjects,
+      setAccount,
+    };
+    const actions = createProjectActions(context);
+    expect(
+      actions.addProject({ ...workspace.projects[0]!, name: "No members", memberIds: [] }).success,
+    ).toBe(true);
+    const applyProjects = setProjects.mock.calls[0]![0] as (list: Project[]) => Project[];
+    expect(applyProjects(workspace.projects)[0]!.memberIds).toEqual([]);
+    const applyAccount = setAccount.mock.calls[0]![0] as (value: typeof account) => typeof account;
+    expect(applyAccount(account).workspaces[0]!.projects[0]!.memberIds).toEqual([]);
+
+    setProjects.mockClear();
+    const existing = workspace.projects[0]!;
+    expect(actions.updateProject(existing.id, { memberIds: [] }).success).toBe(true);
+    const applyEdit = setProjects.mock.calls[0]![0] as (list: Project[]) => Project[];
+    expect(
+      applyEdit(workspace.projects).find((project) => project.id === existing.id)!.memberIds,
+    ).toEqual([]);
+  });
+
   it("denies client mutations without permission", () => {
     const context = clientContext();
     context.can.mockReturnValue(false);

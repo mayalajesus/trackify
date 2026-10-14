@@ -8,7 +8,6 @@ export function createProjectActions({
   clients,
   projects,
   members,
-  activeMemberId,
   setProjects,
   setAccount,
   activeWorkspaceId,
@@ -58,7 +57,7 @@ export function createProjectActions({
     const createdProject: Project = {
       ...project,
       name: projectName,
-      memberIds: [...new Set([...project.memberIds, activeMemberId])],
+      memberIds: [...new Set(project.memberIds)],
       id: nextId(
         "p",
         projects.map((current) => current.id),
