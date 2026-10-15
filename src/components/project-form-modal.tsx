@@ -19,7 +19,6 @@ import { Typography } from "@heroui/react/typography";
 import { toast } from "@/lib/toast";
 import { ChevronDown } from "@gravity-ui/icons";
 import { useEffect, useMemo, useState } from "react";
-import { ProjectColorPicker } from "@/components/project-color-picker";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { FormAlert } from "@/components/form-feedback";
 import { ModalLayout } from "@/components/modal-layout";
@@ -27,7 +26,7 @@ import { ModalTriggerRegistration } from "@/components/overlay-trigger-registrat
 import { getSessionDefaultAvatarUrl } from "@/lib/default-avatar";
 import type { Project } from "@/lib/domain";
 import { useI18n } from "@/lib/i18n";
-import { defaultProjectColor, projectColorValue } from "@/lib/project-colors";
+import { defaultProjectColor } from "@/lib/project-colors";
 import { useStore } from "@/lib/store";
 import { sortClientsByName } from "@/lib/client-order";
 
@@ -58,7 +57,6 @@ export function ProjectFormModal({
   const [name, setName] = useState("");
   const [clientId, setClientId] = useState("");
   const [clientQuery, setClientQuery] = useState("");
-  const [projectColor, setProjectColor] = useState(defaultProjectColor);
   const [projectBillable, setProjectBillable] = useState(false);
   const [assignedMemberIds, setAssignedMemberIds] = useState<string[]>([]);
   const [memberQuery, setMemberQuery] = useState("");
@@ -70,7 +68,6 @@ export function ProjectFormModal({
     setName(project?.name ?? initialName);
     setClientId(project?.clientId ?? "");
     setClientQuery("");
-    setProjectColor(projectColorValue(project?.color));
     setProjectBillable(project?.billable ?? false);
     setAssignedMemberIds(project?.memberIds ?? []);
     setMemberQuery("");
@@ -122,7 +119,7 @@ export function ProjectFormModal({
           name: name.trim(),
           clientId,
           billable: projectBillable,
-          color: projectColor,
+          color: defaultProjectColor,
           memberIds: assignedMemberIds,
         })
       : addProject({
@@ -130,7 +127,7 @@ export function ProjectFormModal({
           clientId,
           billable: projectBillable,
           status: "active",
-          color: projectColor,
+          color: defaultProjectColor,
           lastActivity: today,
           memberIds: assignedMemberIds,
         });
@@ -197,8 +194,6 @@ export function ProjectFormModal({
                     <Label>{t("Billable")}</Label>
                   </Switch.Content>
                 </Switch>
-
-                <ProjectColorPicker value={projectColor} onChange={setProjectColor} />
 
                 <Autocomplete
                   isRequired
