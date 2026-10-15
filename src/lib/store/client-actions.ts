@@ -1,5 +1,6 @@
 import { clientCurrencyOptions, defaultCurrencyForLocale } from "../billing";
 import type { Client } from "../domain";
+import { clientColorValue, isClientColor } from "../client-colors";
 import { nextId } from "./ids";
 import type { StoreResult } from "./types";
 
@@ -23,6 +24,8 @@ export function createClientActions({
   const addClient = (client: Omit<Client, "id">): StoreResult => {
     if (!can("manage-clients"))
       return { success: false, error: "Only Admins and the Owner can manage clients." };
+    if (client.color !== undefined && !isClientColor(client.color))
+      return { success: false, error: "Choose a valid client color." };
     if (!client.name.trim()) return { success: false, error: "A client name is required." };
     if (client.status !== undefined && !["active", "on-hold", "archived"].includes(client.status))
       return { success: false, error: "Choose a valid client status." };
@@ -48,6 +51,7 @@ export function createClientActions({
           list.map((current) => current.id),
         ),
         name: client.name.trim(),
+        color: clientColorValue(client.color),
         contact: client.contact.trim(),
         billable: client.billable ?? false,
         contractedHours: client.contractedHours ?? null,
@@ -67,6 +71,8 @@ export function createClientActions({
   const updateClient = (id: string, patch: Partial<Client>): StoreResult => {
     if (!can("manage-clients"))
       return { success: false, error: "Only Admins and the Owner can manage clients." };
+    if (patch.color !== undefined && !isClientColor(patch.color))
+      return { success: false, error: "Choose a valid client color." };
     if (patch.status !== undefined && !["active", "on-hold", "archived"].includes(patch.status))
       return { success: false, error: "Choose a valid client status." };
     if (
@@ -90,6 +96,7 @@ export function createClientActions({
     const next = {
       ...current,
       ...patch,
+      color: clientColorValue(patch.color ?? current.color),
       name: (patch.name ?? current.name).trim(),
       contact: (patch.contact ?? current.contact).trim(),
     };

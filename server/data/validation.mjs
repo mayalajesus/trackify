@@ -94,6 +94,13 @@ export function optionalCurrency(value) {
   return value;
 }
 
+export function clientColorValue(value) {
+  if (typeof value !== "string" || !/^#[0-9a-f]{6}$/i.test(value)) {
+    throw new DataApiError(400, "Choose a valid client color.");
+  }
+  return value.toLowerCase();
+}
+
 export function projectColorValue(value) {
   const color = requiredText(value, "Project color", 40).toLowerCase();
   const legacyColors = new Set([

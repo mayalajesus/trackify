@@ -4,6 +4,8 @@ export type Role = "Owner" | "Admin" | "Member";
 export type ProjectStatus = "active" | "on-hold" | "archived";
 
 export interface Client {
+  /** Absent in older snapshots; defaults to black. */
+  color?: string;
   status?: ProjectStatus;
   memberIds?: string[];
   id: string;

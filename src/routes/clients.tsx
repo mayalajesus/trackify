@@ -1,3 +1,4 @@
+import { ColorSwatch } from "@heroui/react/color-swatch";
 import { Button } from "@heroui/react/button";
 import { Description } from "@heroui/react/description";
 import { FieldError } from "@heroui/react/field-error";
@@ -24,6 +25,8 @@ import {
   TrashBin,
 } from "@gravity-ui/icons";
 import { useState } from "react";
+import { ClientColorPicker } from "@/components/client-color-picker";
+import { clientColorValue, defaultClientColor } from "@/lib/client-colors";
 import { ClientMembersModal } from "@/components/client-members-modal";
 import { Tabs } from "@heroui/react/tabs";
 import { ActionDropdown } from "@/components/action-dropdown";
@@ -74,6 +77,7 @@ function ClientsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingClientId, setEditingClientId] = useState<string | null>(null);
   const [name, setName] = useState("");
+  const [color, setColor] = useState(defaultClientColor);
   const [contact, setContact] = useState("");
   const [billable, setBillable] = useState(true);
   const [contractedHours, setContractedHours] = useState("");
@@ -105,6 +109,7 @@ function ClientsPage() {
     setEditingClientId(null);
     setName("");
     setContact("");
+    setColor(defaultClientColor);
     setBillable(true);
     setContractedHours("");
     setCurrency(defaultCurrency);
@@ -120,6 +125,7 @@ function ClientsPage() {
     const values = {
       name: name.trim(),
       contact: contact.trim(),
+      color,
       billable,
       currency,
       contractedHours: contractedHours.trim() ? parsedContractedHours : null,
@@ -238,7 +244,14 @@ function ClientsPage() {
               .map((client) => (
                 <Table.Row key={client.id}>
                   <Table.Cell>
-                    <span>{client.name}</span>
+                    <span className="inline-flex items-center gap-2">
+                      <ColorSwatch
+                        aria-label={t("Client color")}
+                        className="size-2 shrink-0 rounded-full"
+                        color={clientColorValue(client.color)}
+                      />
+                      <span>{client.name}</span>
+                    </span>
                     {client.status === "on-hold" ? (
                       <span className="ml-2 text-xs text-muted">{t("Inactive")}</span>
                     ) : null}
@@ -364,6 +377,7 @@ function ClientsPage() {
                               setEditingClientId(client.id);
                               setName(client.name);
                               setContact(client.contact);
+                              setColor(clientColorValue(client.color));
                               setBillable(client.billable ?? false);
                               setContractedHours(
                                 client.contractedHours == null
@@ -479,6 +493,7 @@ function ClientsPage() {
                       <Label>{t("Billable")}</Label>
                     </Switch.Content>
                   </Switch>
+                  <ClientColorPicker value={color} onChange={setColor} />
                   <ModalSelect
                     label={t("Currency")}
                     buttonAriaLabel={t("Choose currency")}

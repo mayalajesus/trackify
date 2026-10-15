@@ -155,3 +155,21 @@
     line-height: 38px;
   }
 }
+
+.client-form-modal .client-color-picker > .label {
+  display: block;
+  margin-bottom: 8px;
+}
+.client-form-modal .client-color-picker > .flex,
+.client-form-modal .color-swatch-picker {
+  gap: 6px;
+}
+.client-form-modal .color-swatch-picker {
+  display: contents;
+}
+.client-form-modal .color-swatch-picker__item,
+.client-form-modal .client-color-picker .color-picker__trigger {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+}

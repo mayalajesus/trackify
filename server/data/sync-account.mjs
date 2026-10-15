@@ -6,6 +6,7 @@ import { ensureProfile } from "./profile.mjs";
 import { workspaceLogoPath } from "./storage.mjs";
 import {
   avatarDataValue,
+  clientColorValue,
   dateValue,
   favoriteTasksValue,
   membershipBilling,
@@ -409,14 +410,15 @@ export async function syncAccount(client, user, config, account) {
         throw new DataApiError(400, "Enter a positive number of contracted hours.");
       }
       const result = await client.query(
-        `insert into public.clients (id, workspace_id, name, contact, billable, currency, contracted_hours, status, member_ids)
-         values ($1, $2, $3, $4, coalesce($5::boolean, false), $6, $7, coalesce($9::text, 'active'), coalesce($10::uuid[], '{}'))
+        `insert into public.clients (id, workspace_id, name, contact, billable, currency, contracted_hours, status, member_ids, color)
+         values ($1, $2, $3, $4, coalesce($5::boolean, false), $6, $7, coalesce($9::text, 'active'), coalesce($10::uuid[], '{}'), coalesce($11::text, '#000000'))
          on conflict (id) do update set name = excluded.name, contact = excluded.contact,
            billable = coalesce($5::boolean, clients.billable),
            currency = coalesce(excluded.currency, clients.currency),
            contracted_hours = case when $8::boolean then excluded.contracted_hours else clients.contracted_hours end,
            status = coalesce($9::text, clients.status),
-           member_ids = coalesce($10::uuid[], clients.member_ids)
+           member_ids = coalesce($10::uuid[], clients.member_ids),
+           color = coalesce($11::text, clients.color)
          where clients.workspace_id = excluded.workspace_id
          returning id::text`,
         [
@@ -430,6 +432,7 @@ export async function syncAccount(client, user, config, account) {
           Object.hasOwn(item, "contractedHours"),
           item.status ?? null,
           item.memberIds === undefined ? null : [...new Set(item.memberIds)].map(uuid),
+          item.color === undefined ? null : clientColorValue(item.color),
         ],
       );
       if (!result.rowCount) {

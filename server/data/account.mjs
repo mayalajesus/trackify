@@ -92,7 +92,7 @@ export async function loadAccount(client, user, config) {
     [workspaceIds],
   );
   const clients = await client.query(
-    `select id::text, workspace_id::text, name, contact, billable, currency, contracted_hours, status, member_ids from public.clients where workspace_id = any($1::uuid[])`,
+    `select id::text, workspace_id::text, name, contact, billable, currency, contracted_hours, status, member_ids, color from public.clients where workspace_id = any($1::uuid[])`,
     [workspaceIds],
   );
   const projects = await client.query(
@@ -181,6 +181,7 @@ export async function loadAccount(client, user, config) {
       name: row.name,
       contact: row.contact,
       billable: row.billable ?? false,
+      color: row.color ?? "#000000",
       contractedHours: row.contracted_hours == null ? null : Number(row.contracted_hours),
       status: row.status,
       memberIds: row.member_ids ?? [],

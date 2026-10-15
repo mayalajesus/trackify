@@ -1,3 +1,4 @@
+import { isClientColor } from "../client-colors";
 import type {
   PersistedAccount,
   ThemeMode,
@@ -82,6 +83,7 @@ export function isValidClient(value: unknown): value is Client {
     typeof client.name === "string" &&
     Boolean(client.name.trim()) &&
     typeof client.contact === "string" &&
+    (client.color === undefined || isClientColor(client.color)) &&
     (client.status === undefined || ["active", "on-hold", "archived"].includes(client.status)) &&
     (client.memberIds === undefined ||
       (Array.isArray(client.memberIds) &&

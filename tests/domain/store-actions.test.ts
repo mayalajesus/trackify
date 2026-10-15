@@ -86,6 +86,27 @@ describe("store actions preserve domain restrictions", () => {
     expect(next.slice(1)).toEqual(context.clients);
   });
 
+  it("persists client colors on creation and editing without allowing invalid values", () => {
+    const context = clientContext();
+    const actions = createClientActions(context);
+    expect(actions.addClient({ name: "Colored", contact: "", color: "#ABCDEF" }).success).toBe(
+      true,
+    );
+    const create = context.setClients.mock.calls[0]![0] as (clients: Client[]) => Client[];
+    expect(create(context.clients)[0]!.color).toBe("#abcdef");
+    context.clients[0]!.color = "#123456";
+    context.setClients.mockClear();
+    expect(actions.updateClient(context.clients[0]!.id, { name: "Renamed" }).success).toBe(true);
+    const update = context.setClients.mock.calls[0]![0] as (clients: Client[]) => Client[];
+    expect(update(context.clients)[0]!.color).toBe("#123456");
+    context.setClients.mockClear();
+    expect(actions.addClient({ name: "Invalid", contact: "", color: "red" }).success).toBe(false);
+    expect(actions.updateClient(context.clients[0]!.id, { color: "url(evil)" }).success).toBe(
+      false,
+    );
+    expect(context.setClients).not.toHaveBeenCalled();
+  });
+
   it("rejects invalid contracted hours and removal of a linked client", () => {
     const context = clientContext();
     const actions = createClientActions(context);
