@@ -726,7 +726,22 @@ export function ReportFiltersBar({
         icon={<Folder aria-hidden="true" className={reportFilterIconClassName} />}
         options={projectOptions}
         values={values.projectIds}
-        onChange={(projectIds) => onChange({ projectIds })}
+        onChange={(selectedProjectIds) => {
+          const projectIds =
+            selectedProjectIds.includes("none") && !values.projectIds.includes("none")
+              ? ["none"]
+              : selectedProjectIds.filter((id) => id !== "none" || selectedProjectIds.length === 1);
+          const clientIds = projectIds.includes("none")
+            ? []
+            : [
+                ...new Set(
+                  projects
+                    .filter((project) => projectIds.includes(project.id))
+                    .map((project) => project.clientId),
+                ),
+              ];
+          onChange({ projectIds, clientIds });
+        }}
         className={multiSelectClassName}
       />,
     );
