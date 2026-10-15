@@ -81,10 +81,6 @@
   font-size: inherit;
   line-height: inherit;
 }
-.project-form-modal .project-form-members-trigger {
-  height: 28px;
-  min-height: 28px;
-}
 .project-form-modal .project-color-picker > .label {
   display: block;
   margin-bottom: 8px;

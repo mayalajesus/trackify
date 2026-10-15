@@ -434,7 +434,7 @@ function ProjectsPage() {
                 </Typography>
               </ModalLayout.Body>
               <ModalLayout.Footer>
-                <Button slot="close" variant="secondary">
+                <Button slot="close" variant="secondary" className="text-foreground">
                   {t("Cancel")}
                 </Button>
                 <Button
