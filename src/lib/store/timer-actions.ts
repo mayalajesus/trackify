@@ -283,6 +283,7 @@ export function createTimerActions({
 
   const pauseTimer = (effectiveAt?: number) => {
     const current = timerRef.current;
+    if (current.collaborationOwnerId && current.collaborationOwnerId !== activeMemberId) return;
     if (current.status !== "running") return;
     const next = pauseTimerAt(current, effectiveAt);
     timerRevisionRef.current += 1;
@@ -294,6 +295,11 @@ export function createTimerActions({
 
   const resumeTimer = (): StoreResult => {
     const current = timerRef.current;
+    if (current.collaborationOwnerId && current.collaborationOwnerId !== activeMemberId)
+      return {
+        success: false,
+        error: "Only the person who started this shared task can pause or resume it.",
+      };
     if (current.status !== "paused" || current.workspaceId !== activeWorkspaceId)
       return { success: false, error: "There is no paused timer to resume." };
     const details = validateTimerDetails(current.task, current.projectId);

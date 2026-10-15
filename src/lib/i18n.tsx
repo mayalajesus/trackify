@@ -934,6 +934,8 @@ const ptBR: Record<string, string> = {
   "Collaboration declined": "Colaboração recusada",
   "Save the shared task hours before stopping its participants.":
     "Salve as horas da tarefa em conjunto antes de finalizar os participantes.",
+  "Only the person who started this shared task can pause or resume it.":
+    "Somente quem iniciou esta tarefa em conjunto pode pausá-la ou retomá-la.",
   "Only the person who started this shared task can stop it.":
     "Somente quem iniciou esta tarefa em conjunto pode finalizá-la.",
   "The original task timer is no longer active.":

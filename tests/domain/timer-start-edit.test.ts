@@ -63,3 +63,26 @@ describe("editing the active timer start", () => {
     expect(setTimer).not.toHaveBeenCalled();
   });
 });
+
+describe("shared timer pause control", () => {
+  it("does not pause a participant timer or change its elapsed time", () => {
+    const { actions, timerRef, setTimer } = setup("running", "another-owner");
+    const before = timerRef.current;
+    actions.pauseTimer();
+    expect(timerRef.current).toBe(before);
+    expect(setTimer).not.toHaveBeenCalled();
+  });
+  it("does not resume a participant timer paused by the creator", () => {
+    const { actions, timerRef, setTimer } = setup("paused", "another-owner");
+    const before = timerRef.current;
+    expect(actions.resumeTimer().success).toBe(false);
+    expect(timerRef.current).toBe(before);
+    expect(setTimer).not.toHaveBeenCalled();
+  });
+  it.each([undefined, "owner"])("allows the timer owner to pause (%s)", (owner) => {
+    const { actions, timerRef, setTimer } = setup("running", owner);
+    actions.pauseTimer();
+    expect(timerRef.current.status).toBe("paused");
+    expect(setTimer).toHaveBeenCalledOnce();
+  });
+});
