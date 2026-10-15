@@ -20,6 +20,7 @@ import { toast } from "@/lib/toast";
 import { ChevronDown } from "@gravity-ui/icons";
 import { useEffect, useMemo, useState } from "react";
 import { ProjectColorPicker } from "@/components/project-color-picker";
+import { ProfileAvatar } from "@/components/profile-avatar";
 import { FormAlert } from "@/components/form-feedback";
 import { ModalLayout } from "@/components/modal-layout";
 import { ModalTriggerRegistration } from "@/components/overlay-trigger-registration";
@@ -309,9 +310,12 @@ export function ProjectFormModal({
                                 id={member.id}
                                 textValue={`${member.name} ${member.email}`}
                               >
-                                <Avatar size="sm" className="shrink-0">
-                                  <Avatar.Fallback>{member.initials}</Avatar.Fallback>
-                                </Avatar>
+                                <div className="shrink-0">
+                                  <ProfileAvatar
+                                    member={member}
+                                    avatarUrl={preferencesByUserId[member.id]?.avatarUrl ?? null}
+                                  />
+                                </div>
                                 <div className="min-w-0">
                                   <Typography type="body-sm" truncate>
                                     {member.name}
