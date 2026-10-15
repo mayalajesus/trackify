@@ -165,3 +165,18 @@
   color: var(--foreground);
   background: var(--default);
 }
+.team-delete-membership-modal {
+  width: 560px;
+}
+.team-delete-membership-modal .modal__footer .button {
+  white-space: nowrap;
+}
+@media (max-width: 559px) {
+  .team-delete-membership-modal .modal__footer {
+    flex-direction: column;
+  }
+  .team-delete-membership-modal .modal__footer .button {
+    width: 100%;
+    flex: none;
+  }
+}

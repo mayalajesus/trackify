@@ -708,7 +708,7 @@ function TeamPage() {
         <ModalTriggerRegistration />
         <Modal.Backdrop>
           <Modal.Container size="sm">
-            <Modal.Dialog className="team-modal">
+            <Modal.Dialog className="team-modal team-delete-membership-modal">
               <Modal.CloseTrigger isDisabled={deleteBusy} />
               <ModalLayout.Header>{t("Permanently delete team membership?")}</ModalLayout.Header>
               <ModalLayout.Body>
