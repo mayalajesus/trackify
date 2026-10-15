@@ -1062,6 +1062,7 @@ const ptBR: Record<string, string> = {
   Columns: "Colunas",
   "Choose columns": "Escolher colunas",
   "{label} filter": "Filtro de {label}",
+  "{count} selected": "{count} selecionados",
   "{label} options": "Opções de {label}",
   "Search {label} options": "Buscar opções de {label}",
   "Search {label}...": "Buscar {label}...",

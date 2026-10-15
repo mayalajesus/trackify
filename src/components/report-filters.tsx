@@ -220,10 +220,15 @@ function fromRangeValue(value: RangeValue<CalendarDate> | null): DateRange | nul
     : { startDate: second, endDate: first };
 }
 
-function selectedLabel(options: ReportFilterOption[], values: string[], empty: string): string {
+function selectedLabel(
+  options: ReportFilterOption[],
+  values: string[],
+  empty: string,
+  multipleLabel: string,
+): string {
   if (values.length === 0) return empty;
   if (values.length === 1) return options.find((option) => option.id === values[0])?.label ?? empty;
-  return `${values.length} selected`;
+  return multipleLabel;
 }
 
 function GroupedDropdown({ children }: { children: ReactNode }) {
@@ -275,7 +280,14 @@ function ReportFilterDropdown({
           className="h-9 w-full min-w-0 justify-start gap-2"
         >
           <ReportFilterIcon>{icon}</ReportFilterIcon>
-          <ReportFilterValue>{selectedLabel(options, values, allLabel ?? label)}</ReportFilterValue>
+          <ReportFilterValue>
+            {selectedLabel(
+              options,
+              values,
+              allLabel ?? label,
+              t("{count} selected", { count: values.length }),
+            )}
+          </ReportFilterValue>
           <span aria-hidden="true" className="ms-auto flex h-5 shrink-0 items-center gap-2">
             <Separator
               orientation="vertical"
