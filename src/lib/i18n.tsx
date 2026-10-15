@@ -938,7 +938,7 @@ const ptBR: Record<string, string> = {
     "Somente quem iniciou esta tarefa em conjunto pode finalizá-la.",
   "The original task timer is no longer active.":
     "O cronômetro original desta tarefa não está mais ativo.",
-  "Click to add a note": "Clique para inserir uma observação",
+  "Click to add a note": "Inserir uma observação",
   "Edit description": "Editar descrição",
   "Add description": "Adicionar descrição",
   "H:MM": "H:MM",
