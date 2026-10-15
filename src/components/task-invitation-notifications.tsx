@@ -45,7 +45,7 @@ export function TaskInvitationNotifications() {
             { name: item.recipientName },
           );
           if (item.status === "accepted") toast.success(title, { description: item.task });
-          else toast.info(title, { description: item.task });
+          else toast.danger(title, { description: item.task });
         }
         seen = Object.fromEntries(result.data.map((item) => [item.id, item.status]));
         try {

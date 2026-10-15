@@ -428,7 +428,7 @@ export function TaskInvitationInbox() {
       return;
     }
     if (response === "accepted") toast.success(t("Collaboration accepted"));
-    else toast.info(t("Collaboration declined"));
+    else toast.danger(t("Collaboration declined"));
     setInvitations((current) => current.filter((i) => i.id !== invitation.id));
   };
   return (
