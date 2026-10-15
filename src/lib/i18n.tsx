@@ -924,6 +924,7 @@ const ptBR: Record<string, string> = {
   "End time": "Horário final",
   "Start time: {time}": "Horário inicial: {time}",
   "Add a note": "Adicionar uma observação",
+  "1 note": "1 observação",
   "{name} accepted the collaboration": "{name} aceitou a colaboração",
   "{name} declined the collaboration": "{name} recusou a colaboração",
   "Collaboration declined": "Colaboração recusada",

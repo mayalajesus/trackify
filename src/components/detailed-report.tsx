@@ -30,7 +30,7 @@ export function DetailedReport({
   onClear: () => void;
 }) {
   const { locale, t } = useI18n();
-  const { currentMember, preferences } = useStore();
+  const { preferencesByUserId } = useStore();
   const memberMap = useMemo(() => new Map(members.map((member) => [member.id, member])), [members]);
   const projectMap = useMemo(
     () => new Map(projects.map((project) => [project.id, project])),
@@ -134,9 +134,7 @@ export function DetailedReport({
                     <div className="detailed-report-avatar shrink-0">
                       <ProfileAvatar
                         member={{ id: entry.userId, name: memberName }}
-                        avatarUrl={
-                          currentMember?.id === entry.userId ? preferences.avatarUrl : null
-                        }
+                        avatarUrl={preferencesByUserId[entry.userId]?.avatarUrl ?? null}
                       />
                     </div>
                     <span className="truncate" title={memberName}>
@@ -147,12 +145,38 @@ export function DetailedReport({
                 <Table.Cell>
                   <div className="flex min-w-0 items-center gap-3">
                     <div className="min-w-0 flex-1">
-                      <div
-                        className="line-clamp-2 break-words"
-                        title={entry.task || entry.description || undefined}
-                      >
-                        {entry.task || entry.description || "—"}
+                      <div className="flex min-w-0 items-center gap-1">
+                        <span
+                          className="min-w-0 line-clamp-2 break-words"
+                          title={entry.task || entry.description || undefined}
+                        >
+                          {entry.task || entry.description || "—"}
+                        </span>
+                        {entry.taskDetails?.urgent ? (
+                          <Tooltip delay={0}>
+                            <Tooltip.Trigger
+                              aria-label={t("Urgent")}
+                              className="inline-flex shrink-0 text-danger"
+                            >
+                              <Thunderbolt aria-hidden="true" className="size-3.5" />
+                            </Tooltip.Trigger>
+                            <Tooltip.Content>{t("Urgent")}</Tooltip.Content>
+                          </Tooltip>
+                        ) : null}
                       </div>
+                      {entry.description?.trim() ? (
+                        <Tooltip delay={350}>
+                          <Tooltip.Trigger className="mt-1 block text-muted">
+                            {t("1 note")}
+                          </Tooltip.Trigger>
+                          <Tooltip.Content
+                            showArrow
+                            className="max-w-[min(32rem,calc(100vw-2rem))] whitespace-pre-wrap break-words"
+                          >
+                            {entry.description}
+                          </Tooltip.Content>
+                        </Tooltip>
+                      ) : null}
                       <div className="mt-1 flex min-w-0 items-center gap-1 text-muted">
                         <span
                           aria-hidden="true"
@@ -167,17 +191,6 @@ export function DetailedReport({
                     <span className="shrink-0 whitespace-nowrap text-muted tabular-nums">
                       {formatClock(Math.max(0, entry.seconds))}
                     </span>
-                    {entry.taskDetails?.urgent ? (
-                      <Tooltip delay={0}>
-                        <Tooltip.Trigger
-                          aria-label={t("Urgent")}
-                          className="inline-flex shrink-0 text-warning"
-                        >
-                          <Thunderbolt aria-hidden="true" className="size-3" />
-                        </Tooltip.Trigger>
-                        <Tooltip.Content>{t("Urgent")}</Tooltip.Content>
-                      </Tooltip>
-                    ) : null}
                   </div>
                 </Table.Cell>
                 <Table.Cell>
