@@ -1036,6 +1036,10 @@ const ptBR: Record<string, string> = {
     "Você não tem permissão para excluir este vínculo com a equipe.",
   "Team membership deletion requires the database migration.":
     "A exclusão de vínculos requer a atualização do banco de dados.",
+  "Stop this member's timer before removing their team access.":
+    "Finalize o cronômetro deste membro antes de remover seu acesso à equipe.",
+  "This removed member has an unfinished timer from before access was revoked. Review the pending hours before deleting their team membership.":
+    "Este membro removido tem um cronômetro pendente de antes da remoção do acesso. Revise as horas pendentes antes de excluir o vínculo com a equipe.",
   "Stop this member's timer before deleting their team membership.":
     "Finalize o cronômetro deste membro antes de excluir o vínculo com a equipe.",
   "This team membership was permanently deleted. Refresh the team before continuing.":

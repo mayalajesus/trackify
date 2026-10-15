@@ -251,6 +251,17 @@ export async function syncAccount(client, user, config, account) {
         [workspaceId, membership.userId],
       );
       const previousMembership = existingMembership.rows[0];
+      if (previousMembership?.status === "active" && membership.status === "removed") {
+        const pendingTimer = await client.query(
+          "select 1 from public.active_timers where workspace_id = $1 and user_id = $2 limit 1",
+          [workspaceId, membership.userId],
+        );
+        if (pendingTimer.rowCount)
+          throw new DataApiError(
+            409,
+            "Stop this member's timer before removing their team access.",
+          );
+      }
       if (previousMembership?.deleted_at) {
         deletedMembershipIds.add(membership.userId);
         if (membership.status !== "removed" || membership.role !== previousMembership.role)

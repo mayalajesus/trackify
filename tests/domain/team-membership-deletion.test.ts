@@ -73,6 +73,70 @@ describe("permanent team membership deletion", () => {
     },
   );
 
+  it("explains a timer stranded by an already removed membership without deleting hours", async () => {
+    const client = database("Owner", "Member", true);
+    const original = client.query.getMockImplementation()!;
+    client.query.mockImplementation(async (sql, values) => {
+      if (sql.startsWith("select role, status, deleted_at"))
+        return { rows: [{ role: "Member", status: "removed" }], rowCount: 1 };
+      return original(sql, values);
+    });
+    await expect(
+      deleteMember(client, user, { workspaceId, memberId: target.id }),
+    ).rejects.toMatchObject({
+      status: 409,
+      message: expect.stringContaining("unfinished timer from before access was revoked"),
+    });
+    expect(client.query.mock.calls.some(([sql]) => /^(update|delete)/.test(sql))).toBe(false);
+  });
+
+  it("prevents revoking access while a timer is still pending", async () => {
+    const query = vi.fn(async (sql: string, _values?: unknown[]) => {
+      let rows: Record<string, unknown>[] = [];
+      if (sql.includes("select owner_id, name, status"))
+        rows = [{ owner_id: user.id, name: "Team", status: "active" }];
+      if (sql.includes("wm.status as membership_status"))
+        rows = [{ role: "Owner", status: "active", membership_status: "active" }];
+      if (sql.includes("select role, status,")) rows = [{ role: "Member", status: "active" }];
+      if (sql.includes("select 1 from public.active_timers")) rows = [{}];
+      return { rows, rowCount: rows.length };
+    });
+    await expect(
+      syncAccount(
+        { query },
+        user,
+        { databaseProvider: "postgres" },
+        {
+          identities: [user, target],
+          workspaces: [
+            {
+              workspace: { id: workspaceId, ownerId: user.id, name: "Team", status: "active" },
+              memberships: [
+                {
+                  userId: target.id,
+                  role: "Member",
+                  status: "removed",
+                  hourlyRate: 0,
+                  currency: "BRL",
+                },
+              ],
+            },
+          ],
+        },
+      ),
+    ).rejects.toMatchObject({
+      status: 409,
+      message: "Stop this member's timer before removing their team access.",
+    });
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining("select 1 from public.active_timers"),
+      [workspaceId, target.id],
+    );
+    expect(
+      query.mock.calls.some(([sql]) => sql.includes("insert into public.workspace_members")),
+    ).toBe(false);
+  });
+
   it("keeps the historical identity and deletion marker through store serialization", () => {
     const membership = {
       workspaceId,

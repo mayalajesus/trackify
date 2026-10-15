@@ -29,7 +29,12 @@ export async function deleteMember(client, user, body) {
     [workspaceId, memberId],
   );
   if (timer.rows.length)
-    throw new DataApiError(409, "Stop this member's timer before deleting their team membership.");
+    throw new DataApiError(
+      409,
+      member.status === "removed"
+        ? "This removed member has an unfinished timer from before access was revoked. Review the pending hours before deleting their team membership."
+        : "Stop this member's timer before deleting their team membership.",
+    );
   const deleted = await client.query(
     "update public.workspace_members set status = 'removed', deleted_at = now() where workspace_id = $1 and user_id = $2 returning deleted_at",
     [workspaceId, memberId],
