@@ -9,7 +9,11 @@ export function groupKeyFor(entry: TimeEntry): string {
     entry.projectId ?? "none",
     entry.billable ? "billable" : "internal",
     entry.taskDetails?.urgent ? "urgent" : "normal",
-    entry.taskDetails?.trelloCard?.id ?? "",
+    entry.taskDetails?.trelloCard?.url.match(
+      /^https:\/\/trello\.com\/c\/([A-Za-z0-9]{8})(?:\/|$)/,
+    )?.[1] ??
+      entry.taskDetails?.trelloCard?.id ??
+      "",
   ].join("::");
 }
 

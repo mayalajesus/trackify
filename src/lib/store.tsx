@@ -523,11 +523,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [accountScope, activeMemberId, activeWorkspaceId, dataSource, hydrated, authenticatedUserId]);
 
   useEffect(() => {
-    if (!timerHydrated || !authenticatedUserId || !activeWorkspaceId || !timer.collaborationOwnerId)
-      return;
+    if (!timerHydrated || !authenticatedUserId || !activeWorkspaceId) return;
     let cancelled = false;
     let checking = false;
-    const checkSharedTimer = async () => {
+    const checkRemoteTimer = async () => {
       if (
         checking ||
         cancelled ||
@@ -560,6 +559,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           }
           return;
         }
+        if (timerRef.current.status === "idle") return;
         // Refresh the entries before replacing the local timer. Do not turn the
         // new server entry into a stale client-side deletion on the next save.
         if (!(await refreshAccount()) || cancelled || timerRevisionRef.current !== revision) return;
@@ -578,7 +578,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
     };
     const check = () => {
-      void checkSharedTimer();
+      void checkRemoteTimer();
     };
     const interval = window.setInterval(check, 3000);
     window.addEventListener("focus", check);

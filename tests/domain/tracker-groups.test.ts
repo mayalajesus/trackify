@@ -62,6 +62,30 @@ describe("tracker grouping behavior", () => {
     expect(group(entries)).toHaveLength(6);
   });
 
+  it("groups the same card linked by the Trello API and the Chrome extension", () => {
+    const card = { name: "Card", url: "https://trello.com/c/AbCd1234", board: "" };
+    expect(
+      group([
+        entry({
+          id: "api",
+          taskDetails: {
+            id: "task-api",
+            urgent: false,
+            trelloCard: { ...card, id: "a".repeat(24) },
+          },
+        }),
+        entry({
+          id: "extension",
+          taskDetails: {
+            id: "task-extension",
+            urgent: false,
+            trelloCard: { ...card, id: "AbCd1234" },
+          },
+        }),
+      ]),
+    ).toHaveLength(1);
+  });
+
   it("preserves the latest end date for overnight groups and stable row keys", () => {
     const overnight = entry({
       id: "night / 1",
