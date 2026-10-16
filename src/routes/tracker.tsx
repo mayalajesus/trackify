@@ -20,7 +20,8 @@ import {
   type TrackerPeriod,
 } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
-import { useStore } from "@/lib/store";
+import { useStore, useTimerTicker } from "@/lib/store";
+import { trackerPeriodTotal } from "@/lib/tracker-period-total";
 
 export const Route = createFileRoute("/tracker")({
   head: () => ({
@@ -39,6 +40,31 @@ export const Route = createFileRoute("/tracker")({
   }),
   component: TrackerPage,
 });
+
+function TrackerPeriodTotal({
+  savedSeconds,
+  period,
+}: {
+  savedSeconds: number;
+  period: TrackerPeriod;
+}) {
+  const { timer, activeWorkspaceId, today } = useStore();
+  const { elapsed } = useTimerTicker();
+  const { locale, t } = useI18n();
+  const seconds = trackerPeriodTotal(
+    savedSeconds,
+    timer,
+    elapsed,
+    period,
+    activeWorkspaceId,
+    today,
+  );
+  return (
+    <Typography type="body-sm" color="muted">
+      {formatDuration(seconds, locale)} {t("tracked")}
+    </Typography>
+  );
+}
 
 function TrackerPage() {
   const { entries, today, currentUserId, settings, timer } = useStore();
@@ -148,9 +174,7 @@ function TrackerPage() {
             )}
           </div>
           <div className="tracker-period-summary flex flex-wrap items-center justify-between gap-2 sm:justify-end">
-            <Typography type="body-sm" color="muted">
-              {formatDuration(periodTotal, locale)} {t("tracked")}
-            </Typography>
+            <TrackerPeriodTotal savedSeconds={periodTotal} period={period} />
             <Button
               size="sm"
               variant="primary"
