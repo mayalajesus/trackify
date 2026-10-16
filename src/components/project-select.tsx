@@ -9,7 +9,7 @@ import { Tooltip } from "@heroui/react/tooltip";
 import { useFilter } from "@heroui/react/rac";
 import { Plus } from "@gravity-ui/icons";
 import { useId, useMemo, useRef, useState, type RefObject } from "react";
-import { ProjectLabel } from "@/components/project-color";
+import { ClientColorLabel, ProjectLabel } from "@/components/project-color";
 import { useStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
 import { groupProjectsByClient } from "@/lib/project-groups";
@@ -86,7 +86,13 @@ export function ProjectSelect({
       textValue={`${project.name} ${clientNameFor(project.clientId)}`}
     >
       <span className="flex min-w-0 flex-1 flex-col">
-        <ProjectLabel project={project} label={project.name} />
+        {trackerStyle ? (
+          <span className="truncate text-sm font-normal leading-5 text-foreground">
+            {project.name}
+          </span>
+        ) : (
+          <ProjectLabel project={project} label={project.name} />
+        )}
         {showClientNameInOptions && !groupByClient ? (
           <span className="truncate text-xs leading-4 text-muted">
             {clientNameFor(project.clientId)}
@@ -203,8 +209,22 @@ export function ProjectSelect({
 
               {groupByClient
                 ? projectGroups.map((group) => (
-                    <ListBox.Section key={group.id} id={`client-${group.id}`}>
-                      <Header>{group.name}</Header>
+                    <ListBox.Section
+                      key={group.id}
+                      id={`client-${group.id}`}
+                      className={trackerStyle ? "tracker-project-client-group" : ""}
+                    >
+                      <Header>
+                        {trackerStyle ? (
+                          <ClientColorLabel
+                            color={clients.find((client) => client.id === group.id)?.color}
+                          >
+                            {group.name}
+                          </ClientColorLabel>
+                        ) : (
+                          group.name
+                        )}
+                      </Header>
                       {group.projects.map(renderProject)}
                     </ListBox.Section>
                   ))

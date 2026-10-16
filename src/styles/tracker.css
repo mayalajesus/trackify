@@ -434,7 +434,7 @@
 }
 .tracker-project-menu > .project-select-content {
   padding: 0;
-  gap: 8px;
+  gap: 0;
 }
 .tracker-project-menu .search-field {
   margin-inline: 0;
@@ -445,19 +445,34 @@
   border-radius: 16px;
 }
 .tracker-project-menu .list-box {
-  max-height: 256px;
+  max-height: 313px;
   overflow-y: auto;
-  padding: 0;
+  padding: 6px 10px;
+  gap: 0;
 }
 .tracker-project-menu .list-box-item {
-  min-height: 36px;
-  padding: 8px;
+  min-height: 20px;
+  padding: 0;
   border-radius: 12px;
   font-size: 14px;
   line-height: 20px;
 }
 .tracker-project-menu .list-box-item + .list-box-item {
+  margin-top: 6px;
+}
+.tracker-project-menu .tracker-project-client-group {
+  margin: 0;
+  padding: 10px 0;
+}
+.tracker-project-menu .tracker-project-client-group + .tracker-project-client-group {
   border-top: 1px solid var(--separator);
+}
+.tracker-project-menu .tracker-project-client-group .header {
+  padding: 0;
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 17px;
 }
 .tracker-project-menu > div > .button {
   height: 36px;

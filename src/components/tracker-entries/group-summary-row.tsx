@@ -1,6 +1,7 @@
 import { ActionDropdown } from "@/components/action-dropdown";
 import { EntryTrelloModal } from "@/components/entry-trello-modal";
 import { IconTooltip } from "@/components/icon-tooltip";
+import { ClientColorLabel } from "@/components/project-color";
 import { formatDate, formatDuration } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
@@ -12,7 +13,9 @@ import {
   PersonPlus,
   Play,
   Star,
+  StarFill,
   Thunderbolt,
+  ThunderboltFill,
   TrashBin,
 } from "@gravity-ui/icons";
 import { Button } from "@heroui/react/button";
@@ -45,9 +48,8 @@ export function TrackerGroupSummaryRow({
   const [entryTaskMode, setEntryTaskMode] = useState<"trello" | "members" | null>(null);
   const project = projects.find((item) => item.id === group.projectId);
   const projectName = project?.name ?? t("No project");
-  const clientName = project
-    ? (clients.find((client) => client.id === project.clientId)?.name ?? t("Unknown client"))
-    : t("No client");
+  const client = clients.find((item) => item.id === project?.clientId);
+  const clientName = project ? (client?.name ?? t("Unknown client")) : t("No client");
   const urgent = group.entries.some((entry) => entry.taskDetails?.urgent);
   const summaryCellClass = "overflow-hidden";
   const summaryTextClass = "block min-w-0 truncate whitespace-nowrap";
@@ -120,7 +122,7 @@ export function TrackerGroupSummaryRow({
               >
                 <span className="min-w-0 truncate">{group.task}</span>
                 {isFavorite(group) ? (
-                  <Star
+                  <StarFill
                     className="size-3.5 shrink-0 text-warning"
                     aria-label={t("Favorite tasks")}
                   />
@@ -132,7 +134,10 @@ export function TrackerGroupSummaryRow({
                   />
                 ) : null}
                 {urgent ? (
-                  <Thunderbolt className="size-3.5 shrink-0 text-danger" aria-label={t("Urgent")} />
+                  <ThunderboltFill
+                    className="size-3.5 shrink-0 text-danger"
+                    aria-label={t("Urgent")}
+                  />
                 ) : null}
                 <ChevronDown
                   className={`ml-1 size-4 shrink-0 ${isExpanded ? "rotate-180" : ""}`.trim()}
@@ -168,7 +173,11 @@ export function TrackerGroupSummaryRow({
                 {projectName}
               </span>
               <span className={`${summaryTextClass} tracker-client-name text-sm font-normal`}>
-                {clientName}
+                {client ? (
+                  <ClientColorLabel color={client.color}>{clientName}</ClientColorLabel>
+                ) : (
+                  clientName
+                )}
               </span>
             </Tooltip.Trigger>
             <Tooltip.Content

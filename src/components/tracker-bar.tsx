@@ -13,7 +13,15 @@ import { toast } from "@/lib/toast";
 import { Button } from "@heroui/react/button";
 import { useFavoriteTasks } from "@/lib/use-favorite-tasks";
 import { type FavoriteTask } from "@/lib/favorite-tasks";
-import { Star, StarFill, Square, Thunderbolt, PersonPlus, LayoutColumns } from "@gravity-ui/icons";
+import {
+  Star,
+  StarFill,
+  Square,
+  Thunderbolt,
+  ThunderboltFill,
+  PersonPlus,
+  LayoutColumns,
+} from "@gravity-ui/icons";
 import { useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref } from "react";
 import { ActionDropdown } from "@/components/action-dropdown";
 import { TrackerTaskModal } from "@/components/tracker-task-modal";
@@ -298,7 +306,11 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
                 aria-pressed={details.urgent}
                 onPress={() => changeDetails({ ...details, urgent: !details.urgent })}
               >
-                <Thunderbolt className={details.urgent ? "size-4 text-danger" : "size-4"} />
+                {details.urgent ? (
+                  <ThunderboltFill className="size-4 text-danger" />
+                ) : (
+                  <Thunderbolt className="size-4" />
+                )}
               </Button>
             </IconTooltip>
             <ActionDropdown

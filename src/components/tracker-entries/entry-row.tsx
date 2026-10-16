@@ -5,6 +5,7 @@ import { HeroUIDatePicker } from "@/components/hero-ui-date-picker";
 import { IconTooltip } from "@/components/icon-tooltip";
 import { OverlapConfirmation } from "@/components/overlap-confirmation";
 import { ProjectSelect } from "@/components/project-select";
+import { ClientColorLabel } from "@/components/project-color";
 import { TableEditingMode } from "@/components/table-editing-mode";
 import type { TimeEntry } from "@/lib/domain";
 import {
@@ -32,7 +33,9 @@ import {
   Play,
   Plus,
   Star,
+  StarFill,
   Thunderbolt,
+  ThunderboltFill,
   TrashBin,
 } from "@gravity-ui/icons";
 import { Button } from "@heroui/react/button";
@@ -138,9 +141,8 @@ export function TrackerEntryRow({
 
   const project = projects.find((item) => item.id === entry.projectId);
   const projectName = project?.name ?? t("No project");
-  const clientName = project
-    ? (clients.find((client) => client.id === project.clientId)?.name ?? t("Unknown client"))
-    : t("No client");
+  const client = clients.find((item) => item.id === project?.clientId);
+  const clientName = project ? (client?.name ?? t("Unknown client")) : t("No client");
   const selectedProject = projects.find((item) => item.id === draft.projectId);
   const selectedClientName = selectedProject
     ? (clients.find((client) => client.id === selectedProject.clientId)?.name ??
@@ -641,7 +643,7 @@ export function TrackerEntryRow({
                   >
                     <span className="truncate">{entry.task}</span>
                     {isFavorite(entry) ? (
-                      <Star
+                      <StarFill
                         className="size-3.5 shrink-0 text-warning"
                         aria-label={t("Favorite tasks")}
                       />
@@ -653,7 +655,7 @@ export function TrackerEntryRow({
                       />
                     ) : null}
                     {entry.taskDetails?.urgent ? (
-                      <Thunderbolt
+                      <ThunderboltFill
                         className="size-3.5 shrink-0 text-danger"
                         aria-label={t("Urgent")}
                       />
@@ -773,7 +775,11 @@ export function TrackerEntryRow({
                   {projectName}
                 </span>
                 <span className="tracker-client-name block w-full min-w-0 truncate text-sm font-normal">
-                  {clientName}
+                  {client ? (
+                    <ClientColorLabel color={client.color}>{clientName}</ClientColorLabel>
+                  ) : (
+                    clientName
+                  )}
                 </span>
               </span>
             </Button>
