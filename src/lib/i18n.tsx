@@ -48,7 +48,7 @@ const ptBR: Record<string, string> = {
   "This permanently deletes projects, clients, invitations and time entries for everyone in this workspace. This action cannot be undone.":
     "Os projetos, clientes, convites e registros de horas de todos neste workspace serão excluídos definitivamente. Esta ação não pode ser desfeita.",
   "Enter a valid start time before the current time.":
-    "Informe uma hora de início válida, anterior ao horário atual.",
+    "Informe uma hora de início válida",
   "Only the creator can change this shared time entry.":
     "Somente quem criou a tarefa pode alterar ou excluir este registro compartilhado.",
   "If the invited task is still running, stop your timer before accepting.":
