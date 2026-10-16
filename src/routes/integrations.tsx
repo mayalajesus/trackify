@@ -1,4 +1,6 @@
 import { Button } from "@heroui/react/button";
+import { Switch } from "@heroui/react/switch";
+import { useEffect, useState } from "react";
 import { Table } from "@heroui/react/table";
 import { Typography } from "@heroui/react/typography";
 import { createFileRoute } from "@tanstack/react-router";
@@ -8,6 +10,7 @@ import { PageHeader } from "@/components/page-header";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 import { request } from "@/lib/api-data-source";
+import { beginExtensionConnection } from "@/lib/extension-connect";
 
 export const Route = createFileRoute("/integrations")({
   head: () => ({ meta: [{ title: "Integrações — Trackify" }] }),
@@ -37,6 +40,12 @@ function IntegrationsPage() {
   const { t } = useI18n();
   const { session } = useAuth();
   const queryClient = useQueryClient();
+  const [awaitingAuthorization, setAwaitingAuthorization] = useState(false);
+  const connect = useMutation({
+    mutationFn: () =>
+      beginExtensionConnection(import.meta.env["VITE_TRACKIFY_EXTENSION_IDS"] ?? ""),
+    onSuccess: () => setAwaitingAuthorization(true),
+  });
   const queryKey = ["extension-connections", session?.user.id];
   const disconnect = useMutation({
     mutationFn: () => connectionRequest("disconnectOwnExtensions"),
@@ -60,7 +69,15 @@ function IntegrationsPage() {
   });
   const connected = (connections.data?.sessions ?? 0) > 0;
   const unknown = connections.isError || connections.isPending;
-  const error = disconnect.error ?? connections.error;
+  useEffect(() => {
+    if (connected) setAwaitingAuthorization(false);
+  }, [connected]);
+  useEffect(() => {
+    if (!awaitingAuthorization) return;
+    const timeout = window.setTimeout(() => setAwaitingAuthorization(false), 5 * 60_000);
+    return () => window.clearTimeout(timeout);
+  }, [awaitingAuthorization]);
+  const error = connect.error ?? disconnect.error ?? connections.error;
   return (
     <div className="integrations-page">
       <PageHeader
@@ -68,9 +85,21 @@ function IntegrationsPage() {
         description="Gerencie a conexão da extensão com sua conta."
       />
       {error && (
-        <Typography type="body-sm" role="alert">
-          {error.message}
-        </Typography>
+        <div className="flex items-center gap-3">
+          <Typography type="body-sm" role="alert">
+            {error.message}
+          </Typography>
+          {connections.isError && (
+            <Button
+              variant="secondary"
+              size="sm"
+              isPending={connections.isFetching}
+              onPress={() => void connections.refetch()}
+            >
+              Tentar novamente
+            </Button>
+          )}
+        </div>
       )}
       <DataTable className="integrations-table" label={t("Integrations")} minWidth="min-w-[600px]">
         <Table.Header>
@@ -89,48 +118,45 @@ function IntegrationsPage() {
                 </div>
               </div>
             </Table.Cell>
-            <Table.Cell>{session?.user.email ?? "—"}</Table.Cell>
+            <Table.Cell>{connected ? (session?.user.email ?? "—") : "—"}</Table.Cell>
             <Table.Cell>
               <span className="integration-status" role="status">
                 {connections.isPending
                   ? "Verificando…"
                   : connections.isError
                     ? "Indisponível"
-                    : connected
-                      ? "Conectada"
-                      : "Desconectada"}
+                    : disconnect.isPending
+                      ? "Desconectando…"
+                      : connected
+                        ? "Conectada"
+                        : connect.isPending || awaitingAuthorization
+                          ? "Aguardando autorização…"
+                          : "Desconectada"}
               </span>
             </Table.Cell>
             <Table.Cell>
-              {connected && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  isPending={disconnect.isPending}
-                  onPress={() => disconnect.mutate()}
-                >
-                  Desconectar
-                </Button>
-              )}
-              {connections.isError && !connected && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  isPending={connections.isFetching}
-                  onPress={() => void connections.refetch()}
-                >
-                  Tentar novamente
-                </Button>
-              )}
+              <Switch
+                className="integration-connection-switch"
+                aria-label="Conectar Trello"
+                isSelected={connected}
+                isDisabled={unknown || connect.isPending || disconnect.isPending}
+                onChange={(selected) => {
+                  connect.reset();
+                  disconnect.reset();
+                  if (selected) connect.mutate();
+                  else disconnect.mutate();
+                }}
+              >
+                <Switch.Content>
+                  <Switch.Control>
+                    <Switch.Thumb />
+                  </Switch.Control>
+                </Switch.Content>
+              </Switch>
             </Table.Cell>
           </Table.Row>
         </Table.Body>
       </DataTable>
-      {!unknown && !connected && (
-        <Typography type="body-sm" color="muted">
-          Para conectar, abra a extensão Trackify no navegador e selecione “Conectar ao Trackify”.
-        </Typography>
-      )}
       {!unknown && connected && connections.data!.sessions > 1 && (
         <Typography type="body-sm" color="muted">
           {`${connections.data!.sessions} conexões ativas. Desconectar encerra todas as conexões da extensão nesta conta.`}

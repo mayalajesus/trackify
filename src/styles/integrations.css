@@ -57,6 +57,26 @@
   width: 12px;
   height: 12px;
 }
+/* DEV 629:3242 overrides the generic UI Kit off color. Keep both states mounted. */
+.integrations-table .integration-connection-switch {
+  width: fit-content;
+  margin-inline-start: auto;
+}
+.integrations-table .integration-connection-switch:not([data-selected="true"]) .switch__control {
+  background: var(--separator);
+}
+.integrations-table .integration-connection-switch .switch__control {
+  border-radius: 999px;
+}
+.integrations-table .integration-connection-switch .switch__thumb {
+  margin-inline-start: 2px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: none;
+}
+.integrations-table .integration-connection-switch[data-selected="true"] .switch__thumb {
+  margin-inline-start: 14px;
+}
 .integrations-table .button {
   height: 32px;
   min-height: 32px;

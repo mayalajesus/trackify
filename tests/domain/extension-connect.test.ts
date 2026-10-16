@@ -1,5 +1,8 @@
-import { describe, expect, it } from "vitest";
-import { parseExtensionConnectRequest } from "../../src/lib/extension-connect";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  beginExtensionConnection,
+  parseExtensionConnectRequest,
+} from "../../src/lib/extension-connect";
 import {
   enforceExtensionOperation,
   isAllowedExtensionOrigin,
@@ -7,6 +10,33 @@ import {
 
 const id = "a".repeat(32);
 const state = "b".repeat(64);
+afterEach(() => vi.unstubAllGlobals());
+describe("integration connection switch", () => {
+  it("requests consent from an installed allowlisted extension without credentials", async () => {
+    const sendMessage = vi.fn((_id, _message, reply) => reply({ success: true }));
+    vi.stubGlobal("window", { setTimeout, clearTimeout, chrome: { runtime: { sendMessage } } });
+    await beginExtensionConnection(`invalid,${id},${id}`);
+    expect(sendMessage).toHaveBeenCalledExactlyOnceWith(
+      id,
+      { type: "TRACKIFY_BEGIN_CONNECT", version: 1 },
+      expect.any(Function),
+    );
+  });
+  it("reports unavailable or outdated extensions without pretending to connect", async () => {
+    vi.stubGlobal("window", {
+      setTimeout,
+      clearTimeout,
+      chrome: {
+        runtime: {
+          sendMessage: (_id: string, _message: unknown, reply: (response: unknown) => void) =>
+            reply({ success: false }),
+        },
+      },
+    });
+    await expect(beginExtensionConnection(id)).rejects.toThrow("Instale ou atualize");
+    await expect(beginExtensionConnection("")).rejects.toThrow("Instale ou atualize");
+  });
+});
 describe("extension authorization boundaries", () => {
   it("requires an explicitly registered extension and a valid state", () => {
     expect(parseExtensionConnectRequest(`?extensionId=${id}&state=${state}`, id)).toEqual({

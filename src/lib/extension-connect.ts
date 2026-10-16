@@ -32,3 +32,20 @@ export function sendExtensionSession(extensionId: string, message: Record<string
     });
   });
 }
+
+export async function beginExtensionConnection(allowedIds: string) {
+  const ids = [...new Set(allowedIds.split(",").map((id) => id.trim()))].filter((id) =>
+    /^[a-p]{32}$/.test(id),
+  );
+  for (const id of ids) {
+    try {
+      await sendExtensionSession(id, { type: "TRACKIFY_BEGIN_CONNECT", version: 1 });
+      return;
+    } catch {
+      // Try the next configured installation, without passing any account credentials.
+    }
+  }
+  throw new Error(
+    "Não foi possível abrir a extensão. Instale ou atualize o Trackify no Chrome e tente novamente.",
+  );
+}
