@@ -14,7 +14,14 @@ export function isAllowedExtensionOrigin(origin, allowedIds = "") {
 export function enforceExtensionOperation(origin, operation) {
   if (
     origin.startsWith("chrome-extension://") &&
-    !["getExtensionSession", "getExtensionContext", "extensionTimerAction"].includes(operation)
+    ![
+      "getExtensionSession",
+      "getExtensionContext",
+      "extensionTimerAction",
+      "createExtensionSession",
+      "refreshExtensionSession",
+      "revokeExtensionSession",
+    ].includes(operation)
   ) {
     throw new DataApiError(403, "This operation is not available to the extension.");
   }

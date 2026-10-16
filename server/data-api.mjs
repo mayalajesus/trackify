@@ -9,6 +9,12 @@ import {
   transferWorkspaceOwnership,
 } from "./account-lifecycle.mjs";
 import { authenticateDataRequest } from "./authentication.mjs";
+import {
+  authenticateExtension,
+  createExtensionSession,
+  refreshExtensionSession,
+  revokeExtensionSession,
+} from "./extension-sessions.mjs";
 import { DataApiError } from "./data-api-error.mjs";
 import { requirePayloadUser, requireWorkspaceAccess } from "./data/access.mjs";
 import { loadAccount } from "./data/account.mjs";
@@ -85,7 +91,7 @@ async function operation(request, user, config, body) {
   let discardClient = false;
   try {
     requirePayloadUser(user, body ?? {});
-    await ensureProfile(client, user, config);
+    if (!user.extensionSessionId) await ensureProfile(client, user, config);
     const operationName = String(body.operation ?? "");
     const includesUpload =
       (operationName === "syncAccount" &&
@@ -99,7 +105,18 @@ async function operation(request, user, config, body) {
         typeof body.logoDataUrl === "string" &&
         body.logoDataUrl.startsWith("data:image/"));
     await enforceUserRateLimits(client, user.id, operationName, new Date(), { includesUpload });
+    if (operationName === "revokeExtensionSession")
+      return await revokeExtensionSession(client, user);
     await enforceAccountLifecycle(client, user.id, operationName);
+    if (operationName === "createExtensionSession")
+      return await createExtensionSession(
+        client,
+        user,
+        String(request.headers?.origin ?? ""),
+        config.extensionIds,
+      );
+    if (operationName === "refreshExtensionSession")
+      return await refreshExtensionSession(client, user);
     if (body.operation === "getExtensionSession") {
       return { version: 1, user: { id: user.id, name: user.name ?? "", email: user.email } };
     }
@@ -479,10 +496,12 @@ export async function handleDataRequest(request, response, env = {}) {
     if (contentType && !contentType.startsWith("application/json")) {
       throw new DataApiError(415, "The request content type must be application/json.");
     }
-    const user = await authenticateDataRequest(request, config, getPool);
     const body = await readBody(request);
     operationName = String(body.operation ?? "unknown");
     enforceExtensionOperation(origin, operationName);
+    const user =
+      (await authenticateExtension(request, config, getPool(config), operationName)) ??
+      (await authenticateDataRequest(request, config, getPool));
     const data = await operation(request, user, config, body);
     sendJson(response, 200, { data, requestId }, requestId);
   } catch (error) {
