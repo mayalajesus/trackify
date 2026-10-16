@@ -3,6 +3,7 @@ import { ButtonGroup } from "@heroui/react/button-group";
 import { DateField } from "@heroui/react/date-field";
 import { DateRangePicker } from "@heroui/react/date-range-picker";
 import { Dropdown } from "@heroui/react/dropdown";
+import { Header } from "@heroui/react/header";
 import { EmptyState } from "@heroui/react/empty-state";
 import { I18nProvider, useFilter } from "@heroui/react/rac";
 import { InputGroup } from "@heroui/react/input-group";
@@ -36,7 +37,7 @@ import {
 import { CalendarDate } from "@internationalized/date";
 import type { RangeValue } from "@react-types/shared";
 import { BillableIndicator } from "@/components/billable-indicator";
-import { ProjectLabel } from "@/components/project-color";
+import { ClientColorLabel, ProjectLabel } from "@/components/project-color";
 import { useI18n } from "@/lib/i18n";
 import {
   formatReportPeriod,
@@ -47,6 +48,7 @@ import {
 } from "@/lib/format";
 import type { Client, Member, Project } from "@/lib/domain";
 import type { CurrencyCode } from "@/lib/billing";
+import { groupProjectsByClient } from "@/lib/project-groups";
 import { sortClientsByName } from "@/lib/client-order";
 
 export type ReportFilterKey = "member" | "client" | "project" | "description";
@@ -66,6 +68,13 @@ export type ReportFilterOption = {
   description?: string;
   billable?: boolean | null;
   project?: Pick<Project, "color"> | null;
+};
+
+type ReportProjectGroup = {
+  id: string;
+  name: string;
+  color: string | undefined;
+  projectIds: string[];
 };
 
 const reportFilterIconClassName = "size-4 shrink-0";
@@ -243,6 +252,7 @@ function ReportFilterDropdown({
   onChange,
   searchable,
   multiple,
+  projectGroups,
   allLabel,
   separator = "button-group",
   className,
@@ -252,6 +262,7 @@ function ReportFilterDropdown({
   options: ReportFilterOption[];
   values: string[];
   onChange: (values: string[]) => void;
+  projectGroups?: ReportProjectGroup[];
   searchable: boolean;
   multiple: boolean;
   allLabel?: string;
@@ -300,13 +311,13 @@ function ReportFilterDropdown({
           </span>
         </Button>
         <Dropdown.Popover
-          className="report-filter-popover w-64 max-w-[calc(100vw-2rem)] min-w-0"
+          className={`${projectGroups ? "tracker-project-menu" : "report-filter-popover"} w-64 max-w-[calc(100vw-2rem)] min-w-0`}
           onOpenChange={(isOpen) => {
             if (!isOpen) setQuery("");
           }}
         >
           {searchable ? (
-            <div className="p-2">
+            <div className={projectGroups ? "p-0" : "p-2"}>
               <SearchField
                 autoFocus
                 aria-label={t("Search {label} options", { label: label.toLowerCase() })}
@@ -318,7 +329,11 @@ function ReportFilterDropdown({
                 <SearchField.Group>
                   <SearchField.SearchIcon />
                   <SearchField.Input
-                    placeholder={t("Search {label}...", { label: label.toLowerCase() })}
+                    placeholder={
+                      projectGroups
+                        ? `${t("Search projects")}...`
+                        : t("Search {label}...", { label: label.toLowerCase() })
+                    }
                   />
                   <SearchField.ClearButton />
                 </SearchField.Group>
@@ -354,21 +369,64 @@ function ReportFilterDropdown({
                   <Dropdown.ItemIndicator />
                 </Dropdown.Item>
               ) : null}
-              {filteredOptions.map((option) => (
-                <Dropdown.Item key={option.id} id={option.id} textValue={option.label}>
-                  {option.billable !== undefined ? (
-                    <Label className="flex items-center gap-2">
-                      <BillableIndicator billable={option.billable} mode="icon" />
-                      {option.label}
-                    </Label>
-                  ) : option.project ? (
-                    <ProjectLabel project={option.project} label={option.label} />
-                  ) : (
-                    <Label>{option.label}</Label>
-                  )}
-                  <Dropdown.ItemIndicator />
-                </Dropdown.Item>
-              ))}
+              {projectGroups ? (
+                <>
+                  {filteredOptions
+                    .filter((option) => option.id === "none")
+                    .map((option) => (
+                      <Dropdown.Item key={option.id} id={option.id} textValue={option.label}>
+                        <span className="truncate text-sm font-normal leading-5 text-foreground">
+                          {option.label}
+                        </span>
+                        <Dropdown.ItemIndicator />
+                      </Dropdown.Item>
+                    ))}
+                  {projectGroups.map((group) => {
+                    const groupOptions = filteredOptions.filter((option) =>
+                      group.projectIds.includes(option.id),
+                    );
+                    return groupOptions.length > 0 ? (
+                      <Dropdown.Section
+                        key={group.id}
+                        id={`client-${group.id}`}
+                        className="tracker-project-client-group"
+                      >
+                        <Header>
+                          <ClientColorLabel color={group.color}>{group.name}</ClientColorLabel>
+                        </Header>
+                        {groupOptions.map((option) => (
+                          <Dropdown.Item
+                            key={option.id}
+                            id={option.id}
+                            textValue={`${option.label} ${group.name}`}
+                          >
+                            <span className="truncate text-sm font-normal leading-5 text-foreground">
+                              {option.label}
+                            </span>
+                            <Dropdown.ItemIndicator />
+                          </Dropdown.Item>
+                        ))}
+                      </Dropdown.Section>
+                    ) : null;
+                  })}
+                </>
+              ) : (
+                filteredOptions.map((option) => (
+                  <Dropdown.Item key={option.id} id={option.id} textValue={option.label}>
+                    {option.billable !== undefined ? (
+                      <Label className="flex items-center gap-2">
+                        <BillableIndicator billable={option.billable} mode="icon" />
+                        {option.label}
+                      </Label>
+                    ) : option.project ? (
+                      <ProjectLabel project={option.project} label={option.label} />
+                    ) : (
+                      <Label>{option.label}</Label>
+                    )}
+                    <Dropdown.ItemIndicator />
+                  </Dropdown.Item>
+                ))
+              )}
             </Dropdown.Menu>
           )}
         </Dropdown.Popover>
@@ -378,6 +436,7 @@ function ReportFilterDropdown({
 }
 
 function ReportMultiSelect(props: {
+  projectGroups?: ReportProjectGroup[];
   allLabel?: string;
   label: string;
   icon: ReactNode;
@@ -686,7 +745,7 @@ export function ReportFiltersBar({
   );
   const projectOptions = useMemo(
     () => [
-      { id: "none", label: "No project", description: "No client" },
+      { id: "none", label: t("No project"), description: t("No client") },
       ...projects.map((project) => ({
         id: project.id,
         label: project.name,
@@ -695,6 +754,14 @@ export function ReportFiltersBar({
       })),
     ],
     [clientNameById, projects, t],
+  );
+  const projectGroups = groupProjectsByClient(projects, clients, locale, t("Unknown client")).map(
+    (group) => ({
+      id: group.id,
+      name: group.name,
+      color: clients.find((client) => client.id === group.id)?.color,
+      projectIds: group.projects.map((project) => project.id),
+    }),
   );
   const activeFilterCount = [
     showTeam && values.memberIds.length > 0,
@@ -740,6 +807,7 @@ export function ReportFiltersBar({
         label={t("Project")}
         icon={<Folder aria-hidden="true" className={reportFilterIconClassName} />}
         options={projectOptions}
+        projectGroups={projectGroups}
         values={values.projectIds}
         onChange={(selectedProjectIds) => {
           const projectIds =
