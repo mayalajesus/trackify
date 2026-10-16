@@ -86,9 +86,6 @@ function IntegrationsPage() {
                 <TrelloLogo />
                 <div className="min-w-0">
                   <Typography type="body-sm">Trello</Typography>
-                  <Typography type="body-xs" color="muted">
-                    Extensão Trackify
-                  </Typography>
                 </div>
               </div>
             </Table.Cell>
@@ -134,12 +131,9 @@ function IntegrationsPage() {
           Para conectar, abra a extensão Trackify no navegador e selecione “Conectar ao Trackify”.
         </Typography>
       )}
-      {!unknown && connected && (
+      {!unknown && connected && connections.data!.sessions > 1 && (
         <Typography type="body-sm" color="muted">
-          {connections.data!.sessions > 1
-            ? `${connections.data!.sessions} conexões ativas. Desconectar encerra todas as conexões da extensão nesta conta.`
-            : ""}{" "}
-          Desconectar não encerra o cronômetro nem apaga registros de horas.
+          {`${connections.data!.sessions} conexões ativas. Desconectar encerra todas as conexões da extensão nesta conta.`}
         </Typography>
       )}
     </div>
