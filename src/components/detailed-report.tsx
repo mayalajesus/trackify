@@ -5,6 +5,7 @@ import { ArrowRotateLeft, CircleInfo, Thunderbolt } from "@gravity-ui/icons";
 import { useMemo } from "react";
 import { DataTable } from "@/components/data-table";
 import { ProfileAvatar } from "@/components/profile-avatar";
+import { ClientColorLabel } from "@/components/project-color";
 import { ReportTableWidget } from "@/components/report-widget";
 import type { Client, Member, Project, TimeEntry } from "@/lib/domain";
 import { formatClock, getEntryEndDayOffset } from "@/lib/format";
@@ -62,6 +63,7 @@ export function DetailedReport({
       name: project?.name ?? t(id === "none" ? "No project" : "Unknown project"),
       client: client?.name ?? t("No client"),
       color: project ? clientColorValue(client?.color) : "var(--muted)",
+      clientColor: client ? clientColorValue(client.color) : undefined,
     };
   };
 
@@ -179,13 +181,15 @@ export function DetailedReport({
                         </Tooltip>
                       ) : null}
                       <div className="mt-1 flex min-w-0 items-center gap-1 text-muted">
-                        <span
-                          aria-hidden="true"
-                          className="size-1.5 shrink-0 rounded-full"
-                          style={{ backgroundColor: project.color }}
-                        />
                         <span className="truncate" title={`${project.name} | ${project.client}`}>
-                          {project.name} | {project.client}
+                          {project.name} |{" "}
+                          {project.clientColor ? (
+                            <ClientColorLabel color={project.clientColor}>
+                              {project.client}
+                            </ClientColorLabel>
+                          ) : (
+                            project.client
+                          )}
                         </span>
                       </div>
                     </div>
@@ -251,7 +255,16 @@ export function DetailedReport({
                                   title={`${segment.name} – ${segment.client}`}
                                 >
                                   {segment.name}{" "}
-                                  <span className="text-muted">– {segment.client}</span>
+                                  <span className="text-muted">
+                                    –{" "}
+                                    {segment.clientColor ? (
+                                      <ClientColorLabel color={segment.clientColor}>
+                                        {segment.client}
+                                      </ClientColorLabel>
+                                    ) : (
+                                      segment.client
+                                    )}
+                                  </span>
                                 </span>
                               </span>
                               <span className="tabular-nums">{formatClock(segment.seconds)}</span>

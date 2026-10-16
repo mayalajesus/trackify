@@ -49,6 +49,7 @@ import {
 import type { Client, Member, Project } from "@/lib/domain";
 import type { CurrencyCode } from "@/lib/billing";
 import { groupProjectsByClient } from "@/lib/project-groups";
+import { clientColorValue } from "@/lib/client-colors";
 import { sortClientsByName } from "@/lib/client-order";
 
 export type ReportFilterKey = "member" | "client" | "project" | "description";
@@ -66,6 +67,7 @@ export type ReportFilterOption = {
   id: string;
   label: string;
   description?: string;
+  clientColor?: string;
   billable?: boolean | null;
   project?: Pick<Project, "color"> | null;
 };
@@ -79,7 +81,7 @@ type ReportProjectGroup = {
 
 const reportFilterIconClassName = "size-4 shrink-0";
 
-function ReportFilterValue({ children }: { children: string }) {
+function ReportFilterValue({ children }: { children: ReactNode }) {
   return (
     <Typography
       slot="description"
@@ -279,6 +281,11 @@ function ReportFilterDropdown({
     );
   }, [contains, options, query, searchable]);
   const selectionMode = multiple ? "multiple" : "single";
+  const selectedOption =
+    values.length === 1 ? options.find((option) => option.id === values[0]) : undefined;
+  const selectedGroup = selectedOption
+    ? projectGroups?.find((group) => group.projectIds.includes(selectedOption.id))
+    : undefined;
 
   return (
     <div className={className ? `min-w-0 ${className}` : "min-w-0"}>
@@ -292,11 +299,24 @@ function ReportFilterDropdown({
         >
           <ReportFilterIcon>{icon}</ReportFilterIcon>
           <ReportFilterValue>
-            {selectedLabel(
-              options,
-              values,
-              allLabel ?? label,
-              t("{count} selected", { count: values.length }),
+            {selectedGroup && selectedOption ? (
+              <>
+                {selectedOption.label}{" "}
+                <ClientColorLabel color={selectedGroup.color}>
+                  {selectedGroup.name}
+                </ClientColorLabel>
+              </>
+            ) : selectedOption?.clientColor ? (
+              <ClientColorLabel color={selectedOption.clientColor}>
+                {selectedOption.label}
+              </ClientColorLabel>
+            ) : (
+              selectedLabel(
+                options,
+                values,
+                allLabel ?? label,
+                t("{count} selected", { count: values.length }),
+              )
             )}
           </ReportFilterValue>
           <span aria-hidden="true" className="ms-auto flex h-5 shrink-0 items-center gap-2">
@@ -417,6 +437,12 @@ function ReportFilterDropdown({
                       <Label className="flex items-center gap-2">
                         <BillableIndicator billable={option.billable} mode="icon" />
                         {option.label}
+                      </Label>
+                    ) : option.clientColor ? (
+                      <Label>
+                        <ClientColorLabel color={option.clientColor}>
+                          {option.label}
+                        </ClientColorLabel>
                       </Label>
                     ) : option.project ? (
                       <ProjectLabel project={option.project} label={option.label} />
@@ -736,6 +762,7 @@ export function ReportFiltersBar({
         id: client.id,
         label: client.name,
         description: client.contact,
+        clientColor: clientColorValue(client.color),
       })),
     [clients, locale],
   );
