@@ -461,3 +461,99 @@
     padding: 16px;
   }
 }
+
+/* Extension authorization uses the same controls, with a compact hierarchy. */
+.auth-page--extension .auth-card {
+  max-width: 448px;
+  padding: 28px 24px 24px;
+}
+.extension-connect-brand {
+  display: block;
+  width: 149px;
+  height: 33px;
+  background: url("/brand/trackify-logo.svg") center / contain no-repeat;
+  margin-bottom: 28px;
+}
+.dark .extension-connect-brand,
+[data-theme="dark"] .extension-connect-brand {
+  filter: brightness(0) invert(1);
+}
+.auth-page--extension .auth-header {
+  text-align: left;
+  margin-bottom: 24px;
+}
+.auth-page--extension .auth-title {
+  text-align: left;
+  font-size: 24px;
+  line-height: 32px;
+  letter-spacing: -0.4px;
+}
+.auth-page--extension .auth-description {
+  text-align: left;
+  line-height: 20px;
+  margin-top: 8px;
+}
+.extension-connect-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.extension-connect-account {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px;
+  background: var(--background);
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 20px;
+}
+.extension-connect-account span {
+  color: var(--muted);
+}
+.extension-connect-account strong {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.extension-connect-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.extension-connect-status svg {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+.extension-connect-status p,
+.extension-connect-hint {
+  font-size: 14px;
+  line-height: 20px;
+}
+.extension-connect-error {
+  color: var(--danger);
+}
+.extension-connect-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.extension-connect-actions .button {
+  width: 100%;
+  padding-inline: 12px;
+}
+.extension-connect-actions .button--secondary {
+  color: var(--foreground);
+}
+.auth-page--extension .auth-legal-links {
+  margin-top: 24px;
+  font-size: 12px;
+  line-height: 18px;
+}
+@media (max-width: 380px) {
+  .extension-connect-actions {
+    grid-template-columns: 1fr;
+  }
+  .extension-connect-actions .button:first-child {
+    order: 1;
+  }
+}

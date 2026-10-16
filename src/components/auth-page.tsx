@@ -21,7 +21,7 @@ export function AuthPage({
   children,
   variant = "default",
 }: {
-  variant?: "default" | "login" | "signup" | "reset" | "confirmation";
+  variant?: "default" | "login" | "signup" | "reset" | "confirmation" | "extension";
   title: string;
   description: string;
   children: ReactNode;
@@ -29,6 +29,9 @@ export function AuthPage({
   return (
     <main data-page="auth" className={`auth-page auth-page--${variant}`}>
       <Card className="auth-card">
+        {variant === "extension" && (
+          <div className="extension-connect-brand" role="img" aria-label="Trackify" />
+        )}
         <div className="auth-header">
           <Typography type="h1" className="auth-title" align="center">
             {title}

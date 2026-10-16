@@ -2,6 +2,7 @@ import { Button } from "@heroui/react/button";
 import { Typography } from "@heroui/react/typography";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { CircleCheck, ShieldCheck } from "@gravity-ui/icons";
 import { AuthPage } from "@/components/auth-page";
 import { useAuth } from "@/lib/auth-context";
 import { getAuthClient } from "@/lib/auth-client";
@@ -52,8 +53,13 @@ function ExtensionConnectPage() {
 
   return (
     <AuthPage
-      title="Conectar a extensão Trackify"
-      description="Use sua conta do Trackify no Chrome."
+      variant="extension"
+      title={done ? "Extensão conectada" : "Conectar extensão"}
+      description={
+        done
+          ? "Tudo pronto para registrar seu tempo no Trello."
+          : "Registre o tempo dos seus cartões do Trello no Trackify."
+      }
     >
       {!request ? (
         <Typography type="body-sm">
@@ -67,34 +73,52 @@ function ExtensionConnectPage() {
           Entrar no Trackify
         </Button>
       ) : done ? (
-        <Typography type="body-sm" role="status">
-          Extensão conectada. Você pode fechar esta aba e abrir o Trackify no menu de extensões.
-        </Typography>
+        <div className="extension-connect-content">
+          <div className="extension-connect-status" role="status">
+            <CircleCheck aria-hidden="true" width={24} height={24} />
+            <Typography type="body-sm">
+              Abra o Trackify no menu de extensões do navegador ou volte ao seu cartão do Trello
+              para começar. Você já pode fechar esta aba.
+            </Typography>
+          </div>
+          <Button className="w-full" onPress={() => window.location.assign("/tracker")}>
+            Ir para o Trackify
+          </Button>
+        </div>
       ) : (
-        <div className="flex flex-col gap-4">
-          <Typography type="body-sm">
-            Conectar como {session.user.email}? A extensão receberá uma sessão temporária da sua
-            conta. Sua senha não será compartilhada.
-          </Typography>
-          <Typography type="body-sm" color="muted">
-            A conexão expira em até 15 minutos ou ao encerrar o navegador. Você pode desconectar
-            pelo painel da extensão.
+        <div className="extension-connect-content">
+          <div className="extension-connect-account">
+            <span>Conectar com esta conta</span>
+            <strong>{session.user.email}</strong>
+          </div>
+          <div className="extension-connect-status">
+            <ShieldCheck aria-hidden="true" width={24} height={24} />
+            <Typography type="body-sm">
+              A extensão poderá controlar o cronômetro e consultar seus projetos. Sua senha não será
+              compartilhada.
+            </Typography>
+          </div>
+          <Typography type="body-sm" color="muted" className="extension-connect-hint">
+            A conexão é renovada automaticamente, mesmo ao fechar o navegador. Você pode desconectar
+            quando quiser pelo painel da extensão.
           </Typography>
           {error && (
-            <Typography type="body-sm" role="alert">
+            <Typography type="body-sm" role="alert" className="extension-connect-error">
               {error}
             </Typography>
           )}
-          <Button className="w-full" isDisabled={busy} onPress={() => void connect()}>
-            {busy ? "Conectando…" : "Autorizar conexão"}
-          </Button>
-          <Button
-            variant="secondary"
-            isDisabled={busy}
-            onPress={() => window.location.assign("/tracker")}
-          >
-            Cancelar
-          </Button>
+          <div className="extension-connect-actions">
+            <Button
+              variant="secondary"
+              isDisabled={busy}
+              onPress={() => window.location.assign("/tracker")}
+            >
+              Cancelar
+            </Button>
+            <Button isDisabled={busy} onPress={() => void connect()}>
+              {busy ? "Conectando…" : "Autorizar conexão"}
+            </Button>
+          </div>
         </div>
       )}
     </AuthPage>
