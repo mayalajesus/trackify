@@ -11,6 +11,7 @@ const READ_OPERATIONS = new Set([
   "loadReportEntries",
   "getActiveTimer",
   "getExtensionContext",
+  "getOwnExtensionConnections",
   "getAccountDeletionStatus",
   "listTaskInvitationResponses",
 ]);

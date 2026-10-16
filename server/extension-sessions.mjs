@@ -90,3 +90,23 @@ export async function revokeExtensionSession(client, user) {
   ]);
   return { revoked: true };
 }
+
+export async function getOwnExtensionConnections(client, user) {
+  if (user.extensionSessionId) throw new DataApiError(403, "Use sua conta do Trackify.");
+  const result = await client.query(
+    `select count(*)::int as sessions from public.extension_sessions
+     where user_id=$1 and revoked_at is null and expires_at>now()`,
+    [user.id],
+  );
+  return { sessions: Number(result.rows[0]?.sessions ?? 0) };
+}
+
+export async function disconnectOwnExtensions(client, user) {
+  if (user.extensionSessionId) throw new DataApiError(403, "Use sua conta do Trackify.");
+  await client.query(
+    `update public.extension_sessions set revoked_at=now()
+     where user_id=$1 and revoked_at is null`,
+    [user.id],
+  );
+  return { sessions: 0 };
+}

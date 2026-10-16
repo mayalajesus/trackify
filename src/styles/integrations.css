@@ -71,3 +71,23 @@
     line-height: 38px;
   }
 }
+
+/* Extension sessions belong to an account, not a Trello workspace. */
+.integrations-table .table__column:nth-child(1) {
+  width: 30%;
+}
+.integrations-table .table__column:nth-child(2) {
+  width: 40%;
+}
+.integrations-table .table__column:nth-child(3) {
+  width: 15%;
+}
+.integrations-table .table__column:last-child {
+  width: 15%;
+}
+.integrations-table .table__cell:nth-child(2) {
+  overflow-wrap: anywhere;
+}
+.integrations-table .table__cell:last-child {
+  text-align: right;
+}

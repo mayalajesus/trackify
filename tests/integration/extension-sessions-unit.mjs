@@ -70,3 +70,29 @@ test("renewal refuses revoked/expired sessions even after authentication", async
     refreshExtensionSession({ query: async () => ({ rows: [] }) }, { extensionSessionId: "s" }),
   );
 });
+
+test("web integration status is account-scoped and never exposes credentials", async () => {
+  const { getOwnExtensionConnections, disconnectOwnExtensions } =
+    await import("../../server/extension-sessions.mjs");
+  const calls = [];
+  const client = {
+    query: async (sql, params) => {
+      calls.push({ sql, params });
+      return { rows: [{ sessions: 2, refresh_hash: "never expose" }] };
+    },
+  };
+  const user = { id: "own-user" };
+  assert.deepEqual(await getOwnExtensionConnections(client, user), { sessions: 2 });
+  assert.deepEqual(calls[0].params, ["own-user"]);
+  assert.match(calls[0].sql, /revoked_at is null and expires_at>now\(\)/);
+  assert.deepEqual(await disconnectOwnExtensions(client, user), { sessions: 0 });
+  assert.deepEqual(calls[1].params, ["own-user"]);
+  assert.match(calls[1].sql, /where user_id=\$1/);
+  await assert.rejects(() =>
+    getOwnExtensionConnections(client, { id: "own-user", extensionSessionId: "s" }),
+  );
+  await assert.rejects(() =>
+    disconnectOwnExtensions(client, { id: "own-user", extensionSessionId: "s" }),
+  );
+  assert.equal(calls.length, 2);
+});

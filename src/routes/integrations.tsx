@@ -1,29 +1,16 @@
 import { Button } from "@heroui/react/button";
-import { Chip } from "@heroui/react/chip";
-import { Switch } from "@heroui/react/switch";
 import { Table } from "@heroui/react/table";
 import { Typography } from "@heroui/react/typography";
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowRotateLeft } from "@gravity-ui/icons";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DataTable } from "@/components/data-table";
 import { PageHeader } from "@/components/page-header";
-import { formatLocalDateTime } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
-import { trelloBoards, trelloCards, trelloLists, trelloWorkspaces } from "@/lib/mock-data";
-import { useStore } from "@/lib/store";
+import { useAuth } from "@/lib/auth-context";
+import { request } from "@/lib/api-data-source";
 
 export const Route = createFileRoute("/integrations")({
-  head: () => ({
-    meta: [
-      { title: "Integrations — Trackify" },
-      {
-        name: "description",
-        content: "Connect Trackify to Trello and sync cards into tracked tasks.",
-      },
-      { property: "og:title", content: "Integrations — Trackify" },
-      { property: "og:description", content: "Trello sync for your time tracking." },
-    ],
-  }),
+  head: () => ({ meta: [{ title: "Integrações — Trackify" }] }),
   component: IntegrationsPage,
 });
 
@@ -37,58 +24,59 @@ function TrelloLogo() {
   );
 }
 
+type Connection = { sessions: number };
+async function connectionRequest(operation: string): Promise<Connection> {
+  const result = await request<Connection>(operation);
+  if (!result.success) throw new Error(result.error);
+  if (!Number.isInteger(result.data.sessions) || result.data.sessions < 0)
+    throw new Error("Não foi possível verificar a conexão da extensão.");
+  return result.data;
+}
+
 function IntegrationsPage() {
-  const { trello, can, currentMember, setTrello } = useStore();
-  const { locale, t } = useI18n();
-  const canManageIntegrations = can("manage-integrations");
-  const connected =
-    trello.status === "connected" || trello.status === "synced" || trello.status === "syncing";
-  const toggleSelected = connected || trello.status === "connecting";
-
-  const connect = (on: boolean) => {
-    if (!on) {
-      setTrello({ status: "disconnected", workspace: null, board: null, lists: [], cards: [] });
-      return;
-    }
-    setTrello({ status: "connecting" });
-    setTimeout(() => {
-      setTrello({
-        status: "connected",
-        workspace: trelloWorkspaces[0] ?? null,
-        board: trelloBoards["Agency"]?.[0] ?? null,
-        lists: trelloLists.slice(0, 2),
-        cards: trelloCards.slice(0, 4),
-      });
-    }, 700);
-  };
-
-  const sync = () => {
-    setTrello({ status: "syncing" });
-    setTimeout(
-      () =>
-        setTrello({
-          status: "synced",
-          cards: trelloCards,
-          lastSync: formatLocalDateTime(new Date(), locale),
-        }),
-      900,
-    );
-  };
-
+  const { t } = useI18n();
+  const { session } = useAuth();
+  const queryClient = useQueryClient();
+  const queryKey = ["extension-connections", session?.user.id];
+  const disconnect = useMutation({
+    mutationFn: () => connectionRequest("disconnectOwnExtensions"),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey });
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey });
+    },
+  });
+  const connections = useQuery({
+    queryKey,
+    queryFn: () => connectionRequest("getOwnExtensionConnections"),
+    enabled: Boolean(session) && !disconnect.isPending,
+    refetchInterval: 10000,
+    refetchOnWindowFocus: "always",
+    retry: 1,
+  });
+  const connected = (connections.data?.sessions ?? 0) > 0;
+  const unknown = connections.isError || connections.isPending;
+  const error = disconnect.error ?? connections.error;
   return (
     <div className="integrations-page">
       <PageHeader
         title={t("Integrations")}
-        description={t("Bring tasks from the tools you already use.")}
+        description="Gerencie a conexão da extensão com sua conta."
       />
-
-      <DataTable className="integrations-table" label={t("Integrations")} minWidth="min-w-[760px]">
+      {error && (
+        <Typography type="body-sm" role="alert">
+          {error.message}
+        </Typography>
+      )}
+      <DataTable className="integrations-table" label={t("Integrations")} minWidth="min-w-[600px]">
         <Table.Header>
           <Table.Column isRowHeader>{t("Integrations")}</Table.Column>
           <Table.Column>{t("Account")}</Table.Column>
-          <Table.Column>{t("Workspace")}</Table.Column>
           <Table.Column>{t("Status")}</Table.Column>
-          <Table.Column>{t("last sync")}</Table.Column>
           <Table.Column aria-label={t("Actions")}>{""}</Table.Column>
         </Table.Header>
         <Table.Body>
@@ -98,70 +86,62 @@ function IntegrationsPage() {
                 <TrelloLogo />
                 <div className="min-w-0">
                   <Typography type="body-sm">Trello</Typography>
+                  <Typography type="body-xs" color="muted">
+                    Extensão Trackify
+                  </Typography>
                 </div>
               </div>
             </Table.Cell>
-            <Table.Cell className="whitespace-nowrap">
-              {connected ? (currentMember?.email ?? "—") : "—"}
-            </Table.Cell>
-            <Table.Cell className="whitespace-nowrap">{t("Workspace")}</Table.Cell>
+            <Table.Cell>{session?.user.email ?? "—"}</Table.Cell>
             <Table.Cell>
               <span className="integration-status" role="status">
-                {t(trello.status)}
+                {connections.isPending
+                  ? "Verificando…"
+                  : connections.isError
+                    ? "Indisponível"
+                    : connected
+                      ? "Conectada"
+                      : "Desconectada"}
               </span>
             </Table.Cell>
-            <Table.Cell className="whitespace-nowrap">{trello.lastSync ?? t("never")}</Table.Cell>
             <Table.Cell>
-              {canManageIntegrations ? (
-                <div className="flex items-center justify-end gap-2">
-                  {connected ? (
-                    <Button
-                      aria-label={t("Sync now")}
-                      size="sm"
-                      variant="secondary"
-                      isPending={trello.status === "syncing"}
-                      onPress={sync}
-                    >
-                      <ArrowRotateLeft className="size-4" />
-                      {t("Sync now")}
-                    </Button>
-                  ) : null}
-                  <Switch
-                    aria-label={t("Connect Trello")}
-                    isSelected={toggleSelected}
-                    isDisabled={trello.status === "connecting" || trello.status === "syncing"}
-                    onChange={connect}
-                  >
-                    <Switch.Control>
-                      <Switch.Thumb />
-                    </Switch.Control>
-                  </Switch>
-                </div>
-              ) : null}
+              {connected && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  isPending={disconnect.isPending}
+                  onPress={() => disconnect.mutate()}
+                >
+                  Desconectar
+                </Button>
+              )}
+              {connections.isError && !connected && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  isPending={connections.isFetching}
+                  onPress={() => void connections.refetch()}
+                >
+                  Tentar novamente
+                </Button>
+              )}
             </Table.Cell>
           </Table.Row>
         </Table.Body>
       </DataTable>
-
-      {connected ? (
-        <div className="mt-5 border-t border-divider pt-5">
-          <Typography type="body-xs" color="muted">
-            {trello.workspace} · {trello.board}
-          </Typography>
-          <ul className="mt-3 overflow-hidden">
-            {trello.cards.map((card) => (
-              <li key={card} className="flex items-center justify-between gap-3 px-4 py-3">
-                <Typography type="body-sm" weight="medium">
-                  {card}
-                </Typography>
-                <Chip size="sm" variant="soft">
-                  {trello.board}
-                </Chip>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+      {!unknown && !connected && (
+        <Typography type="body-sm" color="muted">
+          Para conectar, abra a extensão Trackify no navegador e selecione “Conectar ao Trackify”.
+        </Typography>
+      )}
+      {!unknown && connected && (
+        <Typography type="body-sm" color="muted">
+          {connections.data!.sessions > 1
+            ? `${connections.data!.sessions} conexões ativas. Desconectar encerra todas as conexões da extensão nesta conta.`
+            : ""}{" "}
+          Desconectar não encerra o cronômetro nem apaga registros de horas.
+        </Typography>
+      )}
     </div>
   );
 }

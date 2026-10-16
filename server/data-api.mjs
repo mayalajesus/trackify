@@ -14,6 +14,8 @@ import {
   createExtensionSession,
   refreshExtensionSession,
   revokeExtensionSession,
+  getOwnExtensionConnections,
+  disconnectOwnExtensions,
 } from "./extension-sessions.mjs";
 import { DataApiError } from "./data-api-error.mjs";
 import { requirePayloadUser, requireWorkspaceAccess } from "./data/access.mjs";
@@ -107,7 +109,11 @@ async function operation(request, user, config, body) {
     await enforceUserRateLimits(client, user.id, operationName, new Date(), { includesUpload });
     if (operationName === "revokeExtensionSession")
       return await revokeExtensionSession(client, user);
+    if (operationName === "disconnectOwnExtensions")
+      return await disconnectOwnExtensions(client, user);
     await enforceAccountLifecycle(client, user.id, operationName);
+    if (operationName === "getOwnExtensionConnections")
+      return await getOwnExtensionConnections(client, user);
     if (operationName === "createExtensionSession")
       return await createExtensionSession(
         client,
