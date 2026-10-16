@@ -1,4 +1,3 @@
-import { ColorSwatch } from "@heroui/react/color-swatch";
 import { Button } from "@heroui/react/button";
 import { Description } from "@heroui/react/description";
 import { FieldError } from "@heroui/react/field-error";
@@ -26,6 +25,7 @@ import {
 } from "@gravity-ui/icons";
 import { useState } from "react";
 import { ClientColorPicker } from "@/components/client-color-picker";
+import { ClientColorLabel } from "@/components/project-color";
 import { clientColorValue, defaultClientColor } from "@/lib/client-colors";
 import { ClientMembersModal } from "@/components/client-members-modal";
 import { Tabs } from "@heroui/react/tabs";
@@ -244,14 +244,7 @@ function ClientsPage() {
               .map((client) => (
                 <Table.Row key={client.id}>
                   <Table.Cell>
-                    <span className="inline-flex items-center gap-2">
-                      <ColorSwatch
-                        aria-label={t("Client color")}
-                        className="size-2 shrink-0 rounded-full"
-                        color={clientColorValue(client.color)}
-                      />
-                      <span>{client.name}</span>
-                    </span>
+                    <ClientColorLabel color={client.color}>{client.name}</ClientColorLabel>
                     {client.status === "on-hold" ? (
                       <span className="ml-2 text-xs text-muted">{t("Inactive")}</span>
                     ) : null}
