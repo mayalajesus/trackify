@@ -1,3 +1,4 @@
+import { networkErrorMessage } from "./network-errors";
 import { createContext, useContext, useEffect, useMemo } from "react";
 import type { ReactNode } from "react";
 
@@ -739,6 +740,11 @@ const ptBR: Record<string, string> = {
   "Wait for workspace creation to finish.": "Aguarde a conclusão da criação do workspace.",
   "Could not save your pending changes.": "Não foi possível salvar suas alterações pendentes.",
   "Your account session changed. Try again.": "A sessão da sua conta mudou. Tente novamente.",
+  "You are offline. Reconnect to the internet and try again.":
+    "Você está sem conexão com a internet. Reconecte-se e tente novamente.",
+  "Unable to connect to the server. Check your connection and try again.":
+    "Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.",
+  "The data request timed out.": "A conexão demorou para responder. Tente novamente.",
   "The server returned an invalid response.": "O servidor retornou uma resposta inválida.",
   "Choose an active account in this workspace.": "Escolha uma conta ativa neste workspace.",
   "Stop the active timer before changing accounts.":
@@ -941,7 +947,7 @@ const ptBR: Record<string, string> = {
   "The original task timer is no longer active.":
     "O cronômetro original desta tarefa não está mais ativo.",
   "Click to add a note": "Inserir uma observação",
-  "Edit description": "Editar descrição",
+  "Edit description": "Editar observação",
   "Add description": "Adicionar descrição",
   "H:MM": "H:MM",
   "Delete “{task}”? This action cannot be undone.":
@@ -1532,6 +1538,7 @@ export function translate(
   locale: Locale = defaultLocale,
   values?: Record<string, MessageValue>,
 ): string {
+  key = networkErrorMessage(key);
   return interpolate(locale === "pt-BR" ? (ptBR[key] ?? key) : (enUS[key] ?? key), values);
 }
 

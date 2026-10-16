@@ -1,3 +1,4 @@
+import { networkErrorMessage, offlineMessage } from "./network-errors";
 import type { Session } from "@supabase/supabase-js";
 import { getAuthClient } from "./auth-client";
 import { defaultLocale } from "./i18n";
@@ -22,7 +23,7 @@ function fail<T>(
   error: string,
   metadata: { code?: string; retryAfter?: number; requestId?: string } = {},
 ): DataSourceResult<T> {
-  return { success: false, error, ...metadata };
+  return { success: false, error: networkErrorMessage(error), ...metadata };
 }
 
 function ok<T>(data: T): DataSourceResult<T> {
@@ -54,6 +55,7 @@ export async function request<T>(
   operation: string,
   payload: Record<string, unknown> = {},
 ): Promise<DataSourceResult<T>> {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return fail(offlineMessage);
   const currentSession = await session();
   if (!currentSession.success) return fail<T>(currentSession.error);
 
