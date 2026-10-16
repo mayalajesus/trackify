@@ -390,7 +390,7 @@ function ReportMultiSelect(props: {
   return <ReportFilterDropdown {...props} searchable multiple />;
 }
 
-function ReportPeriodPicker({
+export function ReportPeriodPicker({
   preset,
   range,
   today,
@@ -400,6 +400,7 @@ function ReportPeriodPicker({
   previousLabel,
   nextLabel,
   onPeriodShift,
+  trackerTriggerLabel,
   onChange,
 }: {
   preset: ReportPeriodPreset;
@@ -411,6 +412,7 @@ function ReportPeriodPicker({
   previousLabel?: string;
   nextLabel?: string;
   onPeriodShift?: (direction: -1 | 1) => void;
+  trackerTriggerLabel?: string;
   onChange: (preset: ReportPeriodPreset, range: DateRange) => void;
 }) {
   const { locale, t } = useI18n();
@@ -432,7 +434,7 @@ function ReportPeriodPicker({
     <I18nProvider locale={locale}>
       <DateRangePicker
         data-custom-period={preset === "custom" || undefined}
-        className={`report-period-picker ${weeklyNavigation ? "w-fit min-w-0 shrink-0" : "w-60 min-w-60 shrink-0"}`}
+        className={`report-period-picker ${weeklyNavigation || trackerTriggerLabel ? "w-fit min-w-0 shrink-0" : "w-60 min-w-60 shrink-0"}`}
         aria-label={t("Date range: {range}", { range: formatReportPeriod(range, locale) })}
         value={calendarValue}
         isOpen={isOpen}
@@ -448,53 +450,66 @@ function ReportPeriodPicker({
       >
         <Label className="sr-only">{t("Report period")}</Label>
         <div className="report-period-control flex min-w-0 items-center">
-          <DateField.Group
-            className={`h-9 min-w-0 cursor-pointer gap-0 overflow-hidden p-1 ${
-              weeklyNavigation
-                ? "w-fit flex-none rounded-s-[calc(var(--radius)*3)] rounded-e-none"
-                : "w-fit rounded-[calc(var(--radius)*3)]"
-            }`}
-            variant="secondary"
-            aria-label={t("Selected report period")}
-            onClick={(event) => {
-              if (event.target instanceof Element && event.target.closest("button")) return;
-              setIsOpen(true);
-            }}
-          >
-            <DateField.Prefix className="pointer-events-auto ms-1 me-0 shrink-0 p-0">
-              <DateRangePicker.Trigger
-                ref={triggerRef}
-                className={`flex h-7 min-w-7 shrink-0 items-center justify-center gap-2 ${presetLabel ? "px-2" : "w-7 px-0"}`}
-                aria-label={t("Open {label} calendar", { label: presetLabel ?? t("Date range") })}
-              >
-                <Calendar aria-hidden="true" className={reportFilterIconClassName} />
-                {presetLabel ? (
-                  <span className="whitespace-nowrap text-sm text-field-foreground">
-                    {presetLabel}
-                  </span>
-                ) : null}
-              </DateRangePicker.Trigger>
-            </DateField.Prefix>
-            <div className={presetLabel ? "hidden" : "contents"}>
-              <DateField.Input
-                slot="start"
-                className="w-fit min-w-0 flex-none gap-0 overflow-hidden p-0 whitespace-nowrap"
-              >
-                {(segment) => (
-                  <DateField.Segment segment={segment} className="px-0 whitespace-nowrap" />
-                )}
-              </DateField.Input>
-              <DateRangePicker.RangeSeparator className="px-1">–</DateRangePicker.RangeSeparator>
-              <DateField.Input
-                slot="end"
-                className="w-fit min-w-0 flex-none gap-0 overflow-hidden p-0 pe-2 whitespace-nowrap"
-              >
-                {(segment) => (
-                  <DateField.Segment segment={segment} className="px-0 whitespace-nowrap" />
-                )}
-              </DateField.Input>
-            </div>
-          </DateField.Group>
+          {trackerTriggerLabel ? (
+            <DateRangePicker.Trigger
+              ref={triggerRef}
+              aria-label={t("Open period calendar: {label}", { label: trackerTriggerLabel })}
+              className="tracker-period-trigger flex h-9 w-fit min-w-0 max-w-full shrink-0 items-center justify-center gap-2 rounded-full px-3 text-center"
+            >
+              <Calendar aria-hidden="true" className="size-4 shrink-0" />
+              <span className="min-w-0 max-w-full truncate whitespace-nowrap">
+                {trackerTriggerLabel}
+              </span>
+            </DateRangePicker.Trigger>
+          ) : (
+            <DateField.Group
+              className={`h-9 min-w-0 cursor-pointer gap-0 overflow-hidden p-1 ${
+                weeklyNavigation
+                  ? "w-fit flex-none rounded-s-[calc(var(--radius)*3)] rounded-e-none"
+                  : "w-fit rounded-[calc(var(--radius)*3)]"
+              }`}
+              variant="secondary"
+              aria-label={t("Selected report period")}
+              onClick={(event) => {
+                if (event.target instanceof Element && event.target.closest("button")) return;
+                setIsOpen(true);
+              }}
+            >
+              <DateField.Prefix className="pointer-events-auto ms-1 me-0 shrink-0 p-0">
+                <DateRangePicker.Trigger
+                  ref={triggerRef}
+                  className={`flex h-7 min-w-7 shrink-0 items-center justify-center gap-2 ${presetLabel ? "px-2" : "w-7 px-0"}`}
+                  aria-label={t("Open {label} calendar", { label: presetLabel ?? t("Date range") })}
+                >
+                  <Calendar aria-hidden="true" className={reportFilterIconClassName} />
+                  {presetLabel ? (
+                    <span className="whitespace-nowrap text-sm text-field-foreground">
+                      {presetLabel}
+                    </span>
+                  ) : null}
+                </DateRangePicker.Trigger>
+              </DateField.Prefix>
+              <div className={presetLabel ? "hidden" : "contents"}>
+                <DateField.Input
+                  slot="start"
+                  className="w-fit min-w-0 flex-none gap-0 overflow-hidden p-0 whitespace-nowrap"
+                >
+                  {(segment) => (
+                    <DateField.Segment segment={segment} className="px-0 whitespace-nowrap" />
+                  )}
+                </DateField.Input>
+                <DateRangePicker.RangeSeparator className="px-1">–</DateRangePicker.RangeSeparator>
+                <DateField.Input
+                  slot="end"
+                  className="w-fit min-w-0 flex-none gap-0 overflow-hidden p-0 pe-2 whitespace-nowrap"
+                >
+                  {(segment) => (
+                    <DateField.Segment segment={segment} className="px-0 whitespace-nowrap" />
+                  )}
+                </DateField.Input>
+              </div>
+            </DateField.Group>
+          )}
           {weeklyNavigation && navigationLabel && previousLabel && nextLabel && onPeriodShift ? (
             <ReportPeriodNavigation
               navigationLabel={navigationLabel}

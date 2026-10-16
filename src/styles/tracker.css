@@ -171,6 +171,7 @@
   border: 1px solid var(--accent);
   color: var(--accent);
   padding-inline: 12px;
+  font-size: 14px;
 }
 .tracker-timer {
   padding: 6px;
@@ -837,6 +838,8 @@
     flex: 1;
   }
   .tracker-period-filter > .popover__trigger,
+  .tracker-period-filter > .report-period-picker,
+  .tracker-period-filter .report-period-control,
   .tracker-period-filter .tracker-period-trigger {
     width: 100%;
   }
