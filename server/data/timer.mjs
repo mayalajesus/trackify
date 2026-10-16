@@ -14,8 +14,8 @@ export async function timerWithOwner(client, userId, workspaceId, row) {
   return timer;
 }
 
-export async function clearOwnTimer(client, userId, workspaceId) {
-  await client.query("begin");
+export async function clearOwnTimer(client, userId, workspaceId, manageTransaction = true) {
+  if (manageTransaction) await client.query("begin");
   try {
     await client.query("select id from public.workspaces where id=$1 for update", [workspaceId]);
     const result = await client.query(
@@ -71,9 +71,9 @@ export async function clearOwnTimer(client, userId, workspaceId) {
         workspaceId,
       ]);
     }
-    await client.query("commit");
+    if (manageTransaction) await client.query("commit");
   } catch (error) {
-    await client.query("rollback");
+    if (manageTransaction) await client.query("rollback");
     throw error;
   }
 }

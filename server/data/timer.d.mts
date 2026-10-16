@@ -15,6 +15,7 @@ export function clearOwnTimer(
   client: QueryClient,
   userId: string,
   workspaceId: string,
+  manageTransaction?: boolean,
 ): Promise<void>;
 
 export function requireSharedTimerSource(

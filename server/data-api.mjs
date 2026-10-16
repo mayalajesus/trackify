@@ -47,6 +47,7 @@ import {
 import { createWorkspace } from "./data/workspaces.mjs";
 import { deleteWorkspace } from "./data/delete-workspace.mjs";
 import { enforceExtensionOperation, isAllowedExtensionOrigin } from "./extension-origin.mjs";
+import { extensionContext, extensionTimerAction } from "./data/extension.mjs";
 import {
   captureServerError,
   initializeServerObservability,
@@ -102,6 +103,9 @@ async function operation(request, user, config, body) {
     if (body.operation === "getExtensionSession") {
       return { version: 1, user: { id: user.id, name: user.name ?? "", email: user.email } };
     }
+    if (body.operation === "getExtensionContext") return await extensionContext(client, user, body);
+    if (body.operation === "extensionTimerAction")
+      return await extensionTimerAction(client, user, body);
     if (body.operation === "getAccountDeletionStatus") {
       return await getAccountDeletionStatus(client, user.id);
     }

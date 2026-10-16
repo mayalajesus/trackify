@@ -31,10 +31,15 @@ describe("extension authorization boundaries", () => {
     }
     expect(isAllowedExtensionOrigin(`chrome-extension://${id}`)).toBe(false);
   });
-  it("limits browser extension requests to session validation", () => {
+  it("limits browser extension requests to dedicated session and timer operations", () => {
     expect(() =>
       enforceExtensionOperation(`chrome-extension://${id}`, "getExtensionSession"),
     ).not.toThrow();
+    for (const operation of ["getExtensionContext", "extensionTimerAction"])
+      expect(() => enforceExtensionOperation(`chrome-extension://${id}`, operation)).not.toThrow();
+    expect(() =>
+      enforceExtensionOperation(`chrome-extension://${id}`, "saveActiveTimer"),
+    ).toThrow();
     expect(() => enforceExtensionOperation(`chrome-extension://${id}`, "syncAccount")).toThrow();
     expect(() =>
       enforceExtensionOperation("https://watchtag.vercel.app", "syncAccount"),

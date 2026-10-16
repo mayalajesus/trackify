@@ -19,7 +19,7 @@ export function taskDetailsValue(value) {
     const card = value.trelloCard;
     if (
       typeof card.id !== "string" ||
-      !/^[a-f0-9]{24}$/i.test(card.id) ||
+      !/^(?:[a-f0-9]{24}|[a-z0-9]{8})$/i.test(card.id) ||
       typeof card.name !== "string" ||
       card.name.length > 1000 ||
       typeof card.board !== "string" ||
