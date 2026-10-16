@@ -9,7 +9,7 @@ import { ReportTableWidget } from "@/components/report-widget";
 import type { Client, Member, Project, TimeEntry } from "@/lib/domain";
 import { formatClock, getEntryEndDayOffset } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
-import { projectColorValue } from "@/lib/project-colors";
+import { clientColorValue } from "@/lib/client-colors";
 import { useStore } from "@/lib/store";
 
 type MemberTotal = { seconds: number; projects: Map<string, number> };
@@ -57,10 +57,11 @@ export function DetailedReport({
   const percentageFormatter = new Intl.NumberFormat(locale, { maximumFractionDigits: 2 });
   const projectDetails = (id: string) => {
     const project = projectMap.get(id);
+    const client = project ? clientMap.get(project.clientId) : undefined;
     return {
       name: project?.name ?? t(id === "none" ? "No project" : "Unknown project"),
-      client: (project ? clientMap.get(project.clientId)?.name : undefined) ?? t("No client"),
-      color: project ? projectColorValue(project.color) : "var(--muted)",
+      client: client?.name ?? t("No client"),
+      color: project ? clientColorValue(client?.color) : "var(--muted)",
     };
   };
 
