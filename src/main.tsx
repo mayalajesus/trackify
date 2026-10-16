@@ -46,7 +46,7 @@ function showBootError(rootElement: HTMLElement, copy: BootCopy) {
 
   const mark = document.createElement("img");
   mark.className = "size-12 object-contain";
-  mark.src = "/brand/trackify-symbol.png";
+  mark.src = "/brand/trackify-mark.svg";
   mark.alt = "";
   mark.setAttribute("aria-hidden", "true");
 
