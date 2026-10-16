@@ -1,62 +1,67 @@
 # Conexão com a extensão Trackify
 
-Implementação inicial para a extensão 0.2.0. Não inclui cronômetro ou seleção de
-projetos. O fluxo real requer a extensão instalada no Chrome e o app publicado.
+A extensão 0.3.0 usa o domínio atual https://watchtag.vercel.app. Implementa seleção
+de workspace e projeto, início, pausa, retomada e finalização pelo popup ou pelo
+painel em cartões do Trello. O título e o link do cartão são salvos no lançamento.
+A leitura do cartão aberto não exige uma API Key do Trello.
 
 ## Ativação
 
-1. Instale a extensão de mayalajesus/trackify-extension como extensão sem compactação.
-2. Copie o ID de 32 letras em chrome://extensions.
-3. Configure o mesmo ID em VITE_TRACKIFY_EXTENSION_IDS (frontend) e
-   TRACKIFY_EXTENSION_IDS (backend). Aceitam lista por vírgulas; vazios desabilitam.
-4. Publique frontend e backend juntos. A extensão usa https://watchtag.vercel.app.
-5. Clique em Conectar, entre no app, autorize e reabra o painel para verificar o e-mail.
-6. Teste desconexão, expiração, token inválido e tentativa de reutilizar a conexão.
+1. Carregue `extension.local` como extensão sem compactação no Chrome.
+2. O manifesto possui uma chave pública que fixa o ID de desenvolvimento em
+   `kjlodnmcbfeopfnpbnapjjhpnaefgigl`.
+3. Configure esse ID em `VITE_TRACKIFY_EXTENSION_IDS` e `TRACKIFY_EXTENSION_IDS`
+   no ambiente de publicação. Ambos aceitam listas separadas por vírgulas.
+4. Publique frontend e backend juntos. As configurações locais não atualizam a Vercel.
+5. Abra um cartão, conecte a extensão e autorize no Trackify. Escolha workspace e
+   projeto, inicie, pause, retome e finalize. Confira o registro no app.
+6. Antes da distribuição, teste também expiração, desconexão, troca de cartões,
+   navegação do Trello, colaboração e alterações simultâneas pelo app.
 
-O ID local pode variar por máquina/caminho. Cadastre o ID definitivo da loja
-antes de distribuir. Trocar o domínio exige atualizar APP_ORIGIN, host_permissions
-e externally_connectable.matches no repositório da extensão.
+O repositório da extensão é separado: `mayalajesus/trackify-extension`.
+`extension.local` é ignorado pelo Git do app. Execute seu `package.ps1` para gerar
+`dist/trackify-0.3.0.zip`. Na publicação pela loja, confira o ID atribuído e atualize
+as allowlists antes da distribuição.
 
-## Contrato v1
+## Contrato e segurança
 
-O worker gera 32 bytes aleatórios e salva estado, aba e validade de cinco minutos
-em chrome.storage.session. Abre /extension/connect?extensionId=...&state=...
-(sem token na URL). O app verifica o ID na allowlist, usa o login existente e,
-após autorização explícita, envia diretamente por chrome.runtime.sendMessage:
+O worker gera estado aleatório válido por cinco minutos e abre
+`/extension/connect?extensionId=...&state=...`, sem token na URL. A autorização
+verifica origem, rota, aba, frame, estado, validade e ID permitido. O pedido é
+consumido uma única vez. O token fica em `chrome.storage.session`, sem ser
+retornado ao painel ou ao script do Trello.
 
-    {type: "TRACKIFY_CONNECT", version: 1, state, token, expiresAt}
+Origens Chrome autorizadas podem chamar somente `getExtensionSession`,
+`getExtensionContext` e `extensionTimerAction`. O servidor verifica o vínculo com
+o workspace, o projeto e o proprietário da colaboração. O faturamento é derivado
+do projeto/cliente. Operações do cronômetro usam transação e versão; tentativas
+repetidas de início não criam outro registro. Participantes convidados não podem
+pausar, retomar ou finalizar a tarefa compartilhada.
 
-O worker verifica domínio, rota, frame principal, aba iniciadora, estado e validade.
-Consome o pedido uma única vez e valida a sessão com POST /api/data, usando
-Authorization: Bearer <access token> e body {operation: "getExtensionSession"}.
-Resposta: {data: {version: 1, user: {id, name, email}}, requestId}.
-Autenticação, limites de requisições e regras de situação da conta continuam ativos.
-Requisições de origens Chrome autorizadas só podem usar getExtensionSession.
+O app consulta o cronômetro remoto enquanto visível; a extensão atualiza o contexto
+periodicamente e ao receber foco. A extensão não opera offline. Erros de rede não
+são apresentados como gravações bem-sucedidas.
 
-## Limites
+## Limites e publicação
 
-- Usa o access token atual do provedor, sem escopos próprios de extensão.
-  Allowlist de origem não substitui autorização do servidor.
-- Nenhuma senha, refresh token ou chave administrativa é enviada à extensão.
-- Token fica em storage.session, inacessível a content scripts por padrão, e não
-  aparece nas respostas ao painel, URLs ou logs.
-- A extensão deixa de usar a sessão em até 15 minutos, na validade do provedor ou
-  ao encerrar o navegador. Descarta a sessão expirada quando consultada.
-  Isso não muda a validade original do token no servidor.
-- Desconectar remove a cópia local; não revoga nem encerra a sessão do site.
-- Antes de ampliar a integração, avaliar credenciais com escopos e revogação
-  independente e implementar operações atômicas do cronômetro.
+- A sessão temporária dura no máximo 15 minutos; o cronômetro continua no servidor.
+  Após expirar, reconecte para controlá-lo. Nenhum refresh token é armazenado.
+- Desconectar remove a cópia local, sem parar o cronômetro ou revogar a sessão do site.
+- O token usa a sessão existente do provedor, sem escopo ou revogação próprios.
+- Não há migração de banco nesta etapa.
+- Testes de integração usam exclusivamente QA e revertem os dados de teste.
+- A validação com Chrome instalado e Trello autenticado permanece pendente.
+- A conta de desenvolvedor da loja ainda não foi criada. Consulte `STORE.md` e a
+  minuta `PRIVACY.md` na extensão; faltam contato, URL pública da política e capturas reais.
+- Não foi feito deploy nem alteração remota de variáveis da Vercel nesta etapa.
 
-Testes de unidade cobrem origem, allowlist, estado, aba/frame, validade e API.
-O fluxo completo não foi validado em Chrome instalado ou em produção.
+## Validação desta implementação
 
-## Resultado da validação local (07/10/2026)
-
-- Extensão: 9 testes aprovados, incluindo worker com API simulada.
-- App: testes específicos de conexão/autenticação aprovados; lint dos arquivos
-  alterados e auditoria de UI aprovados.
-- Suíte de domínio: 164 aprovados e 1 falha em timer-start.test.ts, sobre iniciar
-  sem projeto, em código não alterado nesta etapa.
-- Typecheck: falhas em project-select.tsx, auth-client.ts e signup.tsx, fora desta alteração.
-- Build: falhou na resolução de @radix-ui/react-compose-refs em dependência do HeroUI.
-- Nenhum deploy ou teste autenticado em produção foi realizado.
+- 292 testes de domínio do app e 10 testes da extensão aprovados.
+- TypeScript, auditoria de UI, formatação e build aprovados.
+- ESLint aprovado excluindo `tmp-report-preview`; a execução geral encontrou 64
+  erros de formatação em scripts temporários anteriores, não alterados nesta entrega.
+- Integração em QA aprovada: autorização, faturamento, repetição de início,
+  versão em pausa/retomada, finalização atômica, vínculo Trello e colaboração.
+  Os dados criados no teste foram revertidos.
+- Validação real no Chrome e produção pendente, conforme os limites acima.
