@@ -1,5 +1,5 @@
 import { DataTable } from "@/components/data-table";
-import { ProjectLabel } from "@/components/project-color";
+import { ClientColorLabel, ProjectLabel } from "@/components/project-color";
 import { ReportDistribution } from "@/components/report-distribution";
 import {
   ReportChartWidget,
@@ -277,7 +277,13 @@ export function OverviewDashboard({
                         label={project.id === "none" ? t("No project") : project.project}
                       />
                       <Typography type="body-xs" color="muted" truncate>
-                        {project.client ?? t("No client")}
+                        {project.client ? (
+                          <ClientColorLabel color={project.clientColor}>
+                            {project.client}
+                          </ClientColorLabel>
+                        ) : (
+                          t("No client")
+                        )}
                       </Typography>
                     </div>
                   </Table.Cell>

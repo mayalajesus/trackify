@@ -148,12 +148,14 @@ export function overviewProjectRows(
 
   return selectTopProjects(analytics).map((dimension) => {
     const project = dimension.id === "none" ? null : projectMap.get(dimension.id);
+    const client = project ? clientMap.get(project.clientId) : undefined;
     const financial = financialMap.get(dimension.id);
     return {
       id: dimension.id,
       projectColor: project?.color ?? null,
       project: dimension.label,
-      client: project ? clientMap.get(project.clientId)?.name : null,
+      client: client?.name ?? null,
+      clientColor: client?.color,
       seconds: dimension.seconds,
       percentage: dimension.percentage,
       billableSeconds: financial?.billableSeconds ?? 0,
