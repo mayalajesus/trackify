@@ -124,7 +124,7 @@ function RootComponent() {
         </AccountLifecycleProvider>
       </AuthProvider>
       <Toast.Provider
-        className="[&_.toast]:pe-14 [&_.toast__close-button]:pointer-events-auto [&_.toast__close-button]:end-3 [&_.toast__close-button]:top-3 [&_.toast__close-button]:size-7 [&_.toast__close-button]:border [&_.toast__close-button]:border-border [&_.toast__close-button]:bg-surface-tertiary [&_.toast__close-button]:text-[var(--surface-tertiary-foreground)] [&_.toast__close-button]:opacity-100 [&_.toast__close-button:hover]:bg-default [&_.toast__close-button[data-hovered='true']]:bg-default [&_.toast__close-button:focus-visible]:ring-2 [&_.toast__close-button:focus-visible]:ring-focus [&_.toast__close-button_[data-slot='close-button-icon']]:size-4"
+        className="trackify-notifications"
         placement="bottom end"
         width={360}
         gap={8}

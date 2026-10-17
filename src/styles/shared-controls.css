@@ -273,7 +273,7 @@ body {
 }
 
 /* DEV confirmation shell (629:3351); height follows the conflict summary. */
-.overlap-confirmation {
+:is(.overlap-confirmation, .trackify-alert-dialog) {
   width: 384px;
   max-width: calc(100vw - 32px);
   padding: 28px 24px 24px;
@@ -283,16 +283,16 @@ body {
     0 18px 38px #1b1b1b24,
     0 3px 8px #1b1b1b12;
 }
-.overlap-confirmation .alert-dialog__header {
+:is(.overlap-confirmation, .trackify-alert-dialog) .alert-dialog__header {
   padding: 0 0 8px;
 }
-.overlap-confirmation .alert-dialog__heading {
+:is(.overlap-confirmation, .trackify-alert-dialog) .alert-dialog__heading {
   font-size: 18px;
   font-weight: 600;
   line-height: 24px;
   letter-spacing: 0;
 }
-.overlap-confirmation .alert-dialog__body {
+:is(.overlap-confirmation, .trackify-alert-dialog) .alert-dialog__body {
   margin: 0;
   padding: 0;
 }
@@ -302,12 +302,12 @@ body {
   line-height: 24px;
   overflow-wrap: anywhere;
 }
-.overlap-confirmation .alert-dialog__footer {
+:is(.overlap-confirmation, .trackify-alert-dialog) .alert-dialog__footer {
   margin: 0;
   padding: 20px 0 0;
   gap: 8px;
 }
-.overlap-confirmation .alert-dialog__footer .button {
+:is(.overlap-confirmation, .trackify-alert-dialog) .alert-dialog__footer .button {
   min-height: 36px;
   padding: 8px 4px;
   border-radius: 18px;
@@ -315,7 +315,71 @@ body {
   font-weight: 400;
   line-height: 20px;
 }
-.overlap-confirmation .button--secondary {
+:is(.overlap-confirmation, .trackify-alert-dialog) .button--secondary {
   background: var(--default);
   color: var(--foreground);
+}
+
+/* Shared notification styling uses the same typography, surfaces and controls as dialogs. */
+.trackify-notifications .toast {
+  gap: 12px;
+  padding: 16px 48px 16px 16px;
+  border-radius: 24px;
+  background: var(--surface);
+  color: var(--foreground);
+}
+.trackify-notifications .toast__content {
+  min-width: 0;
+  gap: 4px;
+  overflow-wrap: anywhere;
+}
+.trackify-notifications .toast__title {
+  color: var(--foreground);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+}
+.trackify-notifications .toast__description {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 20px;
+}
+.trackify-notifications .toast__indicator {
+  padding: 2px 0;
+}
+.trackify-notifications .toast--accent .toast__indicator {
+  color: var(--accent);
+}
+.trackify-notifications .toast__action {
+  flex-shrink: 0;
+  min-height: 36px;
+  height: auto;
+  max-width: 100%;
+  padding: 8px 20px;
+  border-radius: 18px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  white-space: normal;
+}
+.trackify-notifications .toast__close-button {
+  inset-inline-end: 12px;
+  top: 12px;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  background: var(--default);
+  color: var(--foreground);
+}
+.trackify-notifications .toast[data-frontmost="true"] .toast__close-button {
+  pointer-events: auto;
+  opacity: 1;
+}
+.trackify-notifications .toast__close-button [data-slot="close-button-icon"] {
+  width: 16px;
+  height: 16px;
+}
+.trackify-notifications .toast__close-button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }

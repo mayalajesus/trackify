@@ -462,7 +462,7 @@ function ProjectsPage() {
         <AlertDialog.Trigger aria-label={t("Delete project")} className="sr-only" tabIndex={-1} />
         <AlertDialog.Backdrop>
           <AlertDialog.Container>
-            <AlertDialog.Dialog className="sm:max-w-[400px]">
+            <AlertDialog.Dialog className="trackify-alert-dialog">
               <AlertDialog.CloseTrigger />
               <AlertDialog.Header>
                 <AlertDialog.Icon status="danger" />
@@ -486,7 +486,7 @@ function ProjectsPage() {
                 </Typography>
               </AlertDialog.Body>
               <AlertDialog.Footer>
-                <Button slot="close" variant="tertiary">
+                <Button slot="close" variant="secondary">
                   {t("Cancel")}
                 </Button>
                 <Button
