@@ -33,13 +33,13 @@ export function TimerStartEditor() {
     <Popover
       isOpen={open}
       onOpenChange={(value) => {
-        if (!value && !commit()) return;
+        if (!value) commit();
         setOpen(value);
+        setFailure(null);
         if (value) {
           cancelEdit.current = false;
           setDate(timer.startedDate ?? "");
           setClock(timer.startClock);
-          setFailure(null);
         }
       }}
     >
