@@ -118,6 +118,21 @@ body {
   height: 36px;
 }
 
+.segmented-control .tabs__list {
+  gap: 0;
+  border: 0;
+  background: transparent;
+}
+.segmented-control .tabs__tab {
+  background: transparent;
+  color: var(--muted);
+  transform: none;
+}
+.segmented-control .tabs__tab[data-selected="true"] {
+  background: var(--segment);
+  color: var(--segment-foreground);
+  box-shadow: var(--shadow-surface);
+}
 .theme-tabs {
   width: 100%;
   --theme-track: #eaebec;
@@ -150,9 +165,8 @@ body {
   font-weight: 500;
   line-height: 1;
 }
-.theme-tabs .tabs__indicator {
+.theme-tabs .tabs__tab[data-selected="true"] {
   background: var(--theme-selection);
-  border-radius: 999px;
   box-shadow: none;
 }
 .theme-tabs--icons .tabs__list {

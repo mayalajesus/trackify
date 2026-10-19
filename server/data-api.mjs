@@ -36,7 +36,7 @@ import {
 } from "./data/preferences.mjs";
 import { ensureProfile } from "./data/profile.mjs";
 import { deleteMember } from "./data/members.mjs";
-import { syncAccount } from "./data/sync-account.mjs";
+import { synchronizeAccount } from "./data/account-sync.mjs";
 import {
   timerFromRow,
   timerWithOwner,
@@ -91,6 +91,20 @@ async function operation(request, user, config, body) {
   const pool = getPool(config);
   const client = await pool.connect();
   let discardClient = false;
+  async function rollback(error) {
+    // A client-side read timeout leaves a query in flight. Queuing ROLLBACK on
+    // that socket can time out again and occupy the pool; closing rolls it back.
+    if (isDatabaseConnectionFailure(error)) {
+      discardClient = true;
+      return;
+    }
+    try {
+      await client.query("rollback");
+    } catch {
+      // Preserve the original error, and never reuse an uncertain transaction.
+      discardClient = true;
+    }
+  }
   try {
     requirePayloadUser(user, body ?? {});
     if (!user.extensionSessionId) await ensureProfile(client, user, config);
@@ -145,7 +159,7 @@ async function operation(request, user, config, body) {
         await client.query("commit");
         return requested;
       } catch (error) {
-        await client.query("rollback");
+        await rollback(error);
         throw error;
       }
     }
@@ -156,7 +170,7 @@ async function operation(request, user, config, body) {
         await client.query("commit");
         return cancelled;
       } catch (error) {
-        await client.query("rollback");
+        await rollback(error);
         throw error;
       }
     }
@@ -167,7 +181,7 @@ async function operation(request, user, config, body) {
         await client.query("commit");
         return transferred;
       } catch (error) {
-        await client.query("rollback");
+        await rollback(error);
         throw error;
       }
     }
@@ -186,7 +200,7 @@ async function operation(request, user, config, body) {
         timerFromRow,
       });
     if (body.operation === "loadAccount") {
-      const account = await loadAccount(client, user, config);
+      const account = await loadAccount(client, user, config, { profileEnsured: true });
       await welcomeOnAccess(client, user, config);
       return account;
     }
@@ -200,7 +214,7 @@ async function operation(request, user, config, body) {
         await client.query("commit");
         return created;
       } catch (error) {
-        await client.query("rollback");
+        await rollback(error);
         throw error;
       }
     }
@@ -222,7 +236,7 @@ async function operation(request, user, config, body) {
         await client.query("commit");
         return accepted;
       } catch (error) {
-        await client.query("rollback");
+        await rollback(error);
         throw error;
       }
     }
@@ -230,11 +244,11 @@ async function operation(request, user, config, body) {
       await client.query("begin");
       try {
         await deleteWorkspace(client, user, body);
-        const account = await loadAccount(client, user, config);
+        const account = await loadAccount(client, user, config, { profileEnsured: true });
         await client.query("commit");
         return account;
       } catch (error) {
-        await client.query("rollback");
+        await rollback(error);
         throw error;
       }
     }
@@ -245,18 +259,29 @@ async function operation(request, user, config, body) {
         await client.query("commit");
         return result;
       } catch (error) {
-        await client.query("rollback");
+        await rollback(error);
         throw error;
       }
     }
     if (body.operation === "syncAccount") {
       let obsoleteLogoPaths;
-      await client.query("begin");
+      let savedAccount;
+      await client.query("begin isolation level serializable");
       try {
-        obsoleteLogoPaths = await syncAccount(client, user, config, body.account);
+        const saved = await synchronizeAccount(client, user, config, body, {
+          profileEnsured: true,
+        });
+        obsoleteLogoPaths = saved.obsoleteLogoPaths;
+        savedAccount = saved.account;
         await client.query("commit");
       } catch (error) {
-        await client.query("rollback");
+        await rollback(error);
+        if (["40001", "40P01"].includes(error?.code))
+          throw new DataApiError(
+            409,
+            "Your data changed in another session. Your unsaved changes have been kept.",
+            { code: "sync_conflict" },
+          );
         throw error;
       }
       // Delete only after the new reference is committed. Cleanup failure must
@@ -271,7 +296,7 @@ async function operation(request, user, config, body) {
           console.warn("Could not clean up replaced workspace logos.");
         }
       }
-      return null;
+      return savedAccount;
     }
     if (body.operation === "getActiveTimer") {
       const workspaceId = uuid(body.workspaceId);
@@ -384,7 +409,7 @@ async function operation(request, user, config, body) {
         await client.query("commit");
         return saved;
       } catch (error) {
-        await client.query("rollback");
+        await rollback(error);
         throw error;
       }
     }
@@ -396,7 +421,7 @@ async function operation(request, user, config, body) {
     }
     throw new DataApiError(400, "Unsupported data operation.");
   } catch (error) {
-    discardClient = isDatabaseConnectionFailure(error);
+    discardClient ||= isDatabaseConnectionFailure(error);
     throw error;
   } finally {
     // A severed Neon connection must not return to the pool and poison the
@@ -410,7 +435,9 @@ function isDatabaseConnectionFailure(error) {
   const code = typeof error.code === "string" ? error.code.toUpperCase() : "";
   return (
     ["ECONNRESET", "EPIPE", "ETIMEDOUT", "ENOTFOUND", "57P01", "57P02", "57P03"].includes(code) ||
-    /connection terminated|connection closed|socket hang up|\baborted\b/i.test(error.message)
+    /connection terminated|connection closed|socket hang up|query read timeout|\baborted\b/i.test(
+      error.message,
+    )
   );
 }
 

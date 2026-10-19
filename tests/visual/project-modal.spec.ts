@@ -20,12 +20,15 @@ for (const width of [1280, 390, 320]) {
     if (width === 1280) {
       const bounds = await modal.boundingBox();
       expect(bounds!.width).toBe(384);
-      expect(bounds!.height).toBe(468);
+      expect(bounds!.height).toBe(400);
     }
     await expect(modal.locator(".input")).toHaveCSS("height", "36px");
     await expect(modal.locator(".input")).toHaveCSS("border-radius", "12px");
     await expect(modal.locator(".modal__heading")).toHaveCSS("line-height", "24px");
     await expect(modal.locator(".switch__control")).toHaveCSS("width", "40px");
+    await expect(modal.getByLabel("Nome", { exact: true })).toBeVisible();
+    await expect(modal.locator('[data-slot="autocomplete-trigger"]')).toBeVisible();
+    await expect(modal.getByRole("button", { name: "Adicionar membros ao projeto" })).toBeVisible();
     const buttons = modal.locator(".modal__footer > button");
     const a = await buttons.nth(0).boundingBox();
     const b = await buttons.nth(1).boundingBox();

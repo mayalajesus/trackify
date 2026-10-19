@@ -17,7 +17,9 @@ function readEnv() {
 
 export async function cleanQaData(marker) {
   const env = readEnv();
-  if (!env.DATABASE_URL) return;
+  if (env.DATABASE_ENV !== "qa") throw new Error("QA cleanup requires DATABASE_ENV=qa.");
+  if (!marker || !marker.startsWith("E2E ")) throw new Error("A QA fixture marker is required.");
+  if (!env.DATABASE_URL) throw new Error("QA cleanup requires DATABASE_URL.");
 
   const client = new pg.Client({ connectionString: env.DATABASE_URL });
   await client.connect();
@@ -32,7 +34,7 @@ export async function cleanQaData(marker) {
               from neon_auth."user"
              where email = any($1::text[])
           )`,
-        [["owner@example.test", "admin@example.test", "member@example.test"]],
+        [[env.QA_OWNER_EMAIL, env.QA_ADMIN_EMAIL, env.QA_MEMBER_EMAIL].filter(Boolean)],
       )
     ).rows.map((row) => row.workspace_id);
 

@@ -27,8 +27,8 @@ async function createProjectFromTracker(page: import("@playwright/test").Page, n
 
   const projectDialog = page.getByRole("dialog");
   await expect(projectDialog.getByLabel(/Name|Nome/, { exact: true })).toHaveValue(name);
-  await projectDialog.getByRole("button", { name: /Client|Cliente/, exact: true }).click();
-  await page.getByRole("menuitemradio", { name: clientName, exact: true }).click();
+  await projectDialog.locator('[data-slot="autocomplete-trigger"]').click();
+  await page.getByRole("option", { name: clientName, exact: true }).click();
   const projectSync = waitForAccountSync(page);
   await projectDialog.getByRole("button", { name: /Create project|Criar projeto/ }).click();
   await projectSync;
@@ -61,8 +61,8 @@ test("owner persists client, project and timer data in Neon", async ({ page }) =
   await page.getByRole("button", { name: /New project|Novo projeto/ }).click();
   const projectDialog = page.getByRole("dialog");
   await projectDialog.getByLabel(/Name|Nome/, { exact: true }).fill(projectName);
-  await projectDialog.getByRole("button", { name: /Client|Cliente/, exact: true }).click();
-  await page.getByRole("menuitemradio", { name: clientName, exact: true }).click();
+  await projectDialog.locator('[data-slot="autocomplete-trigger"]').click();
+  await page.getByRole("option", { name: clientName, exact: true }).click();
   const projectSync = waitForAccountSync(page);
   await projectDialog.getByRole("button", { name: /Create project|Criar projeto/ }).click();
   await projectSync;

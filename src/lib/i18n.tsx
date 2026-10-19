@@ -23,6 +23,13 @@ export const localeOptions: Array<{ id: Locale; label: string }> = [
 ];
 
 const ptBR: Record<string, string> = {
+  "Your unsaved changes have been kept": "Suas alterações ainda não salvas foram preservadas",
+  "Try saving again": "Tentar salvar novamente",
+  "Download unsaved changes": "Baixar alterações não salvas",
+  "Your data changed in another session. Your unsaved changes have been kept.":
+    "Os dados mudaram em outra sessão. Suas alterações não salvas foram preservadas. Baixe uma cópia antes de atualizar a página para conferir a versão mais recente.",
+  "Reload the app before saving. Your unsaved changes have been kept.":
+    "Atualize o aplicativo antes de salvar. Baixe uma cópia das alterações não salvas antes de atualizar a página.",
   Urgent: "Urgente",
   "Delete {count} entries for “{task}”?": "Excluir os {count} registros de “{task}”?",
   "Start column": "Início",
@@ -47,8 +54,7 @@ const ptBR: Record<string, string> = {
     "Exclua definitivamente este workspace e seus projetos, clientes e registros de horas de todos os membros. As contas dos usuários e outros workspaces serão mantidos.",
   "This permanently deletes projects, clients, invitations and time entries for everyone in this workspace. This action cannot be undone.":
     "Os projetos, clientes, convites e registros de horas de todos neste workspace serão excluídos definitivamente. Esta ação não pode ser desfeita.",
-  "Enter a valid start time before the current time.":
-    "Informe uma hora de início válida",
+  "Enter a valid start time before the current time.": "Informe uma hora de início válida",
   "Only the creator can change this shared time entry.":
     "Somente quem criou a tarefa pode alterar ou excluir este registro compartilhado.",
   "If the invited task is still running, stop your timer before accepting.":

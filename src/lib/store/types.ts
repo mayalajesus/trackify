@@ -66,7 +66,10 @@ export interface StoreValue {
   sessionStatus: SessionStatus;
   accountLoading: boolean;
   accountError: string | null;
+  accountPersistenceError: string | null;
   retryAccountLoad: () => void;
+  retryAccountSave: () => void;
+  downloadPendingChanges: () => void;
   can: (permission: Permission) => boolean;
   canTrackProject: (projectId: string) => boolean;
   findEntryConflict: (

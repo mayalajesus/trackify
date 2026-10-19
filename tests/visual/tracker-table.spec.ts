@@ -56,7 +56,8 @@ for (const width of [1280, 960, 390]) {
           iconWidths: icons.map((icon) => icon.width),
         };
       });
-      expect(geometry).toEqual({ width: 60, gap: 12, inset: 8, iconWidths: [16, 16] });
+      // The Actions column is explicitly 80px in TrackerEntries.
+      expect(geometry).toEqual({ width: 80, gap: 12, inset: 18, iconWidths: [16, 16] });
     }
     await page.mouse.move(0, 0);
     await page.screenshot({ path: test.info().outputPath("tracker-table.png"), fullPage: true });

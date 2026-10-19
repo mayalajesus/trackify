@@ -81,11 +81,11 @@
   font-weight: 400;
   color: #9ca3af;
 }
-.settings-page .theme-tabs--text .tabs__tab[aria-selected="true"] {
+.settings-page .theme-tabs--text .tabs__tab[data-selected="true"] {
   color: var(--foreground);
   font-weight: 500;
 }
-.settings-page .theme-tabs--text .tabs__indicator {
+.settings-page .theme-tabs--text .tabs__tab[data-selected="true"] {
   box-shadow: 0 2px 5px #1b1b1b0c;
 }
 .settings-page .switch__control {

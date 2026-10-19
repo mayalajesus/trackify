@@ -4,6 +4,15 @@ import { DataApiError } from "./data-api-error.mjs";
 
 const jwksByAuthUrl = new Map();
 
+function isKeyServiceFailure(error) {
+  return (
+    error?.code === "ERR_JWKS_TIMEOUT" ||
+    (error instanceof TypeError && error.message === "fetch failed") ||
+    (error?.code === "ERR_JOSE_GENERIC" &&
+      error.message === "Expected 200 OK from the JSON Web Key Set HTTP response")
+  );
+}
+
 function tokenIssuedAt(token) {
   try {
     const issuedAt = decodeJwt(token).iat;
@@ -72,13 +81,28 @@ export async function authenticateDataRequest(request, config, getPool) {
     jwksByAuthUrl.set(config.neonAuthUrl, keySet);
   }
   let verified;
-  try {
-    verified = await jwtVerify(token, keySet, {
-      issuer: config.neonAuthIssuer,
-      audience: config.neonAuthIssuer,
-    });
-  } catch {
-    throw new DataApiError(401, "The authentication token is invalid or expired.");
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      verified = await jwtVerify(token, keySet, {
+        issuer: config.neonAuthIssuer,
+        audience: config.neonAuthIssuer,
+      });
+      break;
+    } catch (error) {
+      // Retry only fetching public verification keys, once and within jose's
+      // existing deadline. Invalid signatures/claims never bypass verification.
+      if (isKeyServiceFailure(error)) {
+        if (attempt === 0) continue;
+        throw new DataApiError(
+          503,
+          "Authentication is temporarily unavailable. Please try again.",
+          {
+            code: "auth_verification_unavailable",
+          },
+        );
+      }
+      throw new DataApiError(401, "The authentication token is invalid or expired.");
+    }
   }
   if (!verified.payload.sub) {
     throw new DataApiError(401, "The authentication token has no user subject.");

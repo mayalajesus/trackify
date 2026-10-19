@@ -84,10 +84,16 @@ export function getPool(config) {
       connectionString: config.databaseUrl,
       max: 5,
       connectionTimeoutMillis: 10_000,
+      // Bound stalled reads as well as connection attempts. The browser's
+      // 25-second deadline alone cannot release a stuck database client.
+      query_timeout: 15_000,
       idleTimeoutMillis: 30_000,
       keepAlive: true,
       application_name: "trackify-api",
     });
+    // pg removes failed idle clients itself; an error listener keeps a transient
+    // disconnect from becoming an unhandled process error. Never log credentials.
+    pool.on("error", () => console.warn("An idle database connection was discarded."));
     pools.set(config.databaseUrl, pool);
   }
   return pool;

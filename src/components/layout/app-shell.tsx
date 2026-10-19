@@ -1,6 +1,7 @@
 import { TaskInvitationInbox } from "@/components/tracker-task-modal";
 import { TaskInvitationNotifications } from "@/components/task-invitation-notifications";
 import { Button } from "@heroui/react/button";
+import { Alert } from "@heroui/react/alert";
 import { Card } from "@heroui/react/card";
 import { Description } from "@heroui/react/description";
 import { Drawer } from "@heroui/react/drawer";
@@ -170,7 +171,16 @@ export function AppShell({ children }: { children: ReactNode }) {
 }
 
 function AppDataGate({ children }: { children: ReactNode }) {
-  const { sessionStatus, accountLoading, accountError, retryAccountLoad, workspaces } = useStore();
+  const {
+    sessionStatus,
+    accountLoading,
+    accountError,
+    accountPersistenceError,
+    retryAccountLoad,
+    retryAccountSave,
+    downloadPendingChanges,
+    workspaces,
+  } = useStore();
   const { t, error } = useI18n();
 
   if (accountLoading) {
@@ -204,7 +214,28 @@ function AppDataGate({ children }: { children: ReactNode }) {
 
   if (sessionStatus === "signed-out") return <SignedOutScreen />;
   if (workspaces.length === 0) return <WorkspaceAccessOnboarding />;
-  return <AppShellContent>{children}</AppShellContent>;
+  return (
+    <>
+      {accountPersistenceError ? (
+        <Alert status="danger" role="alert" className="fixed inset-x-4 top-4 z-50 mx-auto max-w-xl">
+          <Alert.Indicator />
+          <Alert.Content>
+            <Alert.Title>{t("Your unsaved changes have been kept")}</Alert.Title>
+            <Alert.Description>{error(accountPersistenceError)}</Alert.Description>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button size="sm" onPress={retryAccountSave}>
+                {t("Try saving again")}
+              </Button>
+              <Button size="sm" variant="secondary" onPress={downloadPendingChanges}>
+                {t("Download unsaved changes")}
+              </Button>
+            </div>
+          </Alert.Content>
+        </Alert>
+      ) : null}
+      <AppShellContent>{children}</AppShellContent>
+    </>
+  );
 }
 
 function AppShellContent({ children }: { children: ReactNode }) {

@@ -40,6 +40,14 @@ export async function signInAs(page: Page, role: QaRole): Promise<void> {
   await page.getByLabel(/^(Email|E-mail)\s*\*?$/).fill(credentials.email);
   await page.getByLabel(/^(Password|Senha)\s*\*?$/).fill(credentials.password);
   await page.getByRole("button", { name: /^(Sign in|Entrar)$/ }).click();
-  await expect(page).toHaveURL(/\/tracker(?:\?.*)?$/);
-  await expect(page.locator("#main-content")).toBeVisible({ timeout: 15_000 });
+  // Real authentication and API calls have network deadlines up to 25 seconds.
+  await expect(page).toHaveURL(/\/tracker(?:\?.*)?$/, { timeout: 30_000 });
+  await expect(page.locator("#main-content")).toBeVisible({ timeout: 30_000 });
+}
+
+export async function openAppPage(page: Page, path: string): Promise<void> {
+  await page.goto(path);
+  // Assert the authenticated UI, rather than passing checks against a spinner
+  // (for example, a forbidden button's absence before permissions load).
+  await expect(page.locator("#main-content"), path).toBeVisible({ timeout: 30_000 });
 }

@@ -1,4 +1,5 @@
 import { networkErrorMessage, offlineMessage } from "./network-errors";
+import { prepareAccountSync } from "../../shared/account-merge.mjs";
 import type { Session } from "@supabase/supabase-js";
 import { getAuthClient } from "./auth-client";
 import { defaultLocale } from "./i18n";
@@ -112,7 +113,12 @@ export function createApiDataSource(): AccountDataSource {
     loadAccount: () => request<PersistedAccount>("loadAccount"),
     loadReportEntries: (userId: string, query: ReportEntriesQuery) =>
       request<TimeEntry[]>("loadReportEntries", { userId, ...query }),
-    syncAccount: (_userId, account) => request<null>("syncAccount", { account }),
+    syncAccount: (_userId, account, baseAccount) =>
+      baseAccount.syncProtocol === 1
+        ? request<PersistedAccount>("syncAccount", prepareAccountSync(baseAccount, account))
+        : Promise.resolve(
+            fail("Reload the app before saving. Your unsaved changes have been kept."),
+          ),
     updatePreferences: (userId, patch) => request<null>("updatePreferences", { userId, patch }),
     createWorkspace: (input) => request<CreateWorkspaceResult>("createWorkspace", { ...input }),
     deleteWorkspace: (workspaceId, confirmation) =>

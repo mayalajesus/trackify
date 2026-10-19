@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { qaCredentials, signInAs } from "../support/qa-auth";
+import { openAppPage, qaCredentials, signInAs } from "../support/qa-auth";
 
 const routes = [
   "/tracker",
@@ -17,8 +17,7 @@ const publicRoutes = ["/login", "/signup", "/forgot-password", "/auth/callback",
 test("all primary routes reload into the designed app shell", async ({ page }) => {
   await signInAs(page, "owner");
   for (const route of routes) {
-    await page.goto(route);
-    await expect(page.locator("#main-content"), route).toBeVisible({ timeout: 15_000 });
+    await openAppPage(page, route);
     await expect(page.locator("body")).not.toContainText("Cannot find module");
     await expect(page.locator("body")).not.toContainText("Unexpected token");
   }
@@ -35,20 +34,24 @@ test("authentication routes reload into a structured page", async ({ page }) => 
 
 test("settings preserves language and theme controls", async ({ page }) => {
   await signInAs(page, "owner");
-  await page.goto("/settings");
+  await openAppPage(page, "/settings");
   await expect(page.getByRole("heading", { name: /Settings|Configurações/ })).toBeVisible();
   await expect(
     page.getByRole("heading", { name: /Preferences|Preferências/, exact: true }),
   ).toBeVisible();
-  await expect(page.getByRole("tab", { name: /Light|Claro/ })).toBeVisible();
-  await expect(page.getByRole("tab", { name: /Dark|Escuro/ })).toBeVisible();
-  await page.getByRole("tab", { name: /Dark|Escuro/ }).click();
+  await expect(page.getByRole("radio", { name: /Light|Claro/ })).toBeVisible();
+  await expect(page.getByRole("radio", { name: /Dark|Escuro/ })).toBeVisible();
+  await page.getByRole("radio", { name: /Dark|Escuro/ }).click();
+  await expect(page.getByRole("radio", { name: /Dark|Escuro/ })).toBeChecked();
   await expect(page.locator("html")).toHaveClass(/dark/);
   await page.reload();
+  await expect(page.locator("#main-content")).toBeVisible({ timeout: 30_000 });
   await expect(page.locator("html")).toHaveClass(/dark/);
-  await page.getByRole("tab", { name: /Light|Claro/ }).click();
+  await page.getByRole("radio", { name: /Light|Claro/ }).click();
+  await expect(page.getByRole("radio", { name: /Light|Claro/ })).toBeChecked();
   await expect(page.locator("html")).toHaveClass(/light/);
   await page.reload();
+  await expect(page.locator("#main-content")).toBeVisible({ timeout: 30_000 });
   await expect(page.locator("html")).toHaveClass(/light/);
 });
 
@@ -70,7 +73,7 @@ test("account loading failures expose a recoverable error state", async ({ page 
   const credentials = qaCredentials("owner");
   let failNextRequest = true;
   await page.route("**/api/data", async (route) => {
-    if (failNextRequest) {
+    if (failNextRequest && route.request().postDataJSON()?.operation === "loadAccount") {
       failNextRequest = false;
       await route.fulfill({
         status: 503,
@@ -83,16 +86,16 @@ test("account loading failures expose a recoverable error state", async ({ page 
   });
 
   await page.goto("/login");
-  await page.getByLabel("Email", { exact: true }).fill(credentials.email);
-  await page.getByLabel("Password", { exact: true }).fill(credentials.password);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.getByLabel(/^(Email|E-mail)\s*\*?$/).fill(credentials.email);
+  await page.getByLabel(/^(Password|Senha)\s*\*?$/).fill(credentials.password);
+  await page.getByRole("button", { name: /^(Sign in|Entrar)$/ }).click();
   await expect(
     page.getByRole("heading", {
       name: /We couldn't load your account|Não conseguimos carregar sua conta/,
     }),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 30_000 });
   await page.getByRole("button", { name: /Try again|Tentar novamente/ }).click();
-  await expect(page.locator("#main-content")).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator("#main-content")).toBeVisible({ timeout: 30_000 });
 });
 
 test("accounts without a workspace see the company workspace onboarding", async ({ page }) => {
@@ -118,11 +121,11 @@ test("accounts without a workspace see the company workspace onboarding", async 
   });
 
   await page.goto("/login");
-  await page.getByLabel("Email", { exact: true }).fill(credentials.email);
-  await page.getByLabel("Password", { exact: true }).fill(credentials.password);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.getByLabel(/^(Email|E-mail)\s*\*?$/).fill(credentials.email);
+  await page.getByLabel(/^(Password|Senha)\s*\*?$/).fill(credentials.password);
+  await page.getByRole("button", { name: /^(Sign in|Entrar)$/ }).click();
 
-  await expect(page).toHaveURL(/\/tracker(?:\?.*)?$/);
+  await expect(page).toHaveURL(/\/tracker(?:\?.*)?$/, { timeout: 30_000 });
   await expect(
     page.getByRole("heading", {
       name: /Create your company workspace|Crie o workspace da sua empresa/,
@@ -137,23 +140,23 @@ test("accounts without a workspace see the company workspace onboarding", async 
 
 test("members cannot access owner and admin actions", async ({ page }) => {
   await signInAs(page, "member");
-  await page.goto("/projects");
+  await openAppPage(page, "/projects");
   await expect(page.getByRole("button", { name: /New project|Novo projeto/ })).toHaveCount(0);
-  await page.goto("/tracker");
+  await openAppPage(page, "/tracker");
   const trackerBar = page.locator("[data-tracker-bar]");
   await trackerBar.locator('[data-project-select] [data-slot="autocomplete-trigger"]').click();
   await expect(
     page.getByRole("button", { name: /Create new project|Criar novo projeto/ }),
   ).toHaveCount(0);
-  await page.goto("/clients");
+  await openAppPage(page, "/clients");
   await expect(page.getByRole("button", { name: /New client|Novo cliente/ })).toHaveCount(0);
-  await page.goto("/team");
+  await openAppPage(page, "/team");
   await expect(page.getByRole("button", { name: /Invite member|Convidar membro/ })).toHaveCount(0);
 });
 
 test("owner opens the complete project form from the tracker search", async ({ page }) => {
   await signInAs(page, "owner");
-  await page.goto("/tracker");
+  await openAppPage(page, "/tracker");
   const trackerBar = page.locator("[data-tracker-bar]");
   const projectTrigger = trackerBar.locator(
     '[data-project-select] [data-slot="autocomplete-trigger"]',
@@ -168,9 +171,7 @@ test("owner opens the complete project form from the tracker search", async ({ p
   await expect(projectDialog.getByLabel(/Name|Nome/, { exact: true })).toHaveValue(
     "Website redesign",
   );
-  await expect(
-    projectDialog.getByRole("button", { name: /Client|Cliente/, exact: true }),
-  ).toBeVisible();
+  await expect(projectDialog.locator('[data-slot="autocomplete-trigger"]')).toBeVisible();
   await expect(
     projectDialog.getByRole("button", { name: /Add project members|Adicionar membros ao projeto/ }),
   ).toBeVisible();

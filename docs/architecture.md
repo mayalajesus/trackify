@@ -33,6 +33,13 @@ workspace access.
 - `src/lib/store`: snapshot validation/migrations, reference sharing and domain
   action factories. Factories receive explicit state, setters and refs; the
   provider retains state ownership, effect ordering and synchronization.
+- `src/lib/store/account-persistence.ts`: serialized saves, baseline ownership
+  and reconciliation of edits made while a request is pending.
+- `src/lib/store/use-account-persistence.ts`: save recovery, draft download and
+  browser close protection. Save failures keep the application and draft open;
+  they do not trigger account rehydration.
+- `shared/account-merge.mjs`: pure three-way merge used by server synchronization
+  and browser reconciliation. Collections are matched by stable record IDs.
 - `src/components/tracker-entries`: grouping, stable row keys, time editors,
   group summaries and entry rows. The existing table entry point owns selection,
   expansion and deletion confirmation.
@@ -75,6 +82,51 @@ Internal modules must not import the `store.tsx` or `data-api.mjs` facade at
 runtime. Keep shared dependencies below the facades to prevent circular imports.
 Public data-source interfaces, account versioning, API response shapes and SQL
 transaction boundaries are unchanged by the modularization.
+
+## Concurrent account saves
+
+`syncAccount` now requires both `account` (the edited snapshot) and `baseAccount`
+(the last acknowledged server snapshot), and returns the canonical saved
+account. The persisted account format remains version 13; no database migration
+is required by this protocol change.
+
+Loaded accounts advertise `syncProtocol: 1`. The browser checks this capability
+before sending a write, so a new client cannot fall back to unsafe full-snapshot
+saves against an older server. Unchanged records and images are omitted from
+both request snapshots to keep small edits independent of history size.
+
+The server locks workspace rows in stable ID order inside a SERIALIZABLE
+transaction, loads current data and applies only changes relative to the
+baseline. Independent changes merge; a change or deletion that conflicts with
+a concurrent change returns HTTP 409 with `sync_conflict`. Serialization
+failures also abort the transaction and return that code. No conflicting
+snapshot is written. Signed image URL token refreshes and collection ordering
+do not count as edits.
+
+The write path skips unchanged workspaces and records. A client or preference
+edit therefore does not rewrite the user's full time-entry history or rebuild
+unchanged project assignments.
+
+Clients without a baseline receive HTTP 428 with `sync_baseline_required`;
+they must update before saving. Deploy frontend and server together. During
+recovery, download unsaved changes before reloading an older client or resolving
+a conflict. The downloaded JSON is a recovery copy, not an automatic import.
+
+Successful responses are merged with edits made after the request started.
+Only the server response advances the baseline. Failed requests retain the
+draft and baseline so retrying does not replace local changes with a reload.
+
+Database queries have a 15-second response deadline. Connections that exceed
+that deadline are discarded instead of returned to the pool; failed saves keep
+their pending draft and baseline for recovery.
+
+Initialized account reads do not update profiles or member preferences. Default
+avatars are computed without writing them, and account schema capabilities are
+read together without caching across migrations. Synchronization reuses profile
+initialization and skips unchanged identity/preferences as well as entry history.
+A timed-out transaction closes its connection instead of queuing a rollback on
+an unresponsive socket. Public authentication key fetches may retry once within
+their existing deadlines; invalid tokens are never retried or accepted.
 
 ## Data ownership
 

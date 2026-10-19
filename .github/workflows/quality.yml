@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       VITE_APP_ENV: qa
-      VITE_APP_URL: http://127.0.0.1:5173
+      VITE_APP_URL: http://localhost:5173
       VITE_AUTH_PROVIDER: neon
       VITE_NEON_AUTH_URL: ${{ secrets.QA_NEON_AUTH_URL }}
       DATABASE_PROVIDER: neon
@@ -47,5 +47,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      - run: npm run test:integration
       - run: npm run test:smoke
       - run: npm run test:a11y

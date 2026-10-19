@@ -1,4 +1,5 @@
 import { DataApiError } from "../data-api-error.mjs";
+import { accountsEqual } from "../../shared/account-merge.mjs";
 import { hasColumn, workspaceAccess } from "./access.mjs";
 import { getSupabaseAdmin } from "./connections.mjs";
 import { syncEntries } from "./entries.mjs";
@@ -42,11 +43,11 @@ export async function ensureProjectNameAvailable(
   }
 }
 
-export async function syncAccount(client, user, config, account) {
+export async function syncAccount(client, user, config, account, currentAccount) {
   const obsoleteLogoPaths = [];
   if (!account || !Array.isArray(account.identities) || !Array.isArray(account.workspaces))
     throw new DataApiError(400, "Invalid account payload.");
-  await ensureProfile(client, user, config);
+  if (!currentAccount) await ensureProfile(client, user, config);
   const hasLogoPath = await hasColumn(client, "workspaces", "logo_path");
   const hasActiveWorkspace = await hasColumn(client, "user_preferences", "active_workspace_id");
   const hasReportFilters = await hasColumn(client, "user_preferences", "report_filters");
@@ -74,12 +75,23 @@ export async function syncAccount(client, user, config, account) {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("");
-  await client.query(
-    `update public.profiles set name = $2, email = $3, initials = $4, updated_at = now() where id = $1`,
-    [user.id, ownName, ownEmail, ownInitials],
-  );
+  if (
+    !currentAccount ||
+    !accountsEqual(
+      ownIdentity,
+      currentAccount.identities.find((item) => item.id === user.id),
+    )
+  )
+    await client.query(
+      `update public.profiles set name = $2, email = $3, initials = $4, updated_at = now() where id = $1`,
+      [user.id, ownName, ownEmail, ownInitials],
+    );
   const ownPreferences = account.preferencesByUserId?.[user.id];
-  if (ownPreferences) {
+  if (
+    ownPreferences &&
+    (!currentAccount ||
+      !accountsEqual(ownPreferences, currentAccount.preferencesByUserId?.[user.id]))
+  ) {
     const preferenceValues = [
       user.id,
       ownPreferences.language,
@@ -123,6 +135,15 @@ export async function syncAccount(client, user, config, account) {
       }
     }
     const workspaceId = uuid(data.workspace.id);
+    const previousData = currentAccount?.workspaces.find(
+      (item) => item.workspace.id === workspaceId,
+    );
+    if (previousData && accountsEqual(data, previousData)) continue;
+    const previousClients = new Map((previousData?.clients ?? []).map((item) => [item.id, item]));
+    const previousProjects = new Map((previousData?.projects ?? []).map((item) => [item.id, item]));
+    const previousMemberships = new Map(
+      (previousData?.memberships ?? []).map((item) => [item.userId, item]),
+    );
     const ownerId = String(data.workspace.ownerId);
     if (data.workspace.status !== "active" && data.workspace.status !== "archived") {
       throw new DataApiError(400, "Choose a valid workspace status.");
@@ -226,7 +247,7 @@ export async function syncAccount(client, user, config, account) {
       }
       // Member snapshots may contain stale or tampered workspace fields.
       // Only their own time entries can be synchronized from this branch.
-      await syncEntries(client, user.id, workspaceId, data.entries ?? []);
+      await syncEntries(client, user.id, workspaceId, data.entries ?? [], previousData?.entries);
       continue;
     }
     const membershipByUserId = new Map();
@@ -342,7 +363,13 @@ export async function syncAccount(client, user, config, account) {
         throw new DataApiError(403, "You cannot remove this workspace member.");
       }
     }
-    await client.query(`delete from public.project_members where workspace_id = $1`, [workspaceId]);
+    const changedProjects = (data.projects ?? []).filter(
+      (item) => !accountsEqual(item, previousProjects.get(item.id)),
+    );
+    await client.query(
+      `delete from public.project_members where workspace_id = $1 and project_id = any($2::uuid[])`,
+      [workspaceId, changedProjects.map((item) => uuid(item.id))],
+    );
     await client.query(
       `delete from public.projects where workspace_id = $1 and not (id = any($2::uuid[]))`,
       [workspaceId, (data.projects ?? []).map((project) => uuid(project.id))],
@@ -359,6 +386,7 @@ export async function syncAccount(client, user, config, account) {
       // Protected members are included in every account snapshot. Validation
       // above rejects role/status changes; do not rewrite their other fields.
       if (protectedMembershipIds.has(membership.userId)) continue;
+      if (accountsEqual(membership, previousMemberships.get(membership.userId))) continue;
       if (membership.userId === user.id) {
         const billing = membershipBilling(membership);
         await client.query(
@@ -393,6 +421,7 @@ export async function syncAccount(client, user, config, account) {
       }
     }
     for (const item of data.clients ?? []) {
+      if (item && accountsEqual(item, previousClients.get(item.id))) continue;
       if (!item || typeof item !== "object") {
         throw new DataApiError(400, "Invalid client payload.");
       }
@@ -450,7 +479,7 @@ export async function syncAccount(client, user, config, account) {
         throw new DataApiError(403, "A client identifier belongs to another workspace.");
       }
     }
-    for (const project of data.projects ?? []) {
+    for (const project of changedProjects) {
       if (!project || typeof project !== "object" || !Array.isArray(project.memberIds ?? [])) {
         throw new DataApiError(400, "Invalid project payload.");
       }
@@ -491,7 +520,7 @@ export async function syncAccount(client, user, config, account) {
         );
       }
     }
-    await syncEntries(client, user.id, workspaceId, data.entries ?? []);
+    await syncEntries(client, user.id, workspaceId, data.entries ?? [], previousData?.entries);
   }
   if (ownPreferences && hasActiveWorkspace) {
     const requestedWorkspaceId = ownPreferences.activeWorkspaceId

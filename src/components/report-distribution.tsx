@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Tabs } from "@heroui/react/tabs";
+import { SegmentedControl } from "./segmented-control";
 import { Tooltip } from "@heroui/react/tooltip";
 import { CircleInfo } from "@gravity-ui/icons";
 import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis } from "recharts";
@@ -94,24 +94,15 @@ export function ReportDistribution({
       action={
         <div className="report-distribution-actions">
           <span>{formatDistributionPeriod(analytics.period, locale)}</span>
-          <Tabs
-            selectedKey={mode}
-            onSelectionChange={(key) => setMode(String(key))}
-            aria-label={t("Hours distribution")}
-          >
-            <Tabs.ListContainer>
-              <Tabs.List aria-label={t("Hours distribution")}>
-                <Tabs.Tab id="total">
-                  {t("General")}
-                  <Tabs.Indicator />
-                </Tabs.Tab>
-                <Tabs.Tab id="projects">
-                  {t("By project")}
-                  <Tabs.Indicator />
-                </Tabs.Tab>
-              </Tabs.List>
-            </Tabs.ListContainer>
-          </Tabs>
+          <SegmentedControl
+            value={mode}
+            onChange={setMode}
+            label={t("Hours distribution")}
+            options={[
+              { value: "total", label: t("General") },
+              { value: "projects", label: t("By project") },
+            ]}
+          />
         </div>
       }
       isEmpty={analytics.summary.totalSeconds === 0}

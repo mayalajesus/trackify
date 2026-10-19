@@ -4,6 +4,8 @@ import { createMemberActions } from "@/lib/store/member-actions";
 import { createProjectActions } from "@/lib/store/project-actions";
 import { createTimerActions } from "@/lib/store/timer-actions";
 import { createWorkspaceActions } from "@/lib/store/workspace-actions";
+import { useAccountPersistence } from "@/lib/store/use-account-persistence";
+import { accountsEqual } from "../../shared/account-merge.mjs";
 import { useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import {
@@ -226,32 +228,51 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [activeMemberId, activeWorkspaceId, entries, timer]);
   const retryAccountLoad = useCallback(() => setAccountReloadKey((value) => value + 1), []);
 
-  const persistAccount = useCallback((): Promise<boolean> => {
-    const previousSync = accountSyncPromiseRef.current ?? Promise.resolve();
-    const request = previousSync
-      .catch(() => undefined)
-      .then(async () => {
-        if (!authenticatedUserId || accountScopeRef.current !== accountScope) return false;
-        const snapshot = accountForSyncRef.current;
-        if (JSON.stringify(snapshot) === JSON.stringify(syncedAccountRef.current)) return true;
-        const result = await dataSource.syncAccount(authenticatedUserId, snapshot);
-        if (accountScopeRef.current !== accountScope) return false;
-        if (!result.success) {
-          setAccountError(result.error);
-          return false;
-        }
-        syncedAccountRef.current = snapshot;
-        setAccountError(null);
-        return true;
-      });
-    const trackedSync: Promise<void> = request
-      .then(() => undefined)
-      .finally(() => {
-        if (accountSyncPromiseRef.current === trackedSync) accountSyncPromiseRef.current = null;
-      });
-    accountSyncPromiseRef.current = trackedSync;
-    return request;
-  }, [accountScope, authenticatedUserId, dataSource]);
+  const applySavedAccount = useCallback((next: PersistedAccount) => {
+    accountRef.current = next;
+    setAccount(next);
+    const workspace = next.workspaces.find(
+      (data) => data.workspace.id === timerWorkspaceRef.current,
+    );
+    if (!workspace) return;
+    setEntries(workspace.entries);
+    setProjects(workspace.projects);
+    setClients(workspace.clients);
+    setMembers(
+      reuseIfEqual(
+        membersRef.current,
+        workspace.memberships
+          .map((membership) => membershipToMember(membership, next.identities))
+          .filter((member): member is Member => member !== null),
+      ),
+    );
+    setSettingsState(workspace.settings);
+    setTrelloState(workspace.trello);
+  }, []);
+
+  const {
+    persistAccount,
+    accountPersistenceError,
+    setAccountPersistenceError,
+    retryAccountSave,
+    downloadPendingChanges,
+    timerSaveRetryKey,
+    timerLoadRetryKey,
+  } = useAccountPersistence({
+    userId: authenticatedUserId,
+    dataSource,
+    scope: accountScope,
+    scopeRef: accountScopeRef,
+    snapshotRef: accountForSyncRef,
+    syncedRef: syncedAccountRef,
+    queueRef: accountSyncPromiseRef,
+    timerRef,
+    timerQueueRef: timerSyncPromiseRef,
+    timerError: timerPersistenceError,
+    hydrated,
+    timerHydrated,
+    onSaved: applySavedAccount,
+  });
 
   const refreshAccount = useCallback(async (): Promise<boolean> => {
     if (authLoading || !authenticatedUserId || !hydrated) return false;
@@ -260,7 +281,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     // Polls must not replace edits waiting for the debounce or an active save.
     if (
       accountSyncPromiseRef.current ||
-      JSON.stringify(accountForSyncRef.current) !== JSON.stringify(syncedAccountRef.current)
+      !accountsEqual(accountForSyncRef.current, syncedAccountRef.current)
     )
       return false;
     if (accountRefreshPromiseRef.current) {
@@ -274,7 +295,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const result = await dataSource.loadAccount(authenticatedUserId);
       if (accountScopeRef.current !== scope || accountForSyncRef.current !== snapshot) return false;
       if (!result.success) {
-        setAccountError(result.error);
+        setAccountPersistenceError(result.error);
         return false;
       }
 
@@ -322,6 +343,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setTimer(initialTimer);
         setTimerHydrated(false);
         setAccountError(null);
+        setAccountPersistenceError(null);
         return true;
       }
 
@@ -344,6 +366,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setTimerHydrated(false);
       }
       setAccountError(null);
+      setAccountPersistenceError(null);
       return true;
     })();
     accountRefreshPromiseRef.current = request;
@@ -352,11 +375,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     } finally {
       if (accountRefreshPromiseRef.current === request) accountRefreshPromiseRef.current = null;
     }
-  }, [accountScope, activeWorkspaceId, authLoading, dataSource, hydrated, authenticatedUserId]);
+  }, [
+    accountScope,
+    activeWorkspaceId,
+    authLoading,
+    dataSource,
+    hydrated,
+    authenticatedUserId,
+    setAccountPersistenceError,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
     if (authLoading) return;
+    setAccountPersistenceError(null);
     if (!authenticatedUserId) {
       syncedAccountRef.current = null;
       setTimerPersistenceError(null);
@@ -440,7 +472,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [accountReloadKey, authLoading, dataSource, authenticatedUserId]);
+  }, [accountReloadKey, authLoading, dataSource, authenticatedUserId, setAccountPersistenceError]);
 
   useEffect(() => {
     if (!hydrated || !authenticatedUserId) return;
@@ -520,7 +552,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [accountScope, activeMemberId, activeWorkspaceId, dataSource, hydrated, authenticatedUserId]);
+  }, [
+    accountScope,
+    activeMemberId,
+    activeWorkspaceId,
+    dataSource,
+    hydrated,
+    authenticatedUserId,
+    timerLoadRetryKey,
+  ]);
 
   useEffect(() => {
     if (!timerHydrated || !authenticatedUserId || !activeWorkspaceId) return;
@@ -652,6 +692,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     timerHydrated,
     accountScope,
     persistAccount,
+    timerSaveRetryKey,
   ]);
 
   useEffect(() => {
@@ -696,7 +737,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (!hydrated || !authenticatedUserId) return;
     // Hydration and refreshes are reads, not local edits. Compare against the
     // actual server snapshot instead of skipping the next arbitrary render.
-    if (JSON.stringify(accountForSync) === JSON.stringify(syncedAccountRef.current)) return;
+    if (accountsEqual(accountForSync, syncedAccountRef.current)) return;
     const id = window.setTimeout(() => {
       void persistAccount();
     }, 200);
@@ -1173,8 +1214,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       activeWorkspaceId,
       sessionStatus,
       accountLoading,
-      accountError: accountError ?? timerPersistenceError,
+      accountError,
+      accountPersistenceError: accountPersistenceError ?? timerPersistenceError,
       retryAccountLoad,
+      retryAccountSave,
+      downloadPendingChanges,
       can,
       canTrackProject,
       findEntryConflict,
@@ -1227,6 +1271,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [
     account,
     accountError,
+    accountPersistenceError,
     accountLoading,
     accountScope,
     activeMemberId,
@@ -1245,6 +1290,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     recentTasks,
     persistAccount,
     retryAccountLoad,
+    retryAccountSave,
+    downloadPendingChanges,
     authenticatedUserId,
     sessionStatus,
     settings,

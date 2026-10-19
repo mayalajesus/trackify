@@ -20,6 +20,7 @@ export function syncEntries(
   userId: string,
   workspaceId: string,
   entries: Array<Record<string, unknown>>,
+  previousEntries?: Array<Record<string, unknown>>,
 ): Promise<void>;
 export function createWorkspace(
   client: QueryClient,
@@ -31,6 +32,7 @@ export function loadAccount(
   client: QueryClient,
   user: { id: string; email: string; name?: string; avatarUrl?: string },
   config: Record<string, unknown>,
+  options?: { profileEnsured?: boolean },
 ): Promise<{
   version: number;
   identities: Array<{ id: string; name: string; email: string; initials: string }>;

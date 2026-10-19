@@ -7,7 +7,7 @@ async function signIn(page: Page) {
   await page.getByLabel(/^(Email|E-mail)\s*\*?$/).fill(credentials.email);
   await page.getByLabel(/^(Password|Senha)\s*\*?$/).fill(credentials.password);
   await page.getByRole("button", { name: /^(Sign in|Entrar)$/ }).click();
-  await expect(page).toHaveURL(/\/tracker/);
+  await expect(page).toHaveURL(/\/tracker/, { timeout: 30_000 });
 }
 
 async function simulateFirstAccess(

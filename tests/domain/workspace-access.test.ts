@@ -23,7 +23,7 @@ describe("company workspace access", () => {
     { status: "pending", expires_at: new Date(Date.now() + 60_000), workspace_status: "archived" },
   ])("does not grant unavailable invitations: %j", async (state) => {
     const query = vi.fn(async (sql: string) => {
-      if (sql.includes("select name, email from public.profiles"))
+      if (sql.includes("select p.name, p.email, p.initials"))
         return emptyResult([{ name: user.name, email: user.email }]);
       if (sql.includes("from public.workspace_invitations invitation"))
         return emptyResult([
@@ -71,7 +71,7 @@ describe("company workspace access", () => {
     "loads preferences without a workspace, preserving saved language %s",
     async (language) => {
       const query = vi.fn(async (sql: string, _parameters?: unknown[]) => {
-        if (sql.includes("select name, email from public.profiles")) {
+        if (sql.includes("select p.name, p.email, p.initials")) {
           return emptyResult([{ name: user.name, email: user.email }]);
         }
         if (sql.includes("information_schema.columns")) return emptyResult([{ present: false }]);
@@ -119,7 +119,7 @@ describe("company workspace access", () => {
 
   it("lets any authenticated user create a company workspace as its owner", async () => {
     const query = vi.fn(async (sql: string, _parameters?: unknown[]) => {
-      if (sql.includes("select name, email from public.profiles")) {
+      if (sql.includes("select p.name, p.email, p.initials")) {
         return emptyResult([{ name: user.name, email: user.email }]);
       }
       if (sql.includes("select count(*)::integer as count")) {
@@ -148,7 +148,7 @@ describe("company workspace access", () => {
 
   it("limits a user to five owned workspaces", async () => {
     const query = vi.fn(async (sql: string, _parameters?: unknown[]) => {
-      if (sql.includes("select name, email from public.profiles")) {
+      if (sql.includes("select p.name, p.email, p.initials")) {
         return emptyResult([{ name: user.name, email: user.email }]);
       }
       if (sql.includes("select count(*)::integer as count")) {
@@ -174,7 +174,7 @@ describe("company workspace access", () => {
     const workspaceId = "11111111-1111-4111-8111-111111111111";
     const invitationId = "22222222-2222-4222-8222-222222222222";
     const query = vi.fn(async (sql: string, _parameters?: unknown[]) => {
-      if (sql.includes("select name, email from public.profiles")) {
+      if (sql.includes("select p.name, p.email, p.initials")) {
         return emptyResult([{ name: user.name, email: user.email }]);
       }
       if (sql.includes("from public.workspace_invitations invitation")) {
@@ -210,7 +210,7 @@ describe("company workspace access", () => {
   it("does not grant an invitation issued to another email", async () => {
     const invitationId = "33333333-3333-4333-8333-333333333333";
     const query = vi.fn(async (sql: string, _parameters?: unknown[]) => {
-      if (sql.includes("select name, email from public.profiles")) {
+      if (sql.includes("select p.name, p.email, p.initials")) {
         return emptyResult([{ name: user.name, email: user.email }]);
       }
       if (sql.includes("from public.workspace_invitations invitation")) {

@@ -12,6 +12,19 @@ export async function hasColumn(client, tableName, columnName) {
   return Boolean(result.rows[0]?.present);
 }
 
+// Read capabilities in one round trip; do not cache across deployments/migrations.
+export async function accountColumns(client) {
+  const result = await client.query(
+    `select table_name, column_name from information_schema.columns
+      where table_schema = 'public'
+        and table_name in ('workspaces', 'user_preferences')
+        and column_name in ('logo_path', 'logo_data_url', 'active_workspace_id',
+                            'report_filters', 'avatar_data_url', 'favorite_tasks')`,
+  );
+  const columns = new Set(result.rows.map((row) => `${row.table_name}.${row.column_name}`));
+  return (table, column) => columns.has(`${table}.${column}`);
+}
+
 export async function workspaceAccess(client, userId, workspaceId) {
   const result = await client.query(
     `select w.status, w.owner_id, wm.role, wm.status as membership_status

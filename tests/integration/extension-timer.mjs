@@ -72,8 +72,10 @@ try {
     (e) => e.status === 409,
   );
   await db.query(
-    "update public.active_timers set started_at=clock_timestamp()-interval '65 seconds' where workspace_id=$1",
-    [ws],
+    // Seed against the same application clock used by extensionElapsed; the
+    // remote database clock can differ from the Windows/CI runner's clock.
+    "update public.active_timers set started_at=$2::timestamptz where workspace_id=$1",
+    [ws, new Date(Date.now() - 65_000).toISOString()],
   );
   ({ timer } = await extensionContext(client, user, { workspaceId: ws }));
   const beforePause = timer.version;

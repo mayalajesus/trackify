@@ -73,6 +73,7 @@ export interface WorkspaceData {
 
 export type PersistedAccount = {
   version: 13;
+  syncProtocol?: 1;
   identities: UserIdentity[];
   workspaces: WorkspaceData[];
   preferencesByUserId: Record<string, UserPreferences>;

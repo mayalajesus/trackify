@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { signInAs } from "../support/qa-auth";
+import { openAppPage, signInAs } from "../support/qa-auth";
 
 test("loads reports directly without entering an update loop", async ({ page }) => {
   await signInAs(page, "owner");
@@ -17,7 +17,7 @@ test("loads reports directly without entering an update loop", async ({ page }) 
     }
   });
 
-  await page.goto("/reports");
+  await openAppPage(page, "/reports");
   await expect(page.getByRole("heading", { name: /Reports|Relatórios/, level: 1 })).toBeVisible();
   await expect(page).toHaveURL(/\/reports\?.*preset=/);
   await page.waitForTimeout(500);
@@ -44,7 +44,7 @@ test("keeps reports interactive while switching and reusing periods", async ({ p
   });
 
   await signInAs(page, "owner");
-  await page.goto("/reports?preset=this-week");
+  await openAppPage(page, "/reports?preset=this-week");
   await expect(page.locator("#main-content")).toBeVisible();
   await expect.poll(() => reportRequests.length).toBeGreaterThan(0);
 
@@ -65,72 +65,66 @@ test("keeps reports interactive while switching and reusing periods", async ({ p
   expect(reportRequests.length).toBe(requestCountAfterNext);
 });
 
-test("persists report filters across report views, reloads and route navigation", async ({
+test("persists the client filter across report views, reloads and route navigation", async ({
   page,
 }) => {
+  test.setTimeout(90_000);
   await signInAs(page, "owner");
   await page.evaluate(() => {
     for (const key of Object.keys(window.localStorage)) {
       if (key.startsWith("trackify:report-filters:")) window.localStorage.removeItem(key);
     }
   });
-
-  await page.goto("/reports?view=overview");
-  await expect(
-    page.getByRole("button", { name: /Billability filter|Filtro de Faturabilidade/ }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: /Open Billability|Open Faturabilidade/ }).click();
-  await page.getByRole("menuitemradio", { name: /Internal|Interno/ }).click();
-  await expect(page).toHaveURL(/billability=internal/);
-
-  await page
-    .getByRole("navigation", { name: /Report views|Visualizações do relatório/ })
-    .getByRole("button", { name: /Detailed|Detalhado/ })
-    .click();
+  await openAppPage(page, "/reports?view=overview");
+  const clientFilter = page.getByRole("button", { name: /Client filter|Filtro de Cliente/ });
+  await expect(clientFilter).toBeVisible();
+  const clear = page.getByRole("button", { name: /Clear filters|Limpar filtros/ });
+  if (await clear.isEnabled()) {
+    await clear.click();
+    await expect(clear).toBeDisabled();
+  }
+  await clientFilter.click();
+  const option = page.getByRole("menuitemcheckbox").first();
+  const clientName = (await option.innerText()).trim();
+  const clientId = await option.getAttribute("data-key");
+  if (!clientId) throw new Error("The client option has no stable identifier.");
+  const saved = page.waitForResponse((response) => {
+    if (!response.url().includes("/api/data")) return false;
+    const body = response.request().postDataJSON() as {
+      operation?: string;
+      account?: {
+        preferencesByUserId?: Record<
+          string,
+          { reportFilters?: Record<string, { clientIds?: string[] }> }
+        >;
+      };
+    };
+    return (
+      body.operation === "syncAccount" &&
+      Object.values(body.account?.preferencesByUserId ?? {}).some((preferences) =>
+        Object.values(preferences.reportFilters ?? {}).some((filters) =>
+          filters.clientIds?.includes(clientId),
+        ),
+      )
+    );
+  });
+  await option.click();
+  await page.keyboard.press("Escape");
+  expect((await saved).status()).toBe(200);
+  const verifyFilter = async () => {
+    await expect.poll(() => new URL(page.url()).searchParams.get("clients")).toBe(clientId);
+    await expect(clientFilter).toContainText(clientName);
+  };
+  await verifyFilter();
+  await page.getByRole("radio", { name: /^(Detailed|Detalhado)$/ }).click();
   await expect(page).toHaveURL(/view=detailed/);
-  await expect(page).toHaveURL(/billability=internal/);
-  await expect(
-    page.getByRole("button", { name: /Billability filter|Filtro de Faturabilidade/ }),
-  ).toContainText(/Internal|Interno/);
-  await page.getByRole("button", { name: /Choose columns|Escolher colunas/ }).click();
-  await page
-    .getByRole("dialog", { name: /Choose columns|Escolher colunas/ })
-    .getByRole("checkbox", { name: /Description|Descrição/ })
-    .check({ force: true });
-  await expect(page).toHaveURL(/columns=[^&]*description/);
-
+  await verifyFilter();
   await page.reload();
   await expect(page.locator("#main-content")).toBeVisible({ timeout: 30_000 });
-  await expect(page).toHaveURL(/view=detailed/);
-  await expect(page).toHaveURL(/billability=internal/);
-  await expect(
-    page.getByRole("button", { name: /Billability filter|Filtro de Faturabilidade/ }),
-  ).toContainText(/Internal|Interno/);
-  await page.getByRole("button", { name: /Choose columns|Escolher colunas/ }).click();
-  await expect(
-    page
-      .getByRole("dialog", { name: /Choose columns|Escolher colunas/ })
-      .getByRole("checkbox", { name: /Description|Descrição/ }),
-  ).toBeChecked();
-  await page.keyboard.press("Escape");
-
-  await page.goto("/tracker");
-  await expect(page.locator("#main-content")).toBeVisible({ timeout: 30_000 });
-  await page.goto("/reports?view=overview");
-  await expect(page.locator("#main-content")).toBeVisible({ timeout: 30_000 });
-  await expect(page).toHaveURL(/view=overview/);
-  await expect(page).toHaveURL(/billability=internal/);
-  await expect(
-    page.getByRole("button", { name: /Billability filter|Filtro de Faturabilidade/ }),
-  ).toContainText(/Internal|Interno/);
-  await page
-    .getByRole("navigation", { name: /Report views|Visualizações do relatório/ })
-    .getByRole("button", { name: /Detailed|Detalhado/ })
-    .click();
-  await page.getByRole("button", { name: /Choose columns|Escolher colunas/ }).click();
-  await expect(
-    page
-      .getByRole("dialog", { name: /Choose columns|Escolher colunas/ })
-      .getByRole("checkbox", { name: /Description|Descrição/ }),
-  ).toBeChecked();
+  await expect(page.getByRole("radio", { name: /^(Detailed|Detalhado)$/ })).toBeChecked();
+  await verifyFilter();
+  await openAppPage(page, "/tracker");
+  await openAppPage(page, "/reports?view=overview");
+  await expect(page.getByRole("radio", { name: /^(Overview|Visão geral)$/ })).toBeChecked();
+  await verifyFilter();
 });

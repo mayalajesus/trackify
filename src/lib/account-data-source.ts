@@ -80,7 +80,11 @@ export interface AccountDataSource {
     userId: string,
     query: ReportEntriesQuery,
   ): Promise<DataSourceResult<TimeEntry[]>>;
-  syncAccount(userId: string, account: PersistedAccount): Promise<DataSourceResult<null>>;
+  syncAccount(
+    userId: string,
+    account: PersistedAccount,
+    baseAccount: PersistedAccount,
+  ): Promise<DataSourceResult<PersistedAccount>>;
   updatePreferences(
     userId: string,
     patch: Partial<UserPreferences>,

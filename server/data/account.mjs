@@ -1,4 +1,4 @@
-import { hasColumn } from "./access.mjs";
+import { accountColumns } from "./access.mjs";
 import { timeEntryFromRow } from "./entries.mjs";
 import { invitationMember } from "./invitations.mjs";
 import { ensureProfile } from "./profile.mjs";
@@ -24,12 +24,13 @@ export function emptyTrello() {
   };
 }
 
-export async function loadAccount(client, user, config) {
-  await ensureProfile(client, user, config);
-  const hasLogoPath = await hasColumn(client, "workspaces", "logo_path");
-  const hasLogoData = await hasColumn(client, "workspaces", "logo_data_url");
-  const hasActiveWorkspace = await hasColumn(client, "user_preferences", "active_workspace_id");
-  const hasReportFilters = await hasColumn(client, "user_preferences", "report_filters");
+export async function loadAccount(client, user, config, { profileEnsured = false } = {}) {
+  if (!profileEnsured) await ensureProfile(client, user, config);
+  const column = await accountColumns(client);
+  const hasLogoPath = column("workspaces", "logo_path");
+  const hasLogoData = column("workspaces", "logo_data_url");
+  const hasActiveWorkspace = column("user_preferences", "active_workspace_id");
+  const hasReportFilters = column("user_preferences", "report_filters");
   const workspaces = await client.query(
     `select w.id::text, w.name, w.owner_id, w.status, w.created_at, w.archived_at,
             ${hasLogoPath ? "w.logo_path" : "null::text as logo_path"},
@@ -121,25 +122,15 @@ export async function loadAccount(client, user, config) {
       order by date asc, start_time asc`,
     [workspaceIds, user.id],
   );
-  const hasAvatarData = await hasColumn(client, "user_preferences", "avatar_data_url");
-  if (hasAvatarData) {
-    for (const id of profileIds) {
-      await client.query(
-        `insert into public.user_preferences (user_id, avatar_data_url)
-         values ($1, $2)
-         on conflict (user_id) do update
-           set avatar_data_url = coalesce(nullif(public.user_preferences.avatar_data_url, ''), excluded.avatar_data_url),
-               updated_at = now()`,
-        [id, defaultAvatarForUser(id)],
-      );
-    }
-  }
+  // Default avatars are deterministic below. Loading an account must never
+  // lock/rewrite the preferences of its members just to fill a display fallback.
+  const hasAvatarData = column("user_preferences", "avatar_data_url");
   const preferences = await client.query(
     `select user_id, language, theme, timezone, ${
       hasAvatarData ? "avatar_data_url" : "null::text as avatar_data_url"
     }, ${hasActiveWorkspace ? "active_workspace_id::text" : "null::text as active_workspace_id"},
        ${hasReportFilters ? "report_filters" : "'{}'::jsonb as report_filters"},
-       ${(await hasColumn(client, "user_preferences", "favorite_tasks")) ? "favorite_tasks" : "'{}'::jsonb as favorite_tasks"}
+       ${column("user_preferences", "favorite_tasks") ? "favorite_tasks" : "'{}'::jsonb as favorite_tasks"}
        from public.user_preferences where user_id = any($1::text[])`,
     [profileIds],
   );
@@ -257,6 +248,7 @@ export async function loadAccount(client, user, config) {
   );
   return {
     version: 13,
+    syncProtocol: 1,
     identities,
     workspaces: workspaces.rows.map((row) => ({
       workspace: {

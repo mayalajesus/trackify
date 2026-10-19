@@ -375,7 +375,7 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
               />
             )}
 
-            <Toolbar aria-label={t("Timer")} className="shrink-0 gap-1">
+            <div role="group" aria-label={t("Timer")} className="flex shrink-0 items-center gap-1">
               <TimerActionButton
                 status={timer.status}
                 onPress={() => {
@@ -456,7 +456,7 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
                   </IconTooltip>
                 </ToggleButtonGroup>
               ) : null}
-            </Toolbar>
+            </div>
           </div>
         </Toolbar>
       </Card>

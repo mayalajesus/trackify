@@ -1,4 +1,5 @@
 import { DataApiError } from "../data-api-error.mjs";
+import { accountsEqual } from "../../shared/account-merge.mjs";
 import { taskDetailsValue } from "../task-actions.mjs";
 import { requireWorkspaceAccess } from "./access.mjs";
 import {
@@ -135,8 +136,9 @@ export async function upsertOwnEntry(client, userId, workspaceId, entry, entryId
   }
 }
 
-export async function syncEntries(client, userId, workspaceId, entries) {
+export async function syncEntries(client, userId, workspaceId, entries, previousEntries) {
   if (!Array.isArray(entries)) throw new DataApiError(400, "Invalid time entries payload.");
+  if (previousEntries && accountsEqual(entries, previousEntries)) return;
   const ownEntries = entries.filter((entry) => entry?.userId === userId);
   const entryIds = ownEntries.map((entry) => uuid(entry.id));
   if (new Set(entryIds).size !== entryIds.length) {
@@ -154,7 +156,9 @@ export async function syncEntries(client, userId, workspaceId, entries) {
     [workspaceId, userId, entryIds],
   );
 
+  const previousById = new Map((previousEntries ?? []).map((entry) => [entry.id, entry]));
   for (const [index, entry] of ownEntries.entries()) {
+    if (accountsEqual(entry, previousById.get(entry.id))) continue;
     await upsertOwnEntry(client, userId, workspaceId, entry, entryIds[index]);
   }
   // Preserve replica ids and personal billing rates while copying the creator's
