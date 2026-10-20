@@ -65,6 +65,11 @@
   padding: 0;
   gap: 12px;
 }
+.client-form-modal .modal__body {
+  /* Keep focus rings and swatch outlines inside the scrollable body's bounds. */
+  margin: -3px;
+  padding: 3px;
+}
 .client-form-modal .label {
   font-size: 14px;
   line-height: 20px;
