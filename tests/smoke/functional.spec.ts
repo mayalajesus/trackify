@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { cleanQaData } from "../support/qa-db.mjs";
 import { signInAs } from "../support/qa-auth";
 
@@ -7,6 +7,22 @@ const clientName = `${marker} Client`;
 const projectName = `${marker} Project`;
 const trackerProjectName = `${marker} Tracker Project`;
 const activeTimerProjectName = `${marker} Active Timer Project`;
+
+async function expectPaginatedRecord(page: Page, record: Locator) {
+  await expect(page.getByRole("grid").first()).toBeVisible();
+  const firstRow = page.getByRole("grid").first().getByRole("row").nth(1);
+  const next = page
+    .getByRole("navigation", { name: /pagination|paginação/ })
+    .getByRole("button", { name: /^(Next|Próximo)$/ });
+  for (let pageIndex = 0; pageIndex < 100; pageIndex += 1) {
+    if (await record.isVisible()) return;
+    if (!(await next.isVisible()) || !(await next.isEnabled())) break;
+    const previousFirstRow = await firstRow.innerText();
+    await next.click();
+    await expect(firstRow).not.toHaveText(previousFirstRow);
+  }
+  await expect(record).toBeVisible();
+}
 
 function waitForAccountSync(page: import("@playwright/test").Page) {
   return page.waitForResponse((response) => {
@@ -53,9 +69,9 @@ test("owner persists client, project and timer data in Neon", async ({ page }) =
   const clientSync = waitForAccountSync(page);
   await clientDialog.getByRole("button", { name: /Create client|Criar cliente/ }).click();
   await clientSync;
-  await expect(page.getByRole("rowheader", { name: clientName, exact: true })).toBeVisible();
+  await expectPaginatedRecord(page, page.getByRole("rowheader", { name: clientName, exact: true }));
   await page.reload();
-  await expect(page.getByRole("rowheader", { name: clientName, exact: true })).toBeVisible();
+  await expectPaginatedRecord(page, page.getByRole("rowheader", { name: clientName, exact: true }));
 
   await page.goto("/projects");
   await page.getByRole("button", { name: /New project|Novo projeto/ }).click();
@@ -66,9 +82,9 @@ test("owner persists client, project and timer data in Neon", async ({ page }) =
   const projectSync = waitForAccountSync(page);
   await projectDialog.getByRole("button", { name: /Create project|Criar projeto/ }).click();
   await projectSync;
-  await expect(page.getByRole("link", { name: projectName, exact: true })).toBeVisible();
+  await expectPaginatedRecord(page, page.getByRole("link", { name: projectName, exact: true }));
   await page.reload();
-  await expect(page.getByRole("link", { name: projectName, exact: true })).toBeVisible();
+  await expectPaginatedRecord(page, page.getByRole("link", { name: projectName, exact: true }));
 
   await page.goto("/tracker");
   const trackerBar = await createProjectFromTracker(page, trackerProjectName);
