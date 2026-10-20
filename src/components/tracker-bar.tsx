@@ -318,17 +318,11 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
               ariaLabel={t("Task actions")}
               orientation="vertical"
               items={[
-                ...(active
-                  ? [
-                      {
-                        id: "note",
-                        icon: <Comment className="size-4" />,
-                        label: t(
-                          timer.taskDetails?.description ? "Edit description" : "Add a note",
-                        ),
-                      },
-                    ]
-                  : []),
+                {
+                  id: "note",
+                  icon: <Comment className="size-4" />,
+                  label: t(details.description ? "Edit description" : "Add a note"),
+                },
                 { id: "members", label: t("Add members"), icon: <PersonPlus className="size-4" /> },
                 {
                   id: "trello",
@@ -353,9 +347,20 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
               }}
             />
           </div>
-          {noteOpen && active ? (
+          {noteOpen ? (
             <TimerNoteModal
-              key={timer.taskDetails?.id ?? "timer"}
+              key={`${active ? "active" : "draft"}-${details.id}`}
+              taskDetails={details}
+              readOnly={Boolean(
+                active &&
+                timer.collaborationOwnerId &&
+                timer.collaborationOwnerId !== currentMember?.id,
+              )}
+              onSave={(next) => {
+                if (active) return updateTimer({ taskDetails: next });
+                setTaskDetails(next);
+                return { success: true };
+              }}
               onClose={() => setNoteOpen(false)}
             />
           ) : null}
