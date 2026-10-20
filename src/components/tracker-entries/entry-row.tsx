@@ -738,6 +738,7 @@ export function TrackerEntryRow({
             <ProjectSelect
               required
               trackerStyle
+              groupByClient
               showClientNameInOptions
               ariaLabel={t("Project")}
               value={draft.projectId ?? "none"}
