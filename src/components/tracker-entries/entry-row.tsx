@@ -168,8 +168,8 @@ export function TrackerEntryRow({
     if (elapsedMinutes <= 0 && !allowFullDayDuration && !(preciseDuration && preciseDuration > 0)) {
       return t("End time must be after start time.");
     }
-    if (candidate.projectId !== null && !projects.some((item) => item.id === candidate.projectId)) {
-      return t("Choose an existing project or No project.");
+    if (!projects.some((item) => item.id === candidate.projectId)) {
+      return t("Select a project");
     }
     return null;
   };
@@ -736,20 +736,26 @@ export function TrackerEntryRow({
         {activeField === "project" ? (
           <div data-tracker-field="project">
             <ProjectSelect
+              required
               trackerStyle
               showClientNameInOptions
               ariaLabel={t("Project")}
               value={draft.projectId ?? "none"}
               allowArchivedId={entry.projectId}
               onChange={(value) => {
-                const next = value === "none" || value === "all" ? null : value;
+                if (value === "none" || value === "all") return;
+                const next = value;
                 setDraft((current) => ({ ...current, projectId: next }));
                 if (commitField("project", next)) onDeactivate();
               }}
             />
             <Tooltip delay={350}>
               <Tooltip.Trigger className="mt-1 block truncate">
-                {selectedClientName}
+                <ClientColorLabel
+                  color={clients.find((item) => item.id === selectedProject?.clientId)?.color}
+                >
+                  {selectedClientName}
+                </ClientColorLabel>
               </Tooltip.Trigger>
               <Tooltip.Content
                 showArrow

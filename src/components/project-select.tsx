@@ -94,8 +94,12 @@ export function ProjectSelect({
           <ProjectLabel project={project} label={project.name} />
         )}
         {showClientNameInOptions && !groupByClient ? (
-          <span className="truncate text-xs leading-4 text-muted">
-            {clientNameFor(project.clientId)}
+          <span className="truncate text-xs leading-4">
+            <ClientColorLabel
+              color={clients.find((client) => client.id === project.clientId)?.color}
+            >
+              {clientNameFor(project.clientId)}
+            </ClientColorLabel>
           </span>
         ) : null}
       </span>
@@ -112,7 +116,10 @@ export function ProjectSelect({
       variant={variant}
       value={required && value === "none" ? null : value}
       placeholder={t("Select a project")}
-      onChange={(key) => onChange(key === null ? "none" : String(key))}
+      onChange={(key) => {
+        if (required && (key === null || key === "none" || key === "all")) return;
+        onChange(key === null ? "none" : String(key));
+      }}
       isOpen={isOpen}
       onOpenChange={(nextIsOpen) => {
         setIsOpen(nextIsOpen);
