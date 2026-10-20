@@ -3,6 +3,7 @@ import { Table } from "@heroui/react/table";
 import { Typography } from "@heroui/react/typography";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useI18n } from "@/lib/i18n";
+import { tablePageLinks } from "@/lib/table-pagination";
 
 export type DataTablePagination = {
   page: number;
@@ -23,7 +24,7 @@ export function DataTablePagination({
   nextLabel,
   ariaLabel,
 }: DataTablePagination) {
-  const pages = Array.from({ length: totalPages }, (_, index) => index + 1);
+  const pages = tablePageLinks(page, totalPages);
 
   return (
     <Pagination aria-label={ariaLabel} className="w-full flex-wrap justify-between gap-3" size="sm">
@@ -41,13 +42,17 @@ export function DataTablePagination({
         </Pagination.Item>
         {pages.map((pageNumber) => (
           <Pagination.Item key={pageNumber}>
-            <Pagination.Link
-              aria-label={`${ariaLabel} ${pageNumber}`}
-              isActive={pageNumber === page}
-              onPress={() => onPageChange(pageNumber)}
-            >
-              {pageNumber}
-            </Pagination.Link>
+            {typeof pageNumber === "string" ? (
+              <Pagination.Ellipsis />
+            ) : (
+              <Pagination.Link
+                aria-label={`${ariaLabel} ${pageNumber}`}
+                isActive={pageNumber === page}
+                onPress={() => onPageChange(pageNumber)}
+              >
+                {pageNumber}
+              </Pagination.Link>
+            )}
           </Pagination.Item>
         ))}
         <Pagination.Item>
@@ -90,7 +95,7 @@ export function DataTable({
   contentClassName?: string;
   scrollContainerClassName?: string;
   className?: string;
-  pagination?: DataTablePagination;
+  pagination?: DataTablePagination | undefined;
   footer?: ReactNode;
   scrollHint?: string;
   selectedKeys?: ReadonlySet<string>;

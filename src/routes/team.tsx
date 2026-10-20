@@ -25,6 +25,7 @@ import type { InvitationEmailStatus } from "@/lib/account-data-source";
 import { useRef, useState } from "react";
 import { ActionDropdown } from "@/components/action-dropdown";
 import { DataTable } from "@/components/data-table";
+import { useTablePagination } from "@/lib/use-table-pagination";
 import { FormAlert } from "@/components/form-feedback";
 import { ModalLayout } from "@/components/modal-layout";
 import { ModalTriggerRegistration } from "@/components/overlay-trigger-registration";
@@ -109,6 +110,7 @@ function TeamPage() {
 
   const secondsFor = (id: string) =>
     entries.filter((entry) => entry.userId === id).reduce((sum, entry) => sum + entry.seconds, 0);
+  const memberPage = useTablePagination(orderedMembers, activeWorkspaceId ?? "");
 
   const resetInviteForm = () => {
     setEmail("");
@@ -275,16 +277,21 @@ function TeamPage() {
         }
       />
 
-      <DataTable className="team-table" label={t("Team members")} minWidth="min-w-[680px]">
+      <DataTable
+        className="team-table"
+        label={t("Team members")}
+        minWidth="min-w-[680px]"
+        pagination={memberPage.pagination}
+      >
         <Table.Header>
           <Table.Column isRowHeader>{t("Member")}</Table.Column>
           <Table.Column>{t("Role")}</Table.Column>
           <Table.Column>{t("Status")}</Table.Column>
-          <Table.Column>{t("Tracked")}</Table.Column>
+          {can("view-all-reports") ? <Table.Column>{t("Tracked")}</Table.Column> : null}
           <Table.Column aria-label={t("Actions")}>{""}</Table.Column>
         </Table.Header>
         <Table.Body>
-          {orderedMembers.map((member) => {
+          {memberPage.items.map((member) => {
             const invited = member.status === "invited";
             const removed = member.status === "removed";
             const isCurrentMember = member.id === currentMember?.id;
@@ -327,9 +334,11 @@ function TeamPage() {
                     {invited ? t("Invited") : removed ? t("Removed") : t("Active")}
                   </Chip>
                 </Table.Cell>
-                <Table.Cell>
-                  {invited ? "—" : formatDuration(secondsFor(member.id), locale)}
-                </Table.Cell>
+                {can("view-all-reports") ? (
+                  <Table.Cell>
+                    {invited ? "—" : formatDuration(secondsFor(member.id), locale)}
+                  </Table.Cell>
+                ) : null}
                 <Table.Cell>
                   {invited && canManageTarget ? (
                     <div className="flex justify-end">

@@ -1106,6 +1106,7 @@ const ptBR: Record<string, string> = {
   "Total · {count} entries": "Total · {count} registros",
   "{count} entries · page {page} of {pages}": "{count} registros · página {page} de {pages}",
   Previous: "Anterior",
+  "{start} to {end} of {total} results": "{start} a {end} de {total} resultados",
   Next: "Próximo",
   "Report pages": "Páginas do relatório",
   "Group by": "Agrupar por",

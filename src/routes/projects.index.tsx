@@ -24,6 +24,7 @@ import { useState } from "react";
 import { ActionDropdown } from "@/components/action-dropdown";
 import { BillableIndicator } from "@/components/billable-indicator";
 import { DataTable } from "@/components/data-table";
+import { useTablePagination } from "@/lib/use-table-pagination";
 import { PageHeader } from "@/components/page-header";
 import { ProjectLabel } from "@/components/project-color";
 import { RouterLink } from "@/components/router-link";
@@ -58,8 +59,17 @@ export const Route = createFileRoute("/projects/")({
 });
 
 function ProjectsPage() {
-  const { projects, clients, entries, today, can, addProject, updateProject, deleteProject } =
-    useStore();
+  const {
+    projects,
+    clients,
+    entries,
+    today,
+    can,
+    addProject,
+    updateProject,
+    deleteProject,
+    activeWorkspaceId,
+  } = useStore();
   const { locale, t, error } = useI18n();
   const [filter, setFilter] = useState<string>("all");
   const [clientFilter, setClientFilter] = useState<string>("all");
@@ -80,6 +90,10 @@ function ProjectsPage() {
     );
   });
   const clientName = (id: string) => clients.find((c) => c.id === id)?.name ?? "—";
+  const projectPage = useTablePagination(
+    visible,
+    JSON.stringify([activeWorkspaceId, filter, clientFilter]),
+  );
   const projectSeconds = (id: string) =>
     entries.filter((e) => e.projectId === id).reduce((sum, e) => sum + e.seconds, 0);
 
@@ -275,6 +289,7 @@ function ProjectsPage() {
       ) : (
         <DataTable
           label={t("Projects")}
+          pagination={projectPage.pagination}
           minWidth="min-w-[820px]"
           scrollHint={t("Scroll horizontally to see all columns")}
         >
@@ -283,12 +298,12 @@ function ProjectsPage() {
             <Table.Column>{t("Client")}</Table.Column>
             <Table.Column>{t("Status")}</Table.Column>
             <Table.Column>{t("Billing")}</Table.Column>
-            <Table.Column>{t("Tracked")}</Table.Column>
+            {can("view-all-reports") ? <Table.Column>{t("Tracked")}</Table.Column> : null}
             <Table.Column>{t("Last activity")}</Table.Column>
             <Table.Column aria-label={t("Actions")}>{""}</Table.Column>
           </Table.Header>
           <Table.Body>
-            {visible.map((project) => (
+            {projectPage.items.map((project) => (
               <Table.Row key={project.id}>
                 <Table.Cell>
                   <RouterLink
@@ -316,9 +331,11 @@ function ProjectsPage() {
                 <Table.Cell>
                   <BillableIndicator billable={project.billable} />
                 </Table.Cell>
-                <Table.Cell className="whitespace-nowrap">
-                  {formatDuration(projectSeconds(project.id), locale)}
-                </Table.Cell>
+                {can("view-all-reports") ? (
+                  <Table.Cell className="whitespace-nowrap">
+                    {formatDuration(projectSeconds(project.id), locale)}
+                  </Table.Cell>
+                ) : null}
                 <Table.Cell className="whitespace-nowrap">
                   {formatDate(project.lastActivity, locale)}
                 </Table.Cell>

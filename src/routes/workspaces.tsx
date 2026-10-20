@@ -27,6 +27,7 @@ import { useEffect, useRef, useState } from "react";
 import type { RefObject } from "react";
 import { FormAlert } from "@/components/form-feedback";
 import { DataTable } from "@/components/data-table";
+import { useTablePagination } from "@/lib/use-table-pagination";
 import { ModalLayout } from "@/components/modal-layout";
 import { ModalTriggerRegistration } from "@/components/overlay-trigger-registration";
 import { ModalSelect } from "@/components/modal-select";
@@ -140,6 +141,7 @@ function WorkspacesPage() {
 
   const owned = workspaces.filter((workspace) => workspace.isOwned);
   const shared = workspaces.filter((workspace) => !workspace.isOwned);
+  const workspacePage = useTablePagination([...owned, ...shared], activeWorkspaceId ?? "");
   const isArchivingCurrent =
     confirmation?.kind === "archive" && confirmation.workspace.id === activeWorkspaceId;
   const hasAnotherActiveWorkspace = workspaces.some(
@@ -466,7 +468,12 @@ function WorkspacesPage() {
 
       {workspaces.length > 0 ? (
         <section aria-label={t("Workspace list")}>
-          <DataTable className="workspaces-table" label={t("Workspaces")} minWidth="min-w-[760px]">
+          <DataTable
+            className="workspaces-table"
+            label={t("Workspaces")}
+            minWidth="min-w-[760px]"
+            pagination={workspacePage.pagination}
+          >
             <Table.Header>
               <Table.Column isRowHeader>{t("Workspace")}</Table.Column>
               <Table.Column>{t("Owner")}</Table.Column>
@@ -474,7 +481,7 @@ function WorkspacesPage() {
               <Table.Column>{t("Status")}</Table.Column>
               <Table.Column aria-label={t("Actions")}>{""}</Table.Column>
             </Table.Header>
-            <Table.Body>{[...owned, ...shared].map(renderWorkspaceRow)}</Table.Body>
+            <Table.Body>{workspacePage.items.map(renderWorkspaceRow)}</Table.Body>
           </DataTable>
         </section>
       ) : (
