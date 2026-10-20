@@ -391,16 +391,6 @@ function ReportFilterDropdown({
               ) : null}
               {projectGroups ? (
                 <>
-                  {filteredOptions
-                    .filter((option) => option.id === "none")
-                    .map((option) => (
-                      <Dropdown.Item key={option.id} id={option.id} textValue={option.label}>
-                        <span className="truncate text-sm font-normal leading-5 text-foreground">
-                          {option.label}
-                        </span>
-                        <Dropdown.ItemIndicator />
-                      </Dropdown.Item>
-                    ))}
                   {projectGroups.map((group) => {
                     const groupOptions = filteredOptions.filter((option) =>
                       group.projectIds.includes(option.id),
@@ -771,15 +761,13 @@ export function ReportFiltersBar({
     [clients],
   );
   const projectOptions = useMemo(
-    () => [
-      { id: "none", label: t("No project"), description: t("No client") },
-      ...projects.map((project) => ({
+    () =>
+      projects.map((project) => ({
         id: project.id,
         label: project.name,
         description: clientNameById.get(project.clientId) ?? t("Unknown client"),
         project,
       })),
-    ],
     [clientNameById, projects, t],
   );
   const projectGroups = groupProjectsByClient(projects, clients, locale, t("Unknown client")).map(
@@ -837,19 +825,14 @@ export function ReportFiltersBar({
         projectGroups={projectGroups}
         values={values.projectIds}
         onChange={(selectedProjectIds) => {
-          const projectIds =
-            selectedProjectIds.includes("none") && !values.projectIds.includes("none")
-              ? ["none"]
-              : selectedProjectIds.filter((id) => id !== "none" || selectedProjectIds.length === 1);
-          const clientIds = projectIds.includes("none")
-            ? []
-            : [
-                ...new Set(
-                  projects
-                    .filter((project) => projectIds.includes(project.id))
-                    .map((project) => project.clientId),
-                ),
-              ];
+          const projectIds = selectedProjectIds.filter((id) => id !== "none");
+          const clientIds = [
+            ...new Set(
+              projects
+                .filter((project) => projectIds.includes(project.id))
+                .map((project) => project.clientId),
+            ),
+          ];
           onChange({ projectIds, clientIds });
         }}
         className={multiSelectClassName}
