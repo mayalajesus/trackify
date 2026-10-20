@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import {
   handleDataRequest,
@@ -7,13 +7,6 @@ import {
   upsertOwnEntry,
 } from "../../server/data-api.mjs";
 
-const dataApi = [
-  readFileSync(new URL("../../server/data-api.mjs", import.meta.url), "utf8"),
-  ...readdirSync(new URL("../../server/data/", import.meta.url))
-    .filter((name) => name.endsWith(".mjs"))
-    .sort()
-    .map((name) => readFileSync(new URL(`../../server/data/${name}`, import.meta.url), "utf8")),
-].join("\n");
 const vercel = JSON.parse(readFileSync(new URL("../../vercel.json", import.meta.url), "utf8")) as {
   headers: Array<{ source: string; headers: Array<{ key: string; value: string }> }>;
 };
@@ -39,29 +32,8 @@ describe("production security hardening", () => {
     currency: "BRL",
   };
 
-  it("keeps mutable records scoped to their workspace and entry owner", () => {
-    expect(dataApi).toContain("where clients.workspace_id = excluded.workspace_id");
-    expect(dataApi).toContain("where projects.workspace_id = excluded.workspace_id");
-    expect(dataApi).toContain("where time_entries.workspace_id = excluded.workspace_id");
-    expect(dataApi).toContain("and time_entries.user_id = excluded.user_id");
-    expect(dataApi).toMatch(
-      /delete from public\.time_entries[\s\S]*workspace_id = \$1 and user_id = \$2/i,
-    );
-    expect(dataApi).not.toMatch(
-      /delete from public\.time_entries where workspace_id = \$1 and not \(id = any/i,
-    );
-  });
-
-  it("requires accepted invitations for new workspace members", () => {
-    expect(dataApi).toContain(
-      "New workspace members must accept a valid invitation before they become active.",
-    );
-  });
-
-  it("routes workspace creation through the dedicated rate-limited operation", () => {
-    expect(dataApi).toContain("Create new workspaces with the createWorkspace operation.");
-    expect(dataApi).toContain("minvio:workspace-create:");
-  });
+  // Ownership, invitation and record scoping are exercised against real SQL
+  // in tests/integration/workspace-authorization.mjs, not inferred from text.
 
   it("synchronizes only the authenticated user's entries", async () => {
     const query = vi.fn(async (sql: string, _values?: unknown[]) => ({
@@ -88,12 +60,6 @@ describe("production security hardening", () => {
     await expect(
       upsertOwnEntry({ query }, userId, workspaceId, ownEntry, entryId),
     ).rejects.toMatchObject({ status: 403 });
-  });
-
-  it("limits request bodies and hides unexpected server errors", () => {
-    expect(dataApi).toContain("MAX_REQUEST_BODY_BYTES");
-    expect(dataApi).toContain("The request body is too large.");
-    expect(dataApi).toContain("The data service is temporarily unavailable. Please try again.");
   });
 
   it("enforces the body limit and returns a generic server failure", async () => {

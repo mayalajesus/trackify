@@ -53,10 +53,16 @@ The browser suites need the QA Neon credentials listed in
 `docs/deployment.md`. The GitHub Actions workflow runs the same gates on pull
 requests and pushes to `main`.
 
-The integration suite requires `DATABASE_ENV=qa`, creates isolated fixtures and
-rolls back its database changes. It covers stale account snapshots, conflicting
-edits/deletions, shared tasks, extension timers and workspace deletion. Server
-unit checks also run as part of `npm run test:domain`.
+The integration suite requires `DATABASE_ENV=qa` and creates isolated fixtures.
+Most tests roll back all changes. The concurrency test needs committed, synthetic
+fixtures visible to two PostgreSQL connections; it removes only its generated
+workspace/profile IDs in `finally` and verifies cleanup. New SQL fixtures also
+require the Neon provider and a Neon connection URL, refusing production settings.
+Coverage includes stale snapshots, overlapping SERIALIZABLE transactions,
+conflicting edits/deletions, SQL authorization, shared tasks, extension timers
+and workspace deletion. Server unit checks also run as part of `npm run test:domain`.
+Timer recovery and edited UI flows use real provider effects with an isolated
+API fixture; they never send invitation emails or persist product data.
 
 ## Database changes
 

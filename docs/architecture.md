@@ -33,6 +33,16 @@ workspace access.
 - `src/lib/store`: snapshot validation/migrations, reference sharing and domain
   action factories. Factories receive explicit state, setters and refs; the
   provider retains state ownership, effect ordering and synchronization.
+- `src/lib/store/use-timer-persistence.ts`: timer hydration, save ordering and
+  remote polling. A failed read does not advance the local revision baseline;
+  retrying preserves a timer started locally. Polling only adopts remote state
+  after the local timer has been acknowledged. Conflicting local/server timers
+  remain intact and expose recovery rather than replacing either timer.
+- `src/lib/store/timer-persistence.ts`: pure timer recovery and acknowledgement rules.
+- `src/components/tracker-entries/use-entry-editor.ts`: inline drafts, validation,
+  keyboard handling and overlap confirmation; the row component renders cells.
+- `src/components/team/use-team-invitations.ts` and `invitation-dialog.tsx`:
+  invitation state/actions and dialog presentation, separate from the team table.
 - `src/lib/store/account-persistence.ts`: serialized saves, baseline ownership
   and reconciliation of edits made while a request is pending.
 - `src/lib/store/use-account-persistence.ts`: save recovery, draft download and

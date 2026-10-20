@@ -23,6 +23,8 @@ export const localeOptions: Array<{ id: Locale; label: string }> = [
 ];
 
 const ptBR: Record<string, string> = {
+  "Another timer already exists on the server. Your local timer has been kept. Download your changes before resolving the conflict.":
+    "Já existe outro timer no servidor. Seu timer local foi mantido. Baixe suas alterações antes de resolver o conflito.",
   "Your unsaved changes have been kept": "Suas alterações ainda não salvas foram preservadas",
   "Try saving again": "Tentar salvar novamente",
   "Download unsaved changes": "Baixar alterações não salvas",

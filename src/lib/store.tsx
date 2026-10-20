@@ -5,6 +5,7 @@ import { createProjectActions } from "@/lib/store/project-actions";
 import { createTimerActions } from "@/lib/store/timer-actions";
 import { createWorkspaceActions } from "@/lib/store/workspace-actions";
 import { useAccountPersistence } from "@/lib/store/use-account-persistence";
+import { useTimerPersistence } from "@/lib/store/use-timer-persistence";
 import { accountsEqual } from "../../shared/account-merge.mjs";
 import { useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
@@ -47,11 +48,7 @@ import { elapsedForTimer } from "./store/timer";
 import type { StoreResult, StoreValue, TimerState } from "./store/types";
 import { isValidPreferences } from "./store/validation";
 import { findTimeEntryConflict, type ScopedTimeIntervalEntry } from "./time-entry-overlap";
-import {
-  recentTimerTasksFromEntries,
-  rememberRecentTimerTask,
-  validateTimerDetails,
-} from "./timer-start";
+import { recentTimerTasksFromEntries, rememberRecentTimerTask } from "./timer-start";
 
 export { findTimeEntryConflict, timeEntriesOverlap } from "./time-entry-overlap";
 
@@ -268,6 +265,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     queueRef: accountSyncPromiseRef,
     timerRef,
     timerQueueRef: timerSyncPromiseRef,
+    persistedTimerRef,
+    activeWorkspaceId,
     timerError: timerPersistenceError,
     hydrated,
     timerHydrated,
@@ -518,182 +517,29 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [activeWorkspaceId, entries, hydrated, queryClient]);
 
-  useEffect(() => {
-    if (!hydrated || !authenticatedUserId || !activeWorkspaceId) return;
-    let cancelled = false;
-    setTimerHydrated(false);
-    setTimerPersistenceError(null);
-    const timerRevision = timerRevisionRef.current;
-    void (async () => {
-      // Finish earlier writes before reading the timer for this workspace.
-      if (timerSyncPromiseRef.current) await timerSyncPromiseRef.current;
-      if (cancelled || accountScopeRef.current !== accountScope) return;
-      const result = await dataSource.getActiveTimer(authenticatedUserId, activeWorkspaceId);
-      if (cancelled || accountScopeRef.current !== accountScope) return;
-      if (!result.success) {
-        setTimerPersistenceError(result.error);
-        return;
-      }
-      const hydratedTimer = result.data ?? initialTimer;
-      persistedTimerRef.current = {
-        scope: accountScope,
-        workspaceId: activeWorkspaceId,
-        value: JSON.stringify(hydratedTimer),
-      };
-      // Do not let a slow hydration response overwrite a timer the user started
-      // while the request was in flight. Once hydrated, the persistence effect
-      // below saves that newer local timer normally.
-      if (timerRevisionRef.current === timerRevision) {
-        timerRef.current = hydratedTimer;
-        setTimer(hydratedTimer);
-      }
-      setTimerHydrated(true);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    accountScope,
+  useTimerPersistence({
+    authenticatedUserId,
     activeMemberId,
     activeWorkspaceId,
-    dataSource,
-    hydrated,
-    authenticatedUserId,
-    timerLoadRetryKey,
-  ]);
-
-  useEffect(() => {
-    if (!timerHydrated || !authenticatedUserId || !activeWorkspaceId) return;
-    let cancelled = false;
-    let checking = false;
-    const checkRemoteTimer = async () => {
-      if (
-        checking ||
-        cancelled ||
-        document.visibilityState !== "visible" ||
-        timerSyncPromiseRef.current
-      )
-        return;
-      checking = true;
-      const revision = timerRevisionRef.current;
-      try {
-        const result = await dataSource.getActiveTimer(authenticatedUserId, activeWorkspaceId);
-        if (
-          cancelled ||
-          accountScopeRef.current !== accountScope ||
-          timerRevisionRef.current !== revision ||
-          !result.success
-        )
-          return;
-        if (result.data) {
-          if (JSON.stringify(timerRef.current) !== JSON.stringify(result.data)) {
-            persistedTimerRef.current = {
-              scope: accountScope,
-              workspaceId: activeWorkspaceId,
-              value: JSON.stringify(result.data),
-            };
-            timerRevisionRef.current += 1;
-            timerRef.current = result.data;
-            setTimer(result.data);
-            setElapsed(elapsedForTimer(result.data));
-          }
-          return;
-        }
-        if (timerRef.current.status === "idle") return;
-        // Refresh the entries before replacing the local timer. Do not turn the
-        // new server entry into a stale client-side deletion on the next save.
-        if (!(await refreshAccount()) || cancelled || timerRevisionRef.current !== revision) return;
-        persistedTimerRef.current = {
-          scope: accountScope,
-          workspaceId: activeWorkspaceId,
-          value: JSON.stringify(initialTimer),
-        };
-        timerRevisionRef.current += 1;
-        timerRef.current = initialTimer;
-        setTimer(initialTimer);
-        setElapsed(0);
-        setTimerPersistenceError(null);
-      } finally {
-        checking = false;
-      }
-    };
-    const check = () => {
-      void checkRemoteTimer();
-    };
-    const interval = window.setInterval(check, 3000);
-    window.addEventListener("focus", check);
-    document.addEventListener("visibilitychange", check);
-    return () => {
-      cancelled = true;
-      window.clearInterval(interval);
-      window.removeEventListener("focus", check);
-      document.removeEventListener("visibilitychange", check);
-    };
-  }, [
-    timerHydrated,
-    authenticatedUserId,
-    activeWorkspaceId,
-    timer.collaborationOwnerId,
     accountScope,
-    dataSource,
-    refreshAccount,
-  ]);
-
-  useEffect(() => {
-    if (!hydrated || !timerHydrated || !authenticatedUserId || !activeWorkspaceId) return;
-    // Let users complete older timers in the editor before persisting them.
-    if (timer.status !== "idle" && !validateTimerDetails(timer.task, timer.projectId).success)
-      return;
-    let cancelled = false;
-    const isCurrent = () => !cancelled && accountScopeRef.current === accountScope;
-    const previous = timerSyncPromiseRef.current ?? Promise.resolve();
-    const request = previous
-      .catch(() => undefined)
-      .then(async () => {
-        if (!isCurrent()) return;
-        const value = JSON.stringify(timer);
-        if (
-          persistedTimerRef.current?.scope === accountScope &&
-          persistedTimerRef.current.workspaceId === activeWorkspaceId &&
-          persistedTimerRef.current.value === value
-        )
-          return;
-        // Save project/entry changes before the timer references them or is cleared.
-        if (!(await persistAccount()) || !isCurrent()) return;
-        const result =
-          timer.status === "idle"
-            ? await dataSource.clearActiveTimer(authenticatedUserId, activeWorkspaceId)
-            : await dataSource.saveActiveTimer(authenticatedUserId, timer);
-        if (accountScopeRef.current !== accountScope) return;
-        if (!result.success) {
-          persistedTimerRef.current = null;
-          if (isCurrent()) setTimerPersistenceError(result.error);
-          return;
-        }
-        // Even an obsolete in-flight save changed the server. The next queued
-        // operation must see that result (especially a stop following a start).
-        persistedTimerRef.current = { scope: accountScope, workspaceId: activeWorkspaceId, value };
-        if (isCurrent()) setTimerPersistenceError(null);
-      });
-    const tracked = request.finally(() => {
-      if (timerSyncPromiseRef.current === tracked) timerSyncPromiseRef.current = null;
-    });
-    timerSyncPromiseRef.current = tracked;
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    activeMemberId,
-    activeWorkspaceId,
+    accountScopeRef,
     dataSource,
     hydrated,
-    authenticatedUserId,
     timer,
+    timerRef,
+    timerRevisionRef,
+    persistedTimerRef,
+    timerSyncPromiseRef,
     timerHydrated,
-    accountScope,
+    setTimerHydrated,
+    setTimerPersistenceError,
+    setTimer,
+    setElapsed,
+    refreshAccount,
     persistAccount,
+    timerLoadRetryKey,
     timerSaveRetryKey,
-  ]);
+  });
 
   useEffect(() => {
     const current = account.workspaces.find((data) => data.workspace.id === activeWorkspaceId);

@@ -5,7 +5,7 @@ import type { PersistedAccount } from "../account-types";
 import { createAccountPersistence } from "./account-persistence";
 import type { TimerState } from "./types";
 
-type AccountScope = { userId: string; reloadKey: number };
+import { isTimerAcknowledged, type AccountScope, type PersistedTimer } from "./timer-persistence";
 
 export function useAccountPersistence({
   userId,
@@ -17,6 +17,8 @@ export function useAccountPersistence({
   queueRef,
   timerRef,
   timerQueueRef,
+  persistedTimerRef,
+  activeWorkspaceId,
   timerError,
   hydrated,
   timerHydrated,
@@ -31,6 +33,8 @@ export function useAccountPersistence({
   queueRef: RefObject<Promise<void> | null>;
   timerRef: RefObject<TimerState>;
   timerQueueRef: RefObject<Promise<void> | null>;
+  persistedTimerRef: RefObject<PersistedTimer | null>;
+  activeWorkspaceId: string;
   timerError: string | null;
   hydrated: boolean;
   timerHydrated: boolean;
@@ -94,7 +98,15 @@ export function useAccountPersistence({
         !accountsEqual(snapshotRef.current, syncedRef.current) ||
         queueRef.current ||
         timerQueueRef.current ||
-        timerError
+        timerError ||
+        (activeWorkspaceId &&
+          (timerRef.current.status !== "idle" || timerHydrated) &&
+          !isTimerAcknowledged(
+            timerRef.current,
+            persistedTimerRef.current,
+            scope,
+            activeWorkspaceId,
+          ))
       ) {
         event.preventDefault();
         event.returnValue = "";
@@ -102,7 +114,20 @@ export function useAccountPersistence({
     };
     window.addEventListener("beforeunload", protectPendingChanges);
     return () => window.removeEventListener("beforeunload", protectPendingChanges);
-  }, [userId, hydrated, snapshotRef, syncedRef, queueRef, timerQueueRef, timerError]);
+  }, [
+    userId,
+    hydrated,
+    snapshotRef,
+    syncedRef,
+    queueRef,
+    timerQueueRef,
+    timerError,
+    timerRef,
+    timerHydrated,
+    persistedTimerRef,
+    scope,
+    activeWorkspaceId,
+  ]);
 
   return {
     persistAccount,

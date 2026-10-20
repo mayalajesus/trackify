@@ -22,7 +22,7 @@
     "test": "npm run test:domain",
     "test:domain": "vitest run && npm run test:unit:server",
     "test:unit:server": "node --test tests/integration/*-unit.mjs",
-    "test:integration": "node --env-file-if-exists=.env tests/integration/account-sync.mjs && node --env-file-if-exists=.env tests/integration/shared-task-sync.mjs && node --env-file-if-exists=.env tests/integration/extension-timer.mjs && node --env-file-if-exists=.env tests/integration/workspace-deletion.mjs",
+    "test:integration": "node --env-file-if-exists=.env tests/integration/account-sync.mjs && node --env-file-if-exists=.env tests/integration/account-concurrency.mjs && node --env-file-if-exists=.env tests/integration/workspace-authorization.mjs && node --env-file-if-exists=.env tests/integration/shared-task-sync.mjs && node --env-file-if-exists=.env tests/integration/extension-timer.mjs && node --env-file-if-exists=.env tests/integration/workspace-deletion.mjs",
     "test:smoke": "playwright test tests/smoke",
     "test:a11y": "playwright test tests/a11y",
     "db:migrate": "node scripts/database.mjs migrate",

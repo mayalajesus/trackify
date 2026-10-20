@@ -1,27 +1,20 @@
+import { TeamInvitationDialog } from "@/components/team/invitation-dialog";
+import { useTeamInvitations } from "@/components/team/use-team-invitations";
 import { Button } from "@heroui/react/button";
 import { Chip } from "@heroui/react/chip";
-import { Description } from "@heroui/react/description";
-import { Dropdown } from "@heroui/react/dropdown";
-import { FieldError } from "@heroui/react/field-error";
-import { Form } from "@heroui/react/form";
-import { Input } from "@heroui/react/input";
-import { Label } from "@heroui/react/label";
 import { Modal } from "@heroui/react/modal";
 import { Table } from "@heroui/react/table";
-import { TextField } from "@heroui/react/textfield";
 import { Typography } from "@heroui/react/typography";
 import { toast } from "@/lib/toast";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   ArrowRightFromSquare,
-  ChevronDown,
   Copy,
   PaperPlane,
   PersonPencil,
   PersonPlus,
   TrashBin,
 } from "@gravity-ui/icons";
-import type { InvitationEmailStatus } from "@/lib/account-data-source";
 import { useRef, useState } from "react";
 import { ActionDropdown } from "@/components/action-dropdown";
 import { DataTable } from "@/components/data-table";
@@ -35,17 +28,6 @@ import { formatDuration } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
 import type { Member, Role } from "@/lib/domain";
 import { useStore } from "@/lib/store";
-
-function invitationEmailFeedback(status?: InvitationEmailStatus) {
-  if (status === "accepted") return "Invitation created. The email was accepted for sending.";
-  if (status === "failed")
-    return "Invitation created, but the email could not be sent. Copy the link or resend the invitation.";
-  if (status === "unknown" || status === "sending")
-    return "Invitation created. Email sending could not be confirmed. You can share the link below.";
-  if (status === "pending")
-    return "Invitation created. The email is pending. You can share the link below.";
-  return "Invitation created. Email sending is disabled in this environment. Share the link below.";
-}
 
 type InviteRole = Exclude<Role, "Owner">;
 
@@ -70,36 +52,31 @@ function TeamPage() {
     activeWorkspaceId,
     leaveWorkspace,
     preferencesByUserId,
-    inviteMember,
-    resendInvite,
-    cancelInvite,
     deleteMember,
     removeMember,
     restoreMember,
     updateMemberRole,
   } = useStore();
   const { locale, t, error } = useI18n();
+  const invitation = useTeamInvitations();
+  const {
+    openInvite,
+    invitationActionId,
+    pendingCancel,
+    setPendingCancel,
+    cancelError,
+    setCancelError,
+    handleResend,
+    confirmCancel,
+  } = invitation;
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [leaveError, setLeaveError] = useState<string | null>(null);
-  const [inviteOpen, setInviteOpen] = useState(false);
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState<InviteRole>("Member");
-  const [inviteError, setInviteError] = useState<string | null>(null);
-  const [inviteBusy, setInviteBusy] = useState(false);
-  const [createdLink, setCreatedLink] = useState("");
-  const [createdEmailStatus, setCreatedEmailStatus] = useState<InvitationEmailStatus | undefined>();
-  const inviteRequestRef = useRef(false);
-  const [invitationActionId, setInvitationActionId] = useState<string | null>(null);
-  const [pendingCancel, setPendingCancel] = useState<Member | null>(null);
-  const [cancelError, setCancelError] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Member | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const deleteRequestRef = useRef(false);
   const [pendingRemove, setPendingRemove] = useState<Member | null>(null);
   const [removeError, setRemoveError] = useState<string | null>(null);
-
-  const inviteRoles: InviteRole[] = can("manage-admins") ? ["Member", "Admin"] : ["Member"];
 
   const orderedMembers = members
     .filter((member) => !member.deletedAt)
@@ -111,89 +88,6 @@ function TeamPage() {
   const secondsFor = (id: string) =>
     entries.filter((entry) => entry.userId === id).reduce((sum, entry) => sum + entry.seconds, 0);
   const memberPage = useTablePagination(orderedMembers, activeWorkspaceId ?? "");
-
-  const resetInviteForm = () => {
-    setEmail("");
-    setRole("Member");
-    setInviteError(null);
-    setCreatedLink("");
-    setCreatedEmailStatus(undefined);
-  };
-
-  const openInvite = () => {
-    resetInviteForm();
-    setInviteOpen(true);
-  };
-
-  const submitInvite = async () => {
-    if (inviteRequestRef.current) return;
-    inviteRequestRef.current = true;
-    setInviteBusy(true);
-    try {
-      const result = await inviteMember(email, role);
-      if (!result.success) {
-        setInviteError(error(result.error));
-        return;
-      }
-      const normalizedEmail = email.trim().toLowerCase();
-      setCreatedLink(result.invitationUrl ?? "");
-      setCreatedEmailStatus(result.emailStatus);
-      toast.info(t(invitationEmailFeedback(result.emailStatus)), { description: normalizedEmail });
-    } catch {
-      setInviteError(t("We couldn't prepare this invitation"));
-    } finally {
-      inviteRequestRef.current = false;
-      setInviteBusy(false);
-    }
-  };
-
-  const copyInvitationLink = async (invitationUrl: string) => {
-    try {
-      await navigator.clipboard.writeText(invitationUrl);
-      toast.success(t("Invitation link copied"));
-    } catch {
-      setInviteError(t("Copy the invitation link manually."));
-    }
-  };
-
-  const handleResend = async (member: Member) => {
-    if (inviteRequestRef.current) return;
-    inviteRequestRef.current = true;
-    setInvitationActionId(member.id);
-    try {
-      const result = await resendInvite(member.id);
-      if (!result.success) {
-        toast.danger(t("We couldn't refresh this invitation"), {
-          description: error(result.error),
-        });
-        return;
-      }
-      setCreatedLink(result.invitationUrl ?? "");
-      setCreatedEmailStatus(result.emailStatus);
-      setInviteError(null);
-      setInviteOpen(true);
-      toast.info(t(invitationEmailFeedback(result.emailStatus)), { description: member.email });
-    } catch {
-      toast.danger(t("We couldn't refresh this invitation"));
-    } finally {
-      inviteRequestRef.current = false;
-      setInvitationActionId(null);
-    }
-  };
-
-  const confirmCancel = async () => {
-    if (!pendingCancel) return;
-    setInvitationActionId(pendingCancel.id);
-    const result = await cancelInvite(pendingCancel.id);
-    setInvitationActionId(null);
-    if (!result.success) {
-      setCancelError(error(result.error));
-      return;
-    }
-    toast.success(t("Invitation canceled"), { description: pendingCancel.email });
-    setPendingCancel(null);
-    setCancelError(null);
-  };
 
   const handleRestore = (member: Member) => {
     const result = restoreMember(member.id);
@@ -524,141 +418,7 @@ function TeamPage() {
         </Modal.Backdrop>
       </Modal>
 
-      <Modal
-        isOpen={inviteOpen}
-        onOpenChange={(open) => {
-          setInviteOpen(open);
-          if (!open) resetInviteForm();
-        }}
-      >
-        <ModalTriggerRegistration />
-        <Modal.Backdrop>
-          <Modal.Container size="sm">
-            <Modal.Dialog className="team-modal">
-              <Modal.CloseTrigger aria-label={t("Close")} />
-              <ModalLayout.Header>{t("Invite member")}</ModalLayout.Header>
-              <Form
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  submitInvite();
-                }}
-              >
-                <ModalLayout.Body>
-                  {inviteError ? (
-                    <FormAlert
-                      title={t("We couldn't prepare this invitation")}
-                      description={inviteError}
-                    />
-                  ) : null}
-
-                  {createdLink ? (
-                    <div className="space-y-3">
-                      <Typography type="body-sm" role="status">
-                        {t(invitationEmailFeedback(createdEmailStatus))}
-                      </Typography>
-                      <Typography type="body-sm" color="muted">
-                        {t(
-                          "Share this private link with the invited person. It expires in 7 days.",
-                        )}
-                      </Typography>
-                      <TextField fullWidth name="invitation-link" value={createdLink} isReadOnly>
-                        <Label>{t("Invitation link")}</Label>
-                        <Input variant="secondary" />
-                      </TextField>
-                    </div>
-                  ) : (
-                    <>
-                      <TextField
-                        isRequired
-                        fullWidth
-                        name="invite-email"
-                        type="email"
-                        value={email}
-                        validate={(value) => {
-                          const normalized = value.trim().toLowerCase();
-                          if (!normalized) return t("Email is required");
-                          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
-                            return t("Enter a valid email address");
-                          }
-                          if (members.some((member) => member.email.toLowerCase() === normalized)) {
-                            return t("This email is already part of the team");
-                          }
-                          return null;
-                        }}
-                        onChange={(value) => {
-                          setEmail(value);
-                          setInviteError(null);
-                        }}
-                      >
-                        <Label>{t("Email")}</Label>
-                        <Input variant="secondary" placeholder={t("name@company.com")} />
-                        <Description className="text-xs">
-                          {t(
-                            "An invitation email will be sent. You can also copy the private link.",
-                          )}
-                        </Description>
-                        <FieldError />
-                      </TextField>
-
-                      <div className="flex flex-col gap-2">
-                        <Label>{t("Role")}</Label>
-                        <Dropdown>
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            aria-label={t("Choose invitation role")}
-                            className="h-9 w-full justify-between gap-2 px-3"
-                          >
-                            <span className="truncate text-sm">{t(role)}</span>
-                            <ChevronDown aria-hidden="true" className="size-4 shrink-0" />
-                          </Button>
-                          <Dropdown.Popover>
-                            <Dropdown.Menu
-                              aria-label={t("Invitation role")}
-                              className="max-h-60 overflow-y-auto"
-                              selectionMode="single"
-                              selectedKeys={new Set([role])}
-                              onAction={(key) => setRole(String(key) as InviteRole)}
-                            >
-                              {inviteRoles.map((option) => (
-                                <Dropdown.Item key={option} id={option} textValue={option}>
-                                  <Label>{t(option)}</Label>
-                                  <Dropdown.ItemIndicator />
-                                </Dropdown.Item>
-                              ))}
-                            </Dropdown.Menu>
-                          </Dropdown.Popover>
-                        </Dropdown>
-                      </div>
-                    </>
-                  )}
-                </ModalLayout.Body>
-                <ModalLayout.Footer>
-                  {createdLink ? (
-                    <>
-                      <Button slot="close" type="button" variant="secondary">
-                        {t("Done")}
-                      </Button>
-                      <Button type="button" onPress={() => void copyInvitationLink(createdLink)}>
-                        {t("Copy link")}
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Button slot="close" type="button" variant="secondary">
-                        {t("Cancel")}
-                      </Button>
-                      <Button type="submit" isDisabled={!email.trim()} isPending={inviteBusy}>
-                        {t("Create invitation link")}
-                      </Button>
-                    </>
-                  )}
-                </ModalLayout.Footer>
-              </Form>
-            </Modal.Dialog>
-          </Modal.Container>
-        </Modal.Backdrop>
-      </Modal>
+      <TeamInvitationDialog invitation={invitation} />
 
       <Modal
         isOpen={pendingCancel !== null}
