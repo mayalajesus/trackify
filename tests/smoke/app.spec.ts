@@ -14,14 +14,14 @@ const routes = [
 ];
 const publicRoutes = ["/login", "/signup", "/forgot-password", "/auth/callback", "/invite/accept"];
 
-test("all primary routes reload into the designed app shell", async ({ page }) => {
-  await signInAs(page, "owner");
-  for (const route of routes) {
+for (const route of routes) {
+  test(`primary route ${route} reloads into the designed app shell`, async ({ page }) => {
+    await signInAs(page, "owner");
     await openAppPage(page, route);
     await expect(page.locator("body")).not.toContainText("Cannot find module");
     await expect(page.locator("body")).not.toContainText("Unexpected token");
-  }
-});
+  });
+}
 
 test("authentication routes reload into a structured page", async ({ page }) => {
   for (const route of publicRoutes) {
