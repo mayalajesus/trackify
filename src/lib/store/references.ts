@@ -73,6 +73,8 @@ export function shareAccountReferences(
       ? previous.workspaces
       : workspaces;
   if (
+    previous.version === next.version &&
+    previous.syncProtocol === next.syncProtocol &&
     identities === previous.identities &&
     preferencesByUserId === previous.preferencesByUserId &&
     sharedWorkspaces === previous.workspaces

@@ -15,7 +15,8 @@ export async function synchronizeAccount(client, user, config, body, options = {
   )
     throw new DataApiError(
       428,
-      "Reload the app before saving. Your unsaved changes have been kept.",
+      // Legacy clients display this verbatim and cannot translate the new protocol error.
+      "Esta aba está usando uma versão antiga do Trackify. Antes de atualizar a página, copie as alterações ainda não salvas. Depois, recarregue a página para continuar.",
       {
         code: "sync_baseline_required",
       },
