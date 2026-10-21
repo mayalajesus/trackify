@@ -67,6 +67,7 @@ export interface StoreValue {
   accountLoading: boolean;
   accountError: string | null;
   accountPersistenceError: string | null;
+  recovery: import("./use-recovery-journal").RecoveryController;
   retryAccountLoad: () => void;
   retryAccountSave: () => void;
   downloadPendingChanges: () => void;

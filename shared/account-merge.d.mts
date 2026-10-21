@@ -7,5 +7,8 @@ export function mergeAccountChanges<T>(
   base: T,
   edited: T,
   current: T,
-  options?: { keepLocalOnConflict?: boolean },
+  options?: {
+    keepLocalOnConflict?: boolean;
+    resolveConflict?: (conflict: { path: string[]; local: unknown; remote: unknown }) => unknown;
+  },
 ): T;

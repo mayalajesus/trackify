@@ -13,6 +13,7 @@ export function createAccountPersistence({
   queueRef,
   onSaved,
   onError,
+  beforeSave,
 }: {
   userId: string;
   dataSource: Pick<AccountDataSource, "syncAccount">;
@@ -22,6 +23,7 @@ export function createAccountPersistence({
   queueRef: Ref<Promise<void> | null>;
   onSaved: (account: PersistedAccount) => void;
   onError: (error: string | null) => void;
+  beforeSave?: () => Promise<void>;
 }) {
   return (): Promise<boolean> => {
     const previous = queueRef.current ?? Promise.resolve();
@@ -32,11 +34,13 @@ export function createAccountPersistence({
         const snapshot = snapshotRef.current;
         const baseline = syncedRef.current;
         if (!baseline) return false;
-        if (accountsEqual(snapshot, baseline)) {
-          onError(null);
-          return true;
-        }
         try {
+          await beforeSave?.();
+          if (!isCurrent()) return false;
+          if (accountsEqual(snapshot, baseline)) {
+            onError(null);
+            return true;
+          }
           const result = await dataSource.syncAccount(userId, snapshot, baseline);
           if (!isCurrent()) return false;
           if (!result.success) {

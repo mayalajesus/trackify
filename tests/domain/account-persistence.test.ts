@@ -29,6 +29,27 @@ function setup() {
 }
 
 describe("account persistence recovery", () => {
+  it("never sends a save before the durable journal commits, including timer-only edits", async () => {
+    const ctx = setup();
+    const protect = vi.fn().mockRejectedValue(new Error("Storage unavailable"));
+    const persist = createAccountPersistence({
+      userId: "user",
+      dataSource: { syncAccount: ctx.syncAccount },
+      isCurrent: ctx.isCurrent,
+      snapshotRef: ctx.snapshotRef,
+      syncedRef: ctx.syncedRef,
+      queueRef: { current: null },
+      onSaved: ctx.onSaved,
+      onError: ctx.onError,
+      beforeSave: protect,
+    });
+    expect(await persist()).toBe(false);
+    expect(ctx.syncAccount).not.toHaveBeenCalled();
+    expect(ctx.snapshotRef.current).toBe(ctx.draft);
+    ctx.snapshotRef.current = ctx.base;
+    expect(await persist()).toBe(false);
+    expect(protect).toHaveBeenCalledTimes(2);
+  });
   it("refuses writes to a server that has not advertised safe synchronization", async () => {
     const base = makeSeedAccount();
     const fetch = vi.spyOn(globalThis, "fetch");

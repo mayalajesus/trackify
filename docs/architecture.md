@@ -119,8 +119,27 @@ unchanged project assignments.
 
 Clients without a baseline receive HTTP 428 with `sync_baseline_required`;
 they must update before saving. Deploy frontend and server together. During
-recovery, download unsaved changes before reloading an older client or resolving
-a conflict. The downloaded JSON is a recovery copy, not an automatic import.
+recovery, download unsaved changes before reloading an older client.
+
+New clients journal pending snapshots in IndexedDB with strict transaction durability,
+scoped by authenticated user, page instance and workspace. Account/timer network writes
+wait for the journal commit; storage errors preserve the in-memory draft and block writes
+until recovery/export. Only the owning page's acknowledged draft is removed. No auth
+tokens are stored. Clearing site data or losing the device still removes local copies.
+
+Recovery loads fresh server state, merges compatible changes and requires explicit choices
+for conflicting fields. The original draft and server version are archived locally before
+applying choices. Workspace/membership conflicts cannot restore revoked access. New server
+edits are still checked by the normal three-way synchronization. A changed source draft in
+another tab is never removed by a recovery operation. Settings exposes recovery-file import;
+new versioned exports are validated and restricted to their original user. Legacy JSON
+exports without user/version metadata require manual recovery rather than guessing ownership.
+
+Accounts advertise `timerSyncProtocol: 1`. Timer save/clear accepts an expected snapshot,
+checked under the workspace lock; stale writes fail with `timer_conflict`. Browser retries
+retain this baseline and acknowledge the canonical server timer. Restoring a local timer
+requires the advertised protocol and an unchanged baseline (or an identical remote timer).
+Conflicting/unknown timers remain in the recovery copy while the server timer is preserved.
 
 Successful responses are merged with edits made after the request started.
 Only the server response advances the baseline. Failed requests retain the

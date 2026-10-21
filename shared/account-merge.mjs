@@ -150,6 +150,7 @@ export function mergeAccountChanges(base, edited, current, options = {}) {
     // Used only in the browser to keep edits made AFTER a request was sent.
     // The next server save still checks those edits against its new baseline.
     if (options.keepLocalOnConflict) return local;
+    if (options.resolveConflict) return options.resolveConflict({ path, local, remote });
     throw new AccountConflictError(path.join("."));
   }
   return merge(base, edited, current, []);

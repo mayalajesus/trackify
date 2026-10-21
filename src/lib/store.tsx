@@ -6,6 +6,7 @@ import { createTimerActions } from "@/lib/store/timer-actions";
 import { createWorkspaceActions } from "@/lib/store/workspace-actions";
 import { useAccountPersistence } from "@/lib/store/use-account-persistence";
 import { useTimerPersistence } from "@/lib/store/use-timer-persistence";
+import { useRecoveryJournal } from "@/lib/store/use-recovery-journal";
 import { accountsEqual } from "../../shared/account-merge.mjs";
 import { useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
@@ -121,6 +122,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const accountScopeRef = useRef(accountScope);
   accountScopeRef.current = accountScope;
   const [hydrated, setHydrated] = useState(false);
+  const hydratedAccountScopeRef = useRef<typeof accountScope | null>(null);
   const [timerHydrated, setTimerHydrated] = useState(false);
   const accountRef = useRef(account);
   accountRef.current = account;
@@ -247,6 +249,31 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setTrelloState(workspace.trello);
   }, []);
 
+  const onTimerRecovered = useCallback((next: TimerState) => {
+    timerRevisionRef.current += 1;
+    timerRef.current = next;
+    setTimer(next);
+    setTimerHydrated(true);
+    setTimerPersistenceError(null);
+  }, []);
+  const recovery = useRecoveryJournal({
+    userId: authenticatedUserId,
+    hydrated: hydrated && hydratedAccountScopeRef.current === accountScope,
+    timerHydrated,
+    workspaceId: activeWorkspaceId,
+    scope: accountScope,
+    scopeRef: accountScopeRef,
+    snapshotRef: accountForSyncRef,
+    syncedRef: syncedAccountRef,
+    timerRef,
+    persistedTimerRef,
+    queueRef: accountSyncPromiseRef,
+    timerQueueRef: timerSyncPromiseRef,
+    dataSource,
+    onSaved: applySavedAccount,
+    onTimerRecovered,
+  });
+
   const {
     persistAccount,
     accountPersistenceError,
@@ -271,6 +298,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     hydrated,
     timerHydrated,
     onSaved: applySavedAccount,
+    beforeSave: recovery.protect,
   });
 
   const refreshAccount = useCallback(async (): Promise<boolean> => {
@@ -421,6 +449,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return;
       }
       const loadedAccount = result.data;
+      hydratedAccountScopeRef.current = accountScopeRef.current;
       const preferredWorkspaceId =
         loadedAccount.preferencesByUserId[authenticatedUserId]?.activeWorkspaceId;
       const canUseWorkspace = (data: WorkspaceData) =>
@@ -583,12 +612,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (!hydrated || !authenticatedUserId) return;
     // Hydration and refreshes are reads, not local edits. Compare against the
     // actual server snapshot instead of skipping the next arbitrary render.
-    if (accountsEqual(accountForSync, syncedAccountRef.current)) return;
+    if (accountsEqual(accountForSync, syncedAccountRef.current)) {
+      setAccountPersistenceError(null);
+      return;
+    }
     const id = window.setTimeout(() => {
       void persistAccount();
     }, 200);
     return () => window.clearTimeout(id);
-  }, [accountForSync, hydrated, authenticatedUserId, persistAccount]);
+  }, [accountForSync, hydrated, authenticatedUserId, persistAccount, setAccountPersistenceError]);
 
   useEffect(() => {
     const refreshToday = () => setToday(getLocalToday(new Date(), preferences.timezone));
@@ -1062,6 +1094,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       accountLoading,
       accountError,
       accountPersistenceError: accountPersistenceError ?? timerPersistenceError,
+      recovery,
       retryAccountLoad,
       retryAccountSave,
       downloadPendingChanges,
@@ -1118,6 +1151,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     account,
     accountError,
     accountPersistenceError,
+    recovery,
     accountLoading,
     accountScope,
     activeMemberId,

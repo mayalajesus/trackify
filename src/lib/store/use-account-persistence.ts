@@ -23,6 +23,7 @@ export function useAccountPersistence({
   hydrated,
   timerHydrated,
   onSaved,
+  beforeSave,
 }: {
   userId: string;
   dataSource: AccountDataSource;
@@ -39,6 +40,7 @@ export function useAccountPersistence({
   hydrated: boolean;
   timerHydrated: boolean;
   onSaved: (account: PersistedAccount) => void;
+  beforeSave: () => Promise<void>;
 }) {
   const [accountPersistenceError, setAccountPersistenceError] = useState<string | null>(null);
   const [timerSaveRetryKey, setTimerSaveRetryKey] = useState(0);
@@ -54,8 +56,9 @@ export function useAccountPersistence({
         queueRef,
         onSaved,
         onError: setAccountPersistenceError,
+        beforeSave,
       }),
-    [userId, dataSource, scope, scopeRef, snapshotRef, syncedRef, queueRef, onSaved],
+    [userId, dataSource, scope, scopeRef, snapshotRef, syncedRef, queueRef, onSaved, beforeSave],
   );
 
   const retryAccountSave = useCallback(() => {
@@ -72,10 +75,21 @@ export function useAccountPersistence({
       [
         JSON.stringify(
           {
+            version: 1,
+            userId,
             exportedAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
             account: snapshotRef.current,
             baseline: syncedRef.current,
+            workspaceId: activeWorkspaceId,
             timer: timerRef.current,
+            timerPending: !isTimerAcknowledged(
+              timerRef.current,
+              persistedTimerRef.current,
+              scope,
+              activeWorkspaceId,
+            ),
+            timerBaseline: null,
           },
           null,
           2,
@@ -89,7 +103,7 @@ export function useAccountPersistence({
     link.download = "trackify-unsaved-changes.json";
     link.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }, [snapshotRef, syncedRef, timerRef]);
+  }, [snapshotRef, syncedRef, timerRef, userId, activeWorkspaceId, persistedTimerRef, scope]);
 
   useEffect(() => {
     const protectPendingChanges = (event: BeforeUnloadEvent) => {

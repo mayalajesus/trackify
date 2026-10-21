@@ -16,6 +16,7 @@ export async function installAccountFixture(page: Page) {
     timerSaveFailures: 0,
     timerReads: 0,
     timerWrites: [] as TimerState[],
+    accountSaveFailures: 0,
   };
   await page.route("**/api/data", async (route) => {
     const body = route.request().postDataJSON();
@@ -40,6 +41,7 @@ export async function installAccountFixture(page: Page) {
         state.account = {
           version: 13,
           syncProtocol: 1,
+          timerSyncProtocol: 1,
           identities: [
             { id: userId, name: "QA Fixture", email: "qa@example.test", initials: "QF" },
           ],
@@ -102,7 +104,18 @@ export async function installAccountFixture(page: Page) {
       return reply(state.account);
     }
     if (body.operation === "syncAccount") {
-      state.account = mergeAccountChanges(body.baseAccount, body.account, state.account);
+      if (state.accountSaveFailures > 0) {
+        state.accountSaveFailures -= 1;
+        return route.fulfill({ status: 503, json: { error: "Temporary account save failure" } });
+      }
+      try {
+        state.account = mergeAccountChanges(body.baseAccount, body.account, state.account);
+      } catch {
+        return route.fulfill({
+          status: 409,
+          json: { error: "Concurrent edit", code: "sync_conflict" },
+        });
+      }
       return reply(state.account);
     }
     if (body.operation === "getActiveTimer") {

@@ -1,4 +1,5 @@
 import { TaskInvitationInbox } from "@/components/tracker-task-modal";
+import { RecoveryDialog } from "@/components/recovery-dialog";
 import { TaskInvitationNotifications } from "@/components/task-invitation-notifications";
 import { Button } from "@heroui/react/button";
 import { Alert } from "@heroui/react/alert";
@@ -171,6 +172,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 }
 
 function AppDataGate({ children }: { children: ReactNode }) {
+  const location = useLocation();
   const {
     sessionStatus,
     accountLoading,
@@ -207,13 +209,20 @@ function AppDataGate({ children }: { children: ReactNode }) {
           <Button className="mt-5" onPress={retryAccountLoad}>
             {t("Try again")}
           </Button>
+          <RecoveryDialog allowImport />
         </Card>
       </main>
     );
   }
 
   if (sessionStatus === "signed-out") return <SignedOutScreen />;
-  if (workspaces.length === 0) return <WorkspaceAccessOnboarding />;
+  if (workspaces.length === 0)
+    return (
+      <>
+        <RecoveryDialog allowImport />
+        <WorkspaceAccessOnboarding />
+      </>
+    );
   return (
     <>
       {accountPersistenceError ? (
@@ -233,7 +242,10 @@ function AppDataGate({ children }: { children: ReactNode }) {
           </Alert.Content>
         </Alert>
       ) : null}
-      <AppShellContent>{children}</AppShellContent>
+      <AppShellContent>
+        <RecoveryDialog allowImport={location.pathname === "/settings"} />
+        {children}
+      </AppShellContent>
     </>
   );
 }
