@@ -14,21 +14,8 @@ concurrency:
 
 jobs:
   backup:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_PASSWORD: restore-test
-          POSTGRES_DB: restore_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     env:
       SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -60,25 +47,14 @@ jobs:
         shell: bash
         run: |
           mkdir -p backup/database backup/storage
-          supabase db dump --db-url "$SUPABASE_DB_URL" --role-only -f backup/database/roles.sql
-          supabase db dump --db-url "$SUPABASE_DB_URL" -f backup/database/schema.sql
-          supabase db dump --db-url "$SUPABASE_DB_URL" --data-only --use-copy -f backup/database/data.sql
+          # Do not load the app's OAuth configuration or migrations for a dump.
+          mkdir -p "$RUNNER_TEMP/trackify-backup"
+          supabase init --workdir "$RUNNER_TEMP/trackify-backup"
+          supabase db dump --workdir "$RUNNER_TEMP/trackify-backup" --db-url "$SUPABASE_DB_URL" --role-only -f "$GITHUB_WORKSPACE/backup/database/roles.sql"
+          supabase db dump --workdir "$RUNNER_TEMP/trackify-backup" --db-url "$SUPABASE_DB_URL" -f "$GITHUB_WORKSPACE/backup/database/schema.sql"
+          supabase db dump --workdir "$RUNNER_TEMP/trackify-backup" --db-url "$SUPABASE_DB_URL" --data-only --use-copy -f "$GITHUB_WORKSPACE/backup/database/data.sql"
           node scripts/backup-storage.mjs backup/storage
-          find backup -type f -print0 | sort -z | xargs -0 sha256sum > backup/SHA256SUMS
-
-      - name: Monthly restore verification
-        shell: bash
-        env:
-          PGPASSWORD: restore-test
-        run: |
-          if [[ "${{ github.event_name }}" != "workflow_dispatch" && "$(date -u +%d)" != "01" ]]; then
-            echo "Monthly restore verification is not due."
-            exit 0
-          fi
-          psql -h 127.0.0.1 -U postgres -d restore_test -v ON_ERROR_STOP=1 -f backup/database/roles.sql
-          psql -h 127.0.0.1 -U postgres -d restore_test -v ON_ERROR_STOP=1 -f backup/database/schema.sql
-          psql -h 127.0.0.1 -U postgres -d restore_test -v ON_ERROR_STOP=1 -f backup/database/data.sql
-          psql -h 127.0.0.1 -U postgres -d restore_test -v ON_ERROR_STOP=1 -c "select count(*) from public.profiles;"
+          (cd backup && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS && sha256sum --check SHA256SUMS)
 
       - name: Encrypt archive
         shell: bash
@@ -88,11 +64,36 @@ jobs:
             -in backup.tar.gz \
             -out "production-backup-$(date -u +%Y-%m-%d).tar.gz.enc" \
             -pass env:BACKUP_ENCRYPTION_PASSPHRASE
-          rm -rf backup backup.tar.gz
+          rm backup.tar.gz
 
       - uses: actions/upload-artifact@v4
         with:
           name: production-backup-${{ github.run_id }}
           path: production-backup-*.tar.gz.enc
-          retention-days: 7
+          retention-days: 35
           if-no-files-found: error
+
+      - name: Verify encrypted archive and restore into isolated Supabase
+        shell: bash
+        run: |
+          mkdir "$RUNNER_TEMP/trackify-restore"
+          openssl enc -d -aes-256-cbc -pbkdf2 \
+            -in "production-backup-$(date -u +%Y-%m-%d).tar.gz.enc" \
+            -out "$RUNNER_TEMP/trackify-restore/archive.tar.gz" \
+            -pass env:BACKUP_ENCRYPTION_PASSPHRASE
+          tar -C "$RUNNER_TEMP/trackify-restore" -xzf "$RUNNER_TEMP/trackify-restore/archive.tar.gz"
+          (cd "$RUNNER_TEMP/trackify-restore" && sha256sum --check SHA256SUMS)
+          # A plain PostgreSQL image lacks Supabase's auth/storage schemas and roles.
+          supabase start --workdir "$RUNNER_TEMP/trackify-backup" -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
+          psql 'postgresql://postgres:postgres@127.0.0.1:54322/postgres' --single-transaction -v ON_ERROR_STOP=1 \
+            -f "$RUNNER_TEMP/trackify-restore/database/roles.sql" \
+            -f "$RUNNER_TEMP/trackify-restore/database/schema.sql" \
+            -c 'SET session_replication_role = replica' \
+            -f "$RUNNER_TEMP/trackify-restore/database/data.sql"
+          psql 'postgresql://postgres:postgres@127.0.0.1:54322/postgres' -v ON_ERROR_STOP=1 \
+            -c 'select count(*) as profiles from public.profiles; select count(*) as time_entries from public.time_entries;'
+          echo 'Encrypted archive, file checksums and isolated database restore passed.' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Stop isolated restore services
+        if: always()
+        run: supabase stop --workdir "$RUNNER_TEMP/trackify-backup" --no-backup

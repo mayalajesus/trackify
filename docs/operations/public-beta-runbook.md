@@ -33,15 +33,22 @@ Cadastre no GitHub Actions os secrets `SUPABASE_DB_URL`, `SUPABASE_URL`,
 `SUPABASE_SERVICE_ROLE_KEY` e `BACKUP_ENCRYPTION_PASSPHRASE`. O workflow
 `Production backup` executa diariamente e também pode ser iniciado manualmente. Ele exporta roles,
 schema, dados e objetos privados de avatar/logo, cifra o pacote antes do upload e retém somente o
-artefato criptografado por sete dias.
+artefato criptografado por 35 dias. Guarde a chave de criptografia em um cofre independente;
+perder essa chave torna os arquivos irrecuperáveis. Nunca registre seu valor em logs ou no Git.
 
-No primeiro dia de cada mês — e em toda execução manual — o workflow restaura o dump em um
-PostgreSQL temporário e falha se o restore não for válido. Uma falha de backup ou restore bloqueia
-novos cadastros até correção.
+Em cada execução, o workflow descriptografa o artefato, verifica os checksums e restaura o dump
+em um Supabase local descartável, com os schemas internos de Auth/Storage. O resultado só é
+válido quando todas essas etapas passam. O arquivo criptografado é enviado antes do teste:
+se a restauração falhar, ainda existe uma cópia para investigação, marcada pela execução com falha.
+O procedimento não escreve no banco de produção. Falhas exigem intervenção operacional;
+não existe bloqueio automático de cadastros por esse workflow.
+
+O dump usa uma configuração temporária, independente do OAuth do app. A restauração segue
+[a documentação do Supabase](https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore).
 
 ## Restauração
 
-1. Baixe o artefato mais recente e confirme que ele tem no máximo sete dias.
+1. Baixe o artefato da execução bem-sucedida mais recente. Investigue se tiver mais de 24 horas.
 2. Descriptografe em uma máquina controlada:
    `openssl enc -d -aes-256-cbc -pbkdf2 -in backup.tar.gz.enc -out backup.tar.gz -pass env:BACKUP_ENCRYPTION_PASSPHRASE`.
 3. Extraia o arquivo em um diretório temporário e valide `SHA256SUMS`.
