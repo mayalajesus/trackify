@@ -7,11 +7,41 @@ import {
 import { createTimerActions } from "../../src/lib/store/timer-actions";
 
 describe("shared task stop permissions", () => {
+  it("does not clear a timer changed by another session", async () => {
+    const query = vi.fn(async (sql: string) => ({
+      rows: sql.includes("from public.active_timers")
+        ? [
+            {
+              status: "running",
+              workspace_id: "workspace",
+              task: "Changed remotely",
+              project_id: "project",
+              started_at: "2026-10-13T12:00:00Z",
+              started_date: "2026-10-13",
+              start_clock: "09:00:00",
+              accumulated_seconds: 0,
+              hourly_rate: null,
+              currency: null,
+              billable: false,
+            },
+          ]
+        : [],
+    }));
+    await expect(
+      clearOwnTimer({ query }, "user", "workspace", true, { status: "idle" }),
+    ).rejects.toMatchObject({ code: "timer_conflict" });
+    expect(query).toHaveBeenCalledWith("rollback");
+    expect(query.mock.calls.some(([sql]) => /delete|insert|update set/.test(sql))).toBe(false);
+  });
   it.each([true, false])(
     "commits participant stop only when their hours were saved: %s",
     async (saved) => {
       const query = vi.fn(async (sql: string) => {
-        if (sql.startsWith("select * from public.active_timers"))
+        if (
+          sql.startsWith(
+            "select *, started_date::text, start_clock::text from public.active_timers",
+          )
+        )
           return {
             rows: [
               {
@@ -65,7 +95,11 @@ describe("shared task stop permissions", () => {
         accumulated_seconds: 0,
       };
       const query = vi.fn(async (sql: string, values?: unknown[]) => {
-        if (sql.startsWith("select * from public.active_timers")) {
+        if (
+          sql.startsWith(
+            "select *, started_date::text, start_clock::text from public.active_timers",
+          )
+        ) {
           expect(values).toEqual(["user", "workspace"]);
           return { rows: scenario === "missing" ? [] : [row] };
         }

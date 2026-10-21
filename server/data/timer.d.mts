@@ -16,6 +16,7 @@ export function clearOwnTimer(
   userId: string,
   workspaceId: string,
   manageTransaction?: boolean,
+  expectedTimer?: unknown,
 ): Promise<void>;
 
 export function requireSharedTimerSource(

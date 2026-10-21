@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { assertTimerUnchanged } from "./data/timer-conflict.mjs";
 import {
   acceptLegalTerms,
   cancelAccountDeletion,
@@ -361,6 +362,19 @@ async function operation(request, user, config, body) {
         await client.query("select id from public.workspaces where id=$1 for update", [
           workspaceId,
         ]);
+        if (Object.hasOwn(body, "expectedTimer")) {
+          const current = await client.query(
+            "select *, started_date::text, start_clock::text from public.active_timers where user_id=$1 and workspace_id=$2 for update",
+            [user.id, workspaceId],
+          );
+          assertTimerUnchanged(
+            body.expectedTimer,
+            current.rows[0]
+              ? await timerWithOwner(client, user.id, workspaceId, current.rows[0])
+              : null,
+            timer,
+          );
+        }
         const sharedTimer = await client.query(
           `select t.*,t.workspace_id::text,t.project_id::text,t.started_date::text,t.start_clock::text
              from public.active_timers t where t.workspace_id=$1 and t.user_id=$2
@@ -416,7 +430,7 @@ async function operation(request, user, config, body) {
     if (body.operation === "clearActiveTimer") {
       const workspaceId = uuid(body.workspaceId);
       await requireWorkspaceAccess(client, user.id, workspaceId, true);
-      await clearOwnTimer(client, user.id, workspaceId);
+      await clearOwnTimer(client, user.id, workspaceId, true, body.expectedTimer);
       return null;
     }
     throw new DataApiError(400, "Unsupported data operation.");

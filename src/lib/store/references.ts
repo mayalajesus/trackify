@@ -75,6 +75,7 @@ export function shareAccountReferences(
   if (
     previous.version === next.version &&
     previous.syncProtocol === next.syncProtocol &&
+    previous.timerSyncProtocol === next.timerSyncProtocol &&
     identities === previous.identities &&
     preferencesByUserId === previous.preferencesByUserId &&
     sharedWorkspaces === previous.workspaces

@@ -95,8 +95,16 @@ export interface AccountDataSource {
     confirmation: string,
   ): Promise<DataSourceResult<PersistedAccount>>;
   getActiveTimer(userId: string, workspaceId: string): Promise<DataSourceResult<TimerState | null>>;
-  saveActiveTimer(userId: string, timer: TimerState): Promise<DataSourceResult<TimerState>>;
-  clearActiveTimer(userId: string, workspaceId: string): Promise<DataSourceResult<null>>;
+  saveActiveTimer(
+    userId: string,
+    timer: TimerState,
+    expectedTimer?: TimerState | null,
+  ): Promise<DataSourceResult<TimerState>>;
+  clearActiveTimer(
+    userId: string,
+    workspaceId: string,
+    expectedTimer?: TimerState | null,
+  ): Promise<DataSourceResult<null>>;
   inviteMember(
     workspaceId: string,
     email: string,

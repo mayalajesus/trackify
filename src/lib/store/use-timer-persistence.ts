@@ -240,20 +240,37 @@ export function useTimerPersistence({
           return;
         // Save project/entry changes before the timer references them or is cleared.
         if (!(await persistAccount()) || !isCurrent()) return;
+        const acknowledged = persistedTimerRef.current;
+        const expected =
+          acknowledged?.scope === accountScope && acknowledged.workspaceId === activeWorkspaceId
+            ? (JSON.parse(acknowledged.value) as TimerState)
+            : undefined;
         const result =
           timer.status === "idle"
-            ? await dataSource.clearActiveTimer(authenticatedUserId, activeWorkspaceId)
-            : await dataSource.saveActiveTimer(authenticatedUserId, timer);
+            ? await dataSource.clearActiveTimer(authenticatedUserId, activeWorkspaceId, expected)
+            : await dataSource.saveActiveTimer(authenticatedUserId, timer, expected);
         if (accountScopeRef.current !== accountScope) return;
         if (!result.success) {
-          persistedTimerRef.current = null;
+          // Keep the baseline after errors; dropping it would let retry overwrite
+          // a timer changed by another tab without its precondition.
           if (isCurrent()) setTimerPersistenceError(result.error);
           return;
         }
         // Even an obsolete in-flight save changed the server. The next queued
         // operation must see that result (especially a stop following a start).
-        persistedTimerRef.current = { scope: accountScope, workspaceId: activeWorkspaceId, value };
-        if (isCurrent()) setTimerPersistenceError(null);
+        const canonical = result.data ?? timer;
+        persistedTimerRef.current = {
+          scope: accountScope,
+          workspaceId: activeWorkspaceId,
+          value: JSON.stringify(canonical),
+        };
+        if (isCurrent()) {
+          if (JSON.stringify(canonical) !== value) {
+            timerRef.current = canonical;
+            setTimer(canonical);
+          }
+          setTimerPersistenceError(null);
+        }
       });
     const tracked = request.finally(() => {
       if (timerSyncPromiseRef.current === tracked) timerSyncPromiseRef.current = null;
@@ -273,6 +290,8 @@ export function useTimerPersistence({
     accountScope,
     persistAccount,
     timerSaveRetryKey,
+    setTimer,
+    timerRef,
     accountScopeRef,
     persistedTimerRef,
     setTimerPersistenceError,

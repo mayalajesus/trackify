@@ -249,6 +249,7 @@ export async function loadAccount(client, user, config, { profileEnsured = false
   return {
     version: 13,
     syncProtocol: 1,
+    timerSyncProtocol: 1,
     identities,
     workspaces: workspaces.rows.map((row) => ({
       workspace: {

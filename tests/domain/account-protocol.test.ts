@@ -4,6 +4,11 @@ import { makeSeedAccount } from "../../src/lib/store/seed-account";
 import { synchronizeAccount } from "../../server/data/account-sync.mjs";
 
 describe("account synchronization protocol upgrades", () => {
+  it("preserves the conditional timer-write protocol on unchanged records", () => {
+    const previous = makeSeedAccount();
+    const next = { ...previous, timerSyncProtocol: 1 as const };
+    expect(shareAccountReferences(previous, next).timerSyncProtocol).toBe(1);
+  });
   it("keeps protocol upgrades even when account records have not changed", () => {
     const previous = makeSeedAccount();
     const next = { ...structuredClone(previous), syncProtocol: 1 as const };

@@ -1,5 +1,6 @@
 import { numberValue } from "./validation.mjs";
 import { DataApiError } from "../data-api-error.mjs";
+import { assertTimerUnchanged } from "./timer-conflict.mjs";
 
 export async function timerWithOwner(client, userId, workspaceId, row) {
   const timer = timerFromRow(row);
@@ -14,14 +15,26 @@ export async function timerWithOwner(client, userId, workspaceId, row) {
   return timer;
 }
 
-export async function clearOwnTimer(client, userId, workspaceId, manageTransaction = true) {
+export async function clearOwnTimer(
+  client,
+  userId,
+  workspaceId,
+  manageTransaction = true,
+  expectedTimer,
+) {
   if (manageTransaction) await client.query("begin");
   try {
     await client.query("select id from public.workspaces where id=$1 for update", [workspaceId]);
     const result = await client.query(
-      "select * from public.active_timers where user_id=$1 and workspace_id=$2 for update",
+      "select *, started_date::text, start_clock::text from public.active_timers where user_id=$1 and workspace_id=$2 for update",
       [userId, workspaceId],
     );
+    if (expectedTimer !== undefined)
+      assertTimerUnchanged(
+        expectedTimer,
+        result.rows[0] ? await timerWithOwner(client, userId, workspaceId, result.rows[0]) : null,
+        null,
+      );
     if (result.rows[0]) {
       const timer = await timerWithOwner(client, userId, workspaceId, result.rows[0]);
       if (timer.collaborationOwnerId && timer.collaborationOwnerId !== userId)

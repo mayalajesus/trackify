@@ -125,8 +125,16 @@ export function createApiDataSource(): AccountDataSource {
       request<PersistedAccount>("deleteWorkspace", { workspaceId, confirmation }),
     getActiveTimer: (_userId, workspaceId) =>
       request<TimerState | null>("getActiveTimer", { workspaceId }),
-    saveActiveTimer: (_userId, timer) => request<TimerState>("saveActiveTimer", { timer }),
-    clearActiveTimer: (_userId, workspaceId) => request<null>("clearActiveTimer", { workspaceId }),
+    saveActiveTimer: (_userId, timer, expectedTimer) =>
+      request<TimerState>("saveActiveTimer", {
+        timer,
+        ...(expectedTimer !== undefined ? { expectedTimer } : {}),
+      }),
+    clearActiveTimer: (_userId, workspaceId, expectedTimer) =>
+      request<null>("clearActiveTimer", {
+        workspaceId,
+        ...(expectedTimer !== undefined ? { expectedTimer } : {}),
+      }),
     inviteMember: (workspaceId, email, role) =>
       request<InvitationLink>("createInvitationLink", {
         workspaceId,
