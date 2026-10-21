@@ -84,13 +84,15 @@ jobs:
           tar -C "$RUNNER_TEMP/trackify-restore" -xzf "$RUNNER_TEMP/trackify-restore/archive.tar.gz"
           (cd "$RUNNER_TEMP/trackify-restore" && sha256sum --check SHA256SUMS)
           # A plain PostgreSQL image lacks Supabase's auth/storage schemas and roles.
-          supabase start --workdir "$RUNNER_TEMP/trackify-backup" -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
-          psql 'postgresql://postgres:postgres@127.0.0.1:54322/postgres' --single-transaction -v ON_ERROR_STOP=1 \
+          supabase start --workdir "$RUNNER_TEMP/trackify-backup" -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta > "$RUNNER_TEMP/trackify-restore/start.log" 2>&1
+          # Restoring role settings needs the LOCAL superuser, not the hosted
+          # project's restricted postgres role. This URL is never production.
+          psql 'postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres' --single-transaction -v ON_ERROR_STOP=1 \
             -f "$RUNNER_TEMP/trackify-restore/database/roles.sql" \
             -f "$RUNNER_TEMP/trackify-restore/database/schema.sql" \
             -c 'SET session_replication_role = replica' \
             -f "$RUNNER_TEMP/trackify-restore/database/data.sql"
-          psql 'postgresql://postgres:postgres@127.0.0.1:54322/postgres' -v ON_ERROR_STOP=1 \
+          psql 'postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres' -v ON_ERROR_STOP=1 \
             -c 'select count(*) as profiles from public.profiles; select count(*) as time_entries from public.time_entries;'
           echo 'Encrypted archive, file checksums and isolated database restore passed.' >> "$GITHUB_STEP_SUMMARY"
 
