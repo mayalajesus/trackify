@@ -299,6 +299,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     timerHydrated,
     onSaved: applySavedAccount,
     beforeSave: recovery.protect,
+    hasConflict: recovery.currentConflict,
   });
 
   const refreshAccount = useCallback(async (): Promise<boolean> => {

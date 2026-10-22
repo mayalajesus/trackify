@@ -138,6 +138,18 @@ reads preserve the originals and retry on focus/online, without asserting unsave
 Already saved drafts are archived conditionally, never deleted by reconciliation. Timer
 acknowledgements explicitly update the journal even if React does not render again.
 
+Open-tab saves retry on online/focus and with bounded delays (5–60 seconds), using the
+same durable journal and serialized persistence. Older unarchived drafts are checked on
+startup, reconnection/focus and every 15 seconds. Automatic replay waits for the current
+tab to settle, takes a per-user Web Lock where supported, and uses the original baseline
+for the server's atomic merge. Compatible changes need no review. Conflicting fields,
+revoked workspace access or a changed/unknown timer baseline require a user choice.
+Timers use conditional writes after the account changes succeed. Partial failures and
+lost responses keep the source pending for idempotent retry; only confirmed saves archive
+the unchanged source. Scope, queued writes and local edits are checked across awaits,
+so background recovery cannot replace newer edits. Manual resolutions are also journaled
+as pending until the server confirms them. Archived safety copies are never auto-replayed.
+
 Accounts advertise `timerSyncProtocol: 1`. Timer save/clear accepts an expected snapshot,
 checked under the workspace lock; stale writes fail with `timer_conflict`. Browser retries
 retain this baseline and acknowledge the canonical server timer. Restoring a local timer

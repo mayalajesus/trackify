@@ -83,7 +83,7 @@ export function RecoveryDialog() {
           </Alert.Content>
         </Alert>
       ) : null}
-      {accountPersistenceError ? (
+      {accountPersistenceError && recovery.currentConflict ? (
         <div className="mx-4 my-2">
           <Button
             size="sm"

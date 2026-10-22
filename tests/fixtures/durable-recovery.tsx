@@ -16,6 +16,7 @@ function Fixture() {
         Start fixture timer
       </button>
       <button onClick={() => store.stopTimer()}>Stop fixture timer</button>
+      <button onClick={() => store.setTimerElapsed(60)}>Set fixture timer to one minute</button>
       <output aria-label="Save error">{store.accountPersistenceError}</output>
       <button
         onClick={() => store.updateClient(store.clients[0]!.id, { name: "Local recovery edit" })}

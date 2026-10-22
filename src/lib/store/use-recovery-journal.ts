@@ -6,6 +6,7 @@ import { initialTimer } from "./defaults";
 import { isValidAccount } from "./validation";
 import { isTimerAcknowledged, type AccountScope, type PersistedTimer } from "./timer-persistence";
 import type { TimerState } from "./types";
+import { recoverAutomatically } from "./automatic-recovery";
 import {
   canRecoverTimer,
   hasPendingRecovery,
@@ -48,6 +49,8 @@ export function useRecoveryJournal(options: Options) {
   const [drafts, setDrafts] = useState<RecoveryDraft[]>([]);
   const [verifiedPendingIds, setVerifiedPendingIds] = useState<string[]>([]);
   const refreshRevision = useRef(0);
+  const refreshing = useRef(false);
+  const [currentConflict, setCurrentConflict] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [review, setReview] = useState<{
@@ -58,6 +61,8 @@ export function useRecoveryJournal(options: Options) {
   } | null>(null);
   const [choices, setChoices] = useState<Record<string, RecoveryChoice>>({});
   const [keepRemoteTimer, setKeepRemoteTimer] = useState(false);
+  const interacting = useRef(false);
+  interacting.current = busy || Boolean(review);
 
   const capture = useCallback((): RecoveryDraft | null => {
     const o = latest.current;
@@ -65,7 +70,7 @@ export function useRecoveryJournal(options: Options) {
       return null;
     const ack = o.persistedTimerRef.current;
     const timerBaseline =
-      ack?.scope === o.scope && ack.workspaceId === o.workspaceId
+      o.timerHydrated && ack?.scope === o.scope && ack.workspaceId === o.workspaceId
         ? (JSON.parse(ack.value) as TimerState)
         : null;
     return structuredClone({
@@ -130,14 +135,17 @@ export function useRecoveryJournal(options: Options) {
   useEffect(() => {
     if (options.hydrated) void protect().catch(() => undefined);
   });
-  const refresh = useCallback(async () => {
+  const refreshUnlocked = useCallback(async () => {
     const o = latest.current;
     const revision = ++refreshRevision.current;
     const current = () =>
-      latest.current.userId === o.userId && revision === refreshRevision.current;
+      latest.current.userId === o.userId &&
+      o.scopeRef.current === o.scope &&
+      revision === refreshRevision.current;
     if (!o.userId) {
       setDrafts([]);
       setVerifiedPendingIds([]);
+      setCurrentConflict(false);
       return;
     }
     let records: RecoveryDraft[];
@@ -156,11 +164,31 @@ export function useRecoveryJournal(options: Options) {
     setDrafts(records);
     setVerifiedPendingIds([]);
     const pending = records.filter((draft) => !draft.archived);
-    if (!o.hydrated || pending.length === 0) return;
+    const localDraft = capture();
+    const localPending =
+      localDraft &&
+      (localDraft.timerPending || !accountsEqual(localDraft.account, localDraft.baseline));
+    if (!o.hydrated || (pending.length === 0 && !localPending)) {
+      if (current() && !localPending) setCurrentConflict(false);
+      return;
+    }
     // Failed reads never discard drafts or assert unsaved changes exist.
     try {
       const account = await o.dataSource.loadAccount(o.userId);
       if (!current() || !account.success) return;
+      if (localPending) {
+        const localTimer = localDraft.timerPending
+          ? await o.dataSource.getActiveTimer(o.userId, o.workspaceId)
+          : { success: true as const, data: initialTimer };
+        if (!current()) return;
+        if (localTimer.success) {
+          const plan = planRecovery(localDraft, account.data);
+          setCurrentConflict(
+            plan.conflicts.length > 0 ||
+              !canRecoverTimer(localDraft, localTimer.data ?? initialTimer),
+          );
+        }
+      } else setCurrentConflict(false);
       const verified: string[] = [];
       for (const draft of pending) {
         const timer = draft.timerPending
@@ -169,7 +197,49 @@ export function useRecoveryJournal(options: Options) {
         if (!current()) return;
         if (!timer.success) continue;
         if (hasPendingRecovery(draft, account.data, timer.data ?? initialTimer)) {
-          verified.push(draft.id);
+          const plan = planRecovery(draft, account.data);
+          if (
+            plan.conflicts.length ||
+            !isValidAccount(plan.account) ||
+            !canRecoverTimer(draft, timer.data ?? initialTimer)
+          ) {
+            verified.push(draft.id);
+            continue;
+          }
+          const snapshot = o.snapshotRef.current;
+          const activeTimer = o.timerRef.current;
+          const safeToRecover = () =>
+            current() &&
+            latest.current.timerHydrated &&
+            !interacting.current &&
+            !applying.current &&
+            !o.queueRef.current &&
+            !o.timerQueueRef.current &&
+            o.snapshotRef.current === snapshot &&
+            o.timerRef.current === activeTimer &&
+            accountsEqual(snapshot, o.syncedRef.current) &&
+            isTimerAcknowledged(activeTimer, o.persistedTimerRef.current, o.scope, o.workspaceId);
+          if (!safeToRecover()) continue;
+          const result = await recoverAutomatically(draft, o.dataSource, safeToRecover);
+          if (!current()) return;
+          if (result.status === "conflict") verified.push(draft.id);
+          if (result.status !== "saved") continue;
+          await archiveSourceIfUnchanged(draft);
+          if (safeToRecover()) {
+            o.syncedRef.current = result.account;
+            o.snapshotRef.current = result.account;
+            o.onSaved(result.account);
+            if (draft.timerPending && draft.workspaceId === o.workspaceId) {
+              o.persistedTimerRef.current = {
+                scope: o.scope,
+                workspaceId: o.workspaceId,
+                value: JSON.stringify(result.timer),
+              };
+              o.onTimerRecovered(result.timer);
+            }
+          }
+          // Let ordinary persistence and UI settle before processing another draft.
+          break;
         } else {
           // Preserve the exact original; never archive a newer edit from another tab.
           await archiveSourceIfUnchanged(draft);
@@ -185,7 +255,24 @@ export function useRecoveryJournal(options: Options) {
     } catch {
       // Transient server failures leave originals available for download.
     }
-  }, []);
+  }, [capture]);
+  const refresh = useCallback(async () => {
+    if (refreshing.current || navigator.onLine === false || interacting.current) return;
+    refreshing.current = true;
+    try {
+      if (navigator.locks) {
+        await navigator.locks.request(
+          `trackify-recovery:${latest.current.userId}`,
+          { ifAvailable: true },
+          async (lock) => {
+            if (lock) await refreshUnlocked();
+          },
+        );
+      } else await refreshUnlocked();
+    } finally {
+      refreshing.current = false;
+    }
+  }, [refreshUnlocked]);
   useEffect(() => {
     void refresh();
     const check = () => {
@@ -193,12 +280,14 @@ export function useRecoveryJournal(options: Options) {
     };
     window.addEventListener("focus", check);
     window.addEventListener("online", check);
+    const interval = window.setInterval(check, 15_000);
     return () => {
       refreshRevision.current += 1;
       window.removeEventListener("focus", check);
       window.removeEventListener("online", check);
+      window.clearInterval(interval);
     };
-  }, [options.userId, options.hydrated, refresh]);
+  }, [options.userId, options.hydrated, options.timerHydrated, refresh]);
   useEffect(() => {
     setReview(null);
     setMessage(null);
@@ -316,10 +405,10 @@ export function useRecoveryJournal(options: Options) {
       // Persist the resolved draft before replacing any in-memory version.
       const resolved = {
         ...review.draft,
-        id: `${o.userId}:archive:${crypto.randomUUID()}`,
+        id: `${o.userId}:resolved:${crypto.randomUUID()}`,
         baseline: result.data,
         account: plan.account,
-        archived: true,
+        archived: false,
         timer: recoveredTimer ?? o.timerRef.current,
         timerBaseline: recoveredTimerBaseline,
         timerPending: review.draft.timerPending && !keepRemoteTimer,
@@ -345,7 +434,7 @@ export function useRecoveryJournal(options: Options) {
       if (!review.draft.id.startsWith(`${o.userId}:${pageId.current}:`))
         await archiveSourceIfUnchanged(review.draft);
       setReview(null);
-      await refresh();
+      await refreshUnlocked();
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : "Não foi possível recuperar as alterações.",
@@ -355,7 +444,7 @@ export function useRecoveryJournal(options: Options) {
       lastObserved.current = [];
       setBusy(false);
     }
-  }, [review, busy, choices, keepRemoteTimer, refresh]);
+  }, [review, busy, choices, keepRemoteTimer, refreshUnlocked]);
 
   const importDraft = useCallback(
     async (text: string) => {
@@ -380,6 +469,7 @@ export function useRecoveryJournal(options: Options) {
   return {
     protect,
     storageError,
+    currentConflict,
     pendingDrafts: drafts.filter(
       (draft) =>
         draft.userId === options.userId && !draft.archived && verifiedPendingIds.includes(draft.id),

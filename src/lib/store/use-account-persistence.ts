@@ -24,6 +24,7 @@ export function useAccountPersistence({
   timerHydrated,
   onSaved,
   beforeSave,
+  hasConflict,
 }: {
   userId: string;
   dataSource: AccountDataSource;
@@ -41,6 +42,7 @@ export function useAccountPersistence({
   timerHydrated: boolean;
   onSaved: (account: PersistedAccount) => void;
   beforeSave: () => Promise<void>;
+  hasConflict: boolean;
 }) {
   const [accountPersistenceError, setAccountPersistenceError] = useState<string | null>(null);
   const [timerSaveRetryKey, setTimerSaveRetryKey] = useState(0);
@@ -69,6 +71,82 @@ export function useAccountPersistence({
       }
     });
   }, [persistAccount, scope, scopeRef, timerHydrated]);
+
+  useEffect(() => {
+    if (!userId || !hydrated) return;
+    let cancelled = false;
+    let running = false;
+    let delay = 5_000;
+    let timeout: ReturnType<typeof setTimeout>;
+    const attempt = async () => {
+      if (cancelled || running) return;
+      clearTimeout(timeout);
+      running = true;
+      try {
+        if (
+          navigator.onLine === false ||
+          hasConflict ||
+          scopeRef.current !== scope ||
+          queueRef.current ||
+          timerQueueRef.current
+        )
+          return;
+        const pending =
+          !accountsEqual(snapshotRef.current, syncedRef.current) ||
+          !timerHydrated ||
+          !isTimerAcknowledged(
+            timerRef.current,
+            persistedTimerRef.current,
+            scope,
+            activeWorkspaceId,
+          );
+        if (!pending) {
+          delay = 5_000;
+          return;
+        }
+        // Uses the same durable journal, serialized writes and atomic server merge
+        // as an ordinary save. No baseline is discarded on a failed attempt.
+        const saved = await persistAccount();
+        if (cancelled || scopeRef.current !== scope) return;
+        if (saved) {
+          if (timerHydrated) setTimerSaveRetryKey((key) => key + 1);
+          else setTimerLoadRetryKey((key) => key + 1);
+        }
+        delay = Math.min(delay * 2, 60_000);
+      } finally {
+        running = false;
+        if (!cancelled) timeout = setTimeout(() => void attempt(), delay);
+      }
+    };
+    const reconnect = () => {
+      delay = 5_000;
+      void attempt();
+    };
+    timeout = setTimeout(() => void attempt(), delay);
+    window.addEventListener("online", reconnect);
+    window.addEventListener("focus", reconnect);
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+      window.removeEventListener("online", reconnect);
+      window.removeEventListener("focus", reconnect);
+    };
+  }, [
+    userId,
+    hydrated,
+    timerHydrated,
+    hasConflict,
+    scope,
+    scopeRef,
+    queueRef,
+    timerQueueRef,
+    snapshotRef,
+    syncedRef,
+    timerRef,
+    persistedTimerRef,
+    activeWorkspaceId,
+    persistAccount,
+  ]);
 
   const downloadPendingChanges = useCallback(() => {
     const blob = new Blob(
