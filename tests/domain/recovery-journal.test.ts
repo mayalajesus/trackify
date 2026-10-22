@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   planRecovery,
+  hasPendingRecovery,
   canRecoverTimer,
   parseRecoveryDraft,
   type RecoveryDraft,
@@ -94,5 +95,35 @@ describe("durable recovery planning", () => {
     expect(() => assertTimerUnchanged(timer, null)).toThrow();
     expect(() => assertTimerUnchanged(initialTimer, null)).not.toThrow();
     expect(() => assertTimerUnchanged(timer, structuredClone(timer))).not.toThrow();
+  });
+});
+
+describe("confirmed recovery pending status", () => {
+  it("does not flag an acknowledged stop, but preserves idle draft content", () => {
+    const local = draft();
+    local.timerPending = true;
+    expect(hasPendingRecovery(local, local.account, initialTimer)).toBe(false);
+    local.timer = { ...initialTimer, task: "Unstarted draft", projectId: "project" };
+    expect(hasPendingRecovery(local, local.account, initialTimer)).toBe(true);
+  });
+  it("ignores already saved changes and unrelated server edits", () => {
+    const local = draft();
+    local.account.workspaces[0]!.clients[0]!.name = "Saved edit";
+    const remote = structuredClone(local.account);
+    remote.workspaces[0]!.workspace.name = "Another session";
+    expect(hasPendingRecovery(local, remote, initialTimer)).toBe(false);
+  });
+  it("preserves genuine edits, conflicting changes and pending timers", () => {
+    const local = draft();
+    local.account.workspaces[0]!.clients[0]!.name = "Unsaved";
+    expect(hasPendingRecovery(local, local.baseline, initialTimer)).toBe(true);
+    const remote = structuredClone(local.baseline);
+    remote.workspaces[0]!.clients[0]!.name = "Conflict";
+    expect(hasPendingRecovery(local, remote, initialTimer)).toBe(true);
+    local.account = structuredClone(local.baseline);
+    local.timerPending = true;
+    local.timer = { ...initialTimer, status: "running", task: "Running", startedAt: 1000 };
+    expect(hasPendingRecovery(local, local.baseline, initialTimer)).toBe(true);
+    expect(hasPendingRecovery(local, local.baseline, local.timer)).toBe(false);
   });
 });

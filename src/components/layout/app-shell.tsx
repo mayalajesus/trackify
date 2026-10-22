@@ -172,7 +172,6 @@ export function AppShell({ children }: { children: ReactNode }) {
 }
 
 function AppDataGate({ children }: { children: ReactNode }) {
-  const location = useLocation();
   const {
     sessionStatus,
     accountLoading,
@@ -209,7 +208,7 @@ function AppDataGate({ children }: { children: ReactNode }) {
           <Button className="mt-5" onPress={retryAccountLoad}>
             {t("Try again")}
           </Button>
-          <RecoveryDialog allowImport />
+          <RecoveryDialog />
         </Card>
       </main>
     );
@@ -219,7 +218,7 @@ function AppDataGate({ children }: { children: ReactNode }) {
   if (workspaces.length === 0)
     return (
       <>
-        <RecoveryDialog allowImport />
+        <RecoveryDialog />
         <WorkspaceAccessOnboarding />
       </>
     );
@@ -243,7 +242,7 @@ function AppDataGate({ children }: { children: ReactNode }) {
         </Alert>
       ) : null}
       <AppShellContent>
-        <RecoveryDialog allowImport={location.pathname === "/settings"} />
+        <RecoveryDialog />
         {children}
       </AppShellContent>
     </>

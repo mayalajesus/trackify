@@ -33,6 +33,7 @@ type TimerPersistenceOptions = {
   persistAccount: () => Promise<boolean>;
   timerLoadRetryKey: number;
   timerSaveRetryKey: number;
+  onAcknowledged: () => Promise<void>;
 };
 
 export function useTimerPersistence({
@@ -57,6 +58,7 @@ export function useTimerPersistence({
   persistAccount,
   timerLoadRetryKey,
   timerSaveRetryKey,
+  onAcknowledged,
 }: TimerPersistenceOptions) {
   const hydrationRef = useRef<{
     scope: AccountScope;
@@ -271,6 +273,8 @@ export function useTimerPersistence({
           }
           setTimerPersistenceError(null);
         }
+        // Ref-only acknowledgements may not render React, notably when stopping.
+        await onAcknowledged().catch(() => undefined);
       });
     const tracked = request.finally(() => {
       if (timerSyncPromiseRef.current === tracked) timerSyncPromiseRef.current = null;
@@ -290,6 +294,7 @@ export function useTimerPersistence({
     accountScope,
     persistAccount,
     timerSaveRetryKey,
+    onAcknowledged,
     setTimer,
     timerRef,
     accountScopeRef,

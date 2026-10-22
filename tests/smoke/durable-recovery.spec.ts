@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { installAccountFixture } from "../support/account-fixture";
 import { signInAs } from "../support/qa-auth";
 import { initialTimer } from "../../src/lib/store/defaults";
@@ -51,10 +51,12 @@ test("conflict resolution preserves a recoverable copy and does not silently ove
   await page.getByRole("button", { name: "Usar servidor", exact: true }).click();
   await page.getByRole("button", { name: "Recuperar alterações", exact: true }).click();
   await expect(page.getByLabel("Client name")).toHaveText("Other session edit");
-  await page
-    .getByRole("button", { name: "Rascunhos e cópias de recuperação", exact: true })
-    .click();
-  await expect(page.getByRole("dialog")).toContainText("Cópia preservada");
+  await expect(
+    page.getByRole("button", { name: "Rascunhos e cópias de recuperação", exact: true }),
+  ).toHaveCount(0);
+  await expect
+    .poll(async () => (await readDrafts(page)).filter((draft) => draft.archived).length)
+    .toBeGreaterThan(0);
   expect(fixture.account!.workspaces[0]!.clients[0]!.name).toBe("Other session edit");
 });
 
@@ -76,43 +78,122 @@ test("unavailable local storage blocks writes and keeps the edit visible", async
   expect(fixture.account!.workspaces[0]!.clients[0]!.name).toBe("Fixture client");
 });
 
-test("imports a recovery file for its owner and rejects another account's file", async ({
+test("an already saved stop is archived without a false warning or repeated archive cards", async ({
   page,
 }) => {
   const fixture = await installAccountFixture(page);
   await signInAs(page, "owner");
   await page.goto("/tests/fixtures/durable-recovery.html");
   await expect(page.getByLabel("Client name")).toHaveText("Fixture client");
-  const baseline = structuredClone(fixture.account!);
-  const account = structuredClone(baseline);
-  account.workspaces[0]!.clients[0]!.name = "Imported pending edit";
+  const account = structuredClone(fixture.account!);
+  const userId = account.identities[0]!.id;
   const draft = {
+    id: `${userId}:old-tab:workspace`,
     version: 1,
-    userId: baseline.identities[0]!.id,
-    baseline,
+    userId,
+    updatedAt: "2026-10-21T19:43:34.000Z",
     account,
-    workspaceId: baseline.workspaces[0]!.workspace.id,
+    baseline: account,
+    workspaceId: account.workspaces[0]!.workspace.id,
     timer: initialTimer,
-    timerPending: false,
+    timerBaseline: null,
+    timerPending: true,
   };
-  await page
-    .getByRole("button", { name: "Rascunhos e cópias de recuperação", exact: true })
-    .click();
-  const upload = page.getByLabel("Importar cópia de recuperação", { exact: true });
-  await upload.setInputFiles({
-    name: "draft.json",
-    mimeType: "application/json",
-    buffer: Buffer.from(JSON.stringify({ ...draft, userId: "another-user" })),
-  });
-  await expect(page.getByRole("dialog")).toContainText("não é um rascunho válido desta conta");
-  await upload.setInputFiles({
-    name: "draft.json",
-    mimeType: "application/json",
-    buffer: Buffer.from(JSON.stringify(draft)),
-  });
-  await page.getByRole("dialog").getByRole("button", { name: "Revisar", exact: true }).click();
-  await page.getByRole("button", { name: "Recuperar alterações", exact: true }).click();
+  await page.evaluate(async (draft) => {
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open("trackify-recovery", 1);
+      request.onsuccess = () => {
+        const db = request.result;
+        const tx = db.transaction("drafts", "readwrite");
+        const store = tx.objectStore("drafts");
+        store.put(draft);
+        store.put({ ...draft, id: draft.id + ":archive1", archived: true });
+        store.put({ ...draft, id: draft.id + ":archive2", archived: true });
+        tx.oncomplete = () => {
+          db.close();
+          resolve();
+        };
+        tx.onerror = () => reject(tx.error);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }, draft);
+  await page.reload();
+  await expect(page.getByLabel("Client name")).toHaveText("Fixture client");
   await expect
-    .poll(() => fixture.account?.workspaces[0]?.clients[0]?.name)
-    .toBe("Imported pending edit");
+    .poll(async () => (await readDrafts(page)).find((item) => item.id === draft.id)?.archived)
+    .toBe(true);
+  await expect(page.getByRole("button", { name: "Revisar rascunhos", exact: true })).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Rascunhos e cópias de recuperação", exact: true }),
+  ).toHaveCount(0);
+  const preserved = await page.evaluate(async () => {
+    return new Promise<unknown[]>((resolve) => {
+      const request = indexedDB.open("trackify-recovery", 1);
+      request.onsuccess = () => {
+        const db = request.result;
+        const tx = db.transaction("drafts", "readonly");
+        const get = tx.objectStore("drafts").getAll();
+        tx.oncomplete = () => {
+          db.close();
+          resolve(get.result);
+        };
+      };
+    });
+  });
+  expect(preserved).toEqual(
+    expect.arrayContaining([expect.objectContaining({ id: draft.id, archived: true, account })]),
+  );
 });
+
+test("a successful timer stop clears the journal without needing another user edit", async ({
+  page,
+}) => {
+  const fixture = await installAccountFixture(page);
+  await signInAs(page, "owner");
+  await page.goto("/tests/fixtures/durable-recovery.html");
+  await expect(page.getByLabel("Client name")).toHaveText("Fixture client");
+  await page.getByRole("button", { name: "Start fixture timer", exact: true }).click();
+  await expect.poll(() => fixture.timer?.status).toBe("running");
+  await page.getByRole("button", { name: "Stop fixture timer", exact: true }).click();
+  await expect.poll(() => fixture.timer).toBeNull();
+  await expect
+    .poll(() =>
+      page.evaluate(async () => {
+        return new Promise<number>((resolve) => {
+          const request = indexedDB.open("trackify-recovery", 1);
+          request.onsuccess = () => {
+            const db = request.result;
+            const tx = db.transaction("drafts", "readonly");
+            const get = tx.objectStore("drafts").getAll();
+            tx.oncomplete = () => {
+              db.close();
+              resolve(get.result.filter((item) => !item.archived).length);
+            };
+          };
+        });
+      }),
+    )
+    .toBe(0);
+  await page.reload();
+  await expect(page.getByLabel("Timer status")).toHaveText("idle");
+  await expect(page.getByRole("button", { name: "Revisar rascunhos", exact: true })).toHaveCount(0);
+});
+
+async function readDrafts(page: Page) {
+  return page.evaluate(async () => {
+    return new Promise<Array<{ id: string; archived?: boolean }>>((resolve, reject) => {
+      const request = indexedDB.open("trackify-recovery", 1);
+      request.onsuccess = () => {
+        const db = request.result;
+        const tx = db.transaction("drafts", "readonly");
+        const get = tx.objectStore("drafts").getAll();
+        tx.oncomplete = () => {
+          db.close();
+          resolve(get.result);
+        };
+        tx.onerror = () => reject(tx.error);
+      };
+    });
+  });
+}

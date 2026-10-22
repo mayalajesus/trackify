@@ -149,3 +149,14 @@ export function canRecoverTimer(draft: RecoveryDraft, remote: TimerState) {
     (draft.timerBaseline !== null && accountsEqual(draft.timerBaseline, remote))
   );
 }
+
+// Compare the local delta, preserving unrelated server edits.
+export function hasPendingRecovery(
+  draft: RecoveryDraft,
+  remote: PersistedAccount,
+  remoteTimer: TimerState,
+) {
+  const plan = planRecovery(draft, remote);
+  const timerDiffers = draft.timerPending && !accountsEqual(draft.timer, remoteTimer);
+  return plan.conflicts.length > 0 || !accountsEqual(plan.account, remote) || timerDiffers;
+}

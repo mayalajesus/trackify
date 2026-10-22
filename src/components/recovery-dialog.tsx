@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Alert } from "@heroui/react/alert";
 import { Button } from "@heroui/react/button";
 import { Modal } from "@heroui/react/modal";
-import { Input } from "@heroui/react/input";
 import { Typography } from "@heroui/react/typography";
 import { ModalLayout } from "./modal-layout";
 import { ModalTriggerRegistration } from "./overlay-trigger-registration";
@@ -53,11 +52,11 @@ function conflictLabel(draft: RecoveryDraft, path: string) {
     fields[parts.at(-1) ?? ""] ?? "Informação alterada",
   ].join(" — ");
 }
-export function RecoveryDialog({ allowImport = false }: { allowImport?: boolean }) {
+export function RecoveryDialog() {
   const { recovery, accountPersistenceError } = useStore();
   const [listOpen, setListOpen] = useState(false);
-  const [importError, setImportError] = useState<string | null>(null);
-  const pending = recovery.drafts.filter((draft) => !draft.archived);
+  const pending = recovery.pendingDrafts;
+  const drafts = pending;
   const review = recovery.review;
   const plan = review ? planRecovery(review.draft, review.remote, recovery.choices) : null;
   const timerConflict = review && !canRecoverTimer(review.draft, review.remoteTimer);
@@ -84,27 +83,15 @@ export function RecoveryDialog({ allowImport = false }: { allowImport?: boolean 
           </Alert.Content>
         </Alert>
       ) : null}
-      {allowImport || accountPersistenceError || recovery.drafts.length > 0 ? (
-        <div className="mx-4 my-2 flex flex-wrap gap-2">
-          {accountPersistenceError ? (
-            <Button
-              size="sm"
-              variant="secondary"
-              isDisabled={recovery.busy}
-              onPress={() => void recovery.begin()}
-            >
-              Resolver alterações pendentes
-            </Button>
-          ) : null}
+      {accountPersistenceError ? (
+        <div className="mx-4 my-2">
           <Button
             size="sm"
             variant="secondary"
-            onPress={() => {
-              setListOpen(true);
-              void recovery.refresh();
-            }}
+            isDisabled={recovery.busy}
+            onPress={() => void recovery.begin()}
           >
-            Rascunhos e cópias de recuperação
+            Resolver alterações pendentes
           </Button>
         </div>
       ) : null}
@@ -123,36 +110,9 @@ export function RecoveryDialog({ allowImport = false }: { allowImport?: boolean 
             <Modal.Dialog>
               <Modal.CloseTrigger aria-label="Fechar" />
               <ModalLayout.Header>
-                {review ? "Revisar alterações" : "Rascunhos e cópias de recuperação"}
+                {review ? "Revisar alterações" : "Alterações pendentes"}
               </ModalLayout.Header>
               <ModalLayout.Body>
-                {importError ? (
-                  <Typography type="body-sm" role="alert">
-                    {importError}
-                  </Typography>
-                ) : null}
-                {!review ? (
-                  <label className="flex flex-col gap-2 text-sm">
-                    Importar cópia de recuperação
-                    <Input
-                      type="file"
-                      accept="application/json,.json"
-                      aria-label="Importar cópia de recuperação"
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        setImportError(null);
-                        if (file && file.size > 20_000_000)
-                          setImportError("O arquivo de recuperação deve ter no máximo 20 MB.");
-                        else if (file)
-                          void file
-                            .text()
-                            .then(recovery.importDraft)
-                            .catch(() => setImportError("Não foi possível ler o arquivo."));
-                        event.target.value = "";
-                      }}
-                    />
-                  </label>
-                ) : null}
                 {recovery.message ? (
                   <Alert status="danger">
                     <Alert.Content>
@@ -218,7 +178,11 @@ export function RecoveryDialog({ allowImport = false }: { allowImport?: boolean 
                     {review.draft.timerPending ? (
                       <section className="space-y-2">
                         <Typography type="body-sm">
-                          Cronômetro do rascunho: {review.draft.timer.task || "Sem descrição"}
+                          {review.draft.timer.status === "idle"
+                            ? review.draft.timer.task
+                              ? `Tarefa ainda não iniciada: ${review.draft.timer.task}`
+                              : "Este rascunho contém o encerramento do cronômetro."
+                            : `Cronômetro do rascunho: ${review.draft.timer.task || "Tarefa sem nome"}`}
                         </Typography>
                         {timerConflict ? (
                           <Typography type="body-sm">
@@ -239,19 +203,16 @@ export function RecoveryDialog({ allowImport = false }: { allowImport?: boolean 
                   </>
                 ) : (
                   <div className="space-y-3">
-                    {recovery.drafts.length === 0 ? (
-                      <Typography type="body-sm">
-                        Nenhum rascunho de outra aba encontrado.
-                      </Typography>
+                    {drafts.length === 0 ? (
+                      <Typography type="body-sm">Nenhuma alteração pendente encontrada.</Typography>
                     ) : null}
-                    {recovery.drafts.map((draft) => (
+                    {drafts.map((draft) => (
                       <section
                         key={draft.id}
                         className="space-y-2 rounded-lg border border-border p-3"
                       >
                         <Typography type="body-sm">
-                          {new Date(draft.updatedAt).toLocaleString("pt-BR")} —{" "}
-                          {draft.archived ? "Cópia preservada" : "Alterações pendentes"}
+                          {new Date(draft.updatedAt).toLocaleString("pt-BR")} — Alterações pendentes
                         </Typography>
                         <div className="flex flex-wrap gap-2">
                           <Button

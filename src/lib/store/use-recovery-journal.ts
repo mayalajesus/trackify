@@ -8,6 +8,7 @@ import { isTimerAcknowledged, type AccountScope, type PersistedTimer } from "./t
 import type { TimerState } from "./types";
 import {
   canRecoverTimer,
+  hasPendingRecovery,
   archiveSourceIfUnchanged,
   listRecoveryDrafts,
   planRecovery,
@@ -45,6 +46,8 @@ export function useRecoveryJournal(options: Options) {
   const applying = useRef(false);
   const [storageError, setStorageError] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<RecoveryDraft[]>([]);
+  const [verifiedPendingIds, setVerifiedPendingIds] = useState<string[]>([]);
+  const refreshRevision = useRef(0);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [review, setReview] = useState<{
@@ -128,21 +131,73 @@ export function useRecoveryJournal(options: Options) {
     if (options.hydrated) void protect().catch(() => undefined);
   });
   const refresh = useCallback(async () => {
-    const userId = latest.current.userId;
-    if (!userId) {
+    const o = latest.current;
+    const revision = ++refreshRevision.current;
+    const current = () =>
+      latest.current.userId === o.userId && revision === refreshRevision.current;
+    if (!o.userId) {
       setDrafts([]);
+      setVerifiedPendingIds([]);
       return;
     }
+    let records: RecoveryDraft[];
     try {
-      const records = await listRecoveryDrafts(userId);
-      if (latest.current.userId === userId)
-        setDrafts(records.filter((draft) => !draft.id.startsWith(`${userId}:${pageId.current}:`)));
+      records = (await listRecoveryDrafts(o.userId)).filter(
+        (draft) => !draft.id.startsWith(`${o.userId}:${pageId.current}:`),
+      );
     } catch {
-      setStorageError("Não foi possível consultar os rascunhos locais. Mantenha esta aba aberta.");
+      if (current())
+        setStorageError(
+          "Não foi possível consultar os rascunhos locais. Mantenha esta aba aberta.",
+        );
+      return;
+    }
+    if (!current()) return;
+    setDrafts(records);
+    setVerifiedPendingIds([]);
+    const pending = records.filter((draft) => !draft.archived);
+    if (!o.hydrated || pending.length === 0) return;
+    // Failed reads never discard drafts or assert unsaved changes exist.
+    try {
+      const account = await o.dataSource.loadAccount(o.userId);
+      if (!current() || !account.success) return;
+      const verified: string[] = [];
+      for (const draft of pending) {
+        const timer = draft.timerPending
+          ? await o.dataSource.getActiveTimer(o.userId, draft.workspaceId)
+          : { success: true as const, data: initialTimer };
+        if (!current()) return;
+        if (!timer.success) continue;
+        if (hasPendingRecovery(draft, account.data, timer.data ?? initialTimer)) {
+          verified.push(draft.id);
+        } else {
+          // Preserve the exact original; never archive a newer edit from another tab.
+          await archiveSourceIfUnchanged(draft);
+        }
+      }
+      const refreshed = await listRecoveryDrafts(o.userId);
+      if (current()) {
+        setDrafts(
+          refreshed.filter((draft) => !draft.id.startsWith(`${o.userId}:${pageId.current}:`)),
+        );
+        setVerifiedPendingIds(verified);
+      }
+    } catch {
+      // Transient server failures leave originals available for download.
     }
   }, []);
   useEffect(() => {
     void refresh();
+    const check = () => {
+      void refresh();
+    };
+    window.addEventListener("focus", check);
+    window.addEventListener("online", check);
+    return () => {
+      refreshRevision.current += 1;
+      window.removeEventListener("focus", check);
+      window.removeEventListener("online", check);
+    };
   }, [options.userId, options.hydrated, refresh]);
   useEffect(() => {
     setReview(null);
@@ -325,6 +380,10 @@ export function useRecoveryJournal(options: Options) {
   return {
     protect,
     storageError,
+    pendingDrafts: drafts.filter(
+      (draft) =>
+        draft.userId === options.userId && !draft.archived && verifiedPendingIds.includes(draft.id),
+    ),
     drafts: drafts.filter((draft) => draft.userId === options.userId),
     busy,
     message,

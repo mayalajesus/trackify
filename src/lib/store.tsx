@@ -568,6 +568,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     persistAccount,
     timerLoadRetryKey,
     timerSaveRetryKey,
+    onAcknowledged: recovery.protect,
   });
 
   useEffect(() => {

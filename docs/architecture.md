@@ -131,9 +131,12 @@ Recovery loads fresh server state, merges compatible changes and requires explic
 for conflicting fields. The original draft and server version are archived locally before
 applying choices. Workspace/membership conflicts cannot restore revoked access. New server
 edits are still checked by the normal three-way synchronization. A changed source draft in
-another tab is never removed by a recovery operation. Settings exposes recovery-file import;
-new versioned exports are validated and restricted to their original user. Legacy JSON
-exports without user/version metadata require manual recovery rather than guessing ownership.
+another tab is never removed by a recovery operation. Recovery is not a settings feature:
+archived copies remain internal and are never listed as actionable drafts. A pending-draft
+notice requires a fresh successful server comparison of the local delta and timer. Failed
+reads preserve the originals and retry on focus/online, without asserting unsaved changes.
+Already saved drafts are archived conditionally, never deleted by reconciliation. Timer
+acknowledgements explicitly update the journal even if React does not render again.
 
 Accounts advertise `timerSyncProtocol: 1`. Timer save/clear accepts an expected snapshot,
 checked under the workspace lock; stale writes fail with `timer_conflict`. Browser retries
