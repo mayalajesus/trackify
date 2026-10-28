@@ -87,3 +87,11 @@ início e na edição do cronômetro. Essas gravações compartilham a transaç�
 conflitos de versão ou destinatários inválidos revertem a operação inteira.
 Não há nova migração nem ampliação de permissões da extensão nesta versão.
 Publique o backend antes de distribuir `trackify-0.5.0.zip`.
+
+## Extensão 0.6.0 — criação manual
+
+O início aceita `source: manual` e `task`, exigindo nome e projeto válidos e
+rejeitando um cartão associado nesse modo. Requisições anteriores continuam usando
+Trello por padrão e mantêm a validação do cartão ativo. O vínculo de projeto,
+as permissões, a transação e a proteção contra início duplicado são preservados.
+Não há alteração de esquema. Publicar a API antes de distribuir o ZIP 0.6.0.

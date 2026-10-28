@@ -110,6 +110,20 @@ export function extensionElapsed(row, now) {
   return seconds;
 }
 
+export function extensionTask(body) {
+  if (body.source === "manual") {
+    if (body.card != null)
+      throw new DataApiError(400, "Uma tarefa manual não deve ter cartão vinculado.");
+    if (typeof body.task !== "string" || !body.task.trim() || body.task.trim().length > 240)
+      throw new DataApiError(400, "Informe o nome da tarefa com até 240 caracteres.");
+    return { name: body.task.trim(), card: null };
+  }
+  if (body.source !== undefined && body.source !== "trello")
+    throw new DataApiError(400, "Origem da tarefa inválida.");
+  const card = extensionCard(body.card);
+  return { name: card.name, card };
+}
+
 async function publicTimer(client, userId, workspaceId, row) {
   return row
     ? { ...(await timerWithOwner(client, userId, workspaceId, row)), version: row.version }
@@ -167,7 +181,7 @@ export async function extensionTimerAction(client, user, body) {
     if (body.action === "start") {
       const taskId = uuid(body.taskId),
         projectId = uuid(body.projectId),
-        card = extensionCard(body.card),
+        task = extensionTask(body),
         options = extensionOptions(body);
       // Retries of an already saved start must never create another interval.
       const completed = await client.query(
@@ -203,7 +217,7 @@ export async function extensionTimerAction(client, user, body) {
           [
             user.id,
             workspaceId,
-            card.name,
+            task.name,
             projectId,
             p.billable,
             p.timezone,
@@ -213,7 +227,7 @@ export async function extensionTimerAction(client, user, body) {
               id: taskId,
               urgent: options.urgent,
               description: options.description,
-              trelloCard: card,
+              ...(task.card ? { trelloCard: task.card } : {}),
             },
           ],
         );

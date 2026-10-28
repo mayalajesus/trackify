@@ -1,7 +1,28 @@
 import { describe, it, expect } from "vitest";
-import { extensionCard, extensionElapsed, extensionOptions } from "../../server/data/extension.mjs";
+import {
+  extensionCard,
+  extensionElapsed,
+  extensionOptions,
+  extensionTask,
+} from "../../server/data/extension.mjs";
 import { taskDetailsValue } from "../../server/task-actions.mjs";
 describe("extension timer input", () => {
+  it("accepts a named manual task without a Trello association", () => {
+    expect(extensionTask({ source: "manual", task: "  Planejamento  " })).toEqual({
+      name: "Planejamento",
+      card: null,
+    });
+  });
+  it.each([
+    { source: "manual", task: " " },
+    { source: "manual", task: 12 },
+    { source: "manual", task: "x".repeat(241) },
+    { source: "manual", task: "Nome", card: { url: "https://trello.com/c/AbCd1234" } },
+    { source: "other", task: "Nome" },
+    { task: "Nome" },
+  ])("does not bypass source or name validation", (body) => {
+    expect(() => extensionTask(body)).toThrow();
+  });
   it("validates optional task controls and deduplicates recipients", () => {
     const id = "12345678-1234-4234-8234-123456789abc";
     expect(

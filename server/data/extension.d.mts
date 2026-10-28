@@ -12,6 +12,10 @@ export function extensionCard(value: unknown): {
   board: string;
 };
 export function extensionElapsed(row: Record<string, unknown>, now: number): number;
+export function extensionTask(body: Record<string, unknown>): {
+  name: string;
+  card: ReturnType<typeof extensionCard> | null;
+};
 export function extensionContext(
   client: QueryClient,
   user: { id: string },

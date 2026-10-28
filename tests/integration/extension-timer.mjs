@@ -230,6 +230,47 @@ try {
     ).rowCount,
     1,
   );
+  const manual = {
+    workspaceId: ws,
+    projectId: pid,
+    taskId: randomUUID(),
+    action: "start",
+    source: "manual",
+    task: "Planejamento sem cartão",
+    description: "Nota manual",
+    urgent: true,
+    favorite: true,
+  };
+  await assert.rejects(
+    extensionTimerAction(client, user, { ...manual, projectId: randomUUID() }),
+    (e) => e.status === 403,
+  );
+  ({ timer } = await extensionTimerAction(client, user, manual));
+  assert.equal(timer.task, manual.task);
+  assert.equal(timer.taskDetails.trelloCard, undefined);
+  const manualVersion = timer.version;
+  ({ timer } = await extensionTimerAction(client, user, manual));
+  assert.equal(timer.version, manualVersion);
+  await db.query(
+    "update public.active_timers set accumulated_seconds=65 where workspace_id=$1 and user_id=$2",
+    [ws, user.id],
+  );
+  timer = (await extensionContext(client, user, { workspaceId: ws })).timer;
+  await extensionTimerAction(client, user, {
+    workspaceId: ws,
+    action: "stop",
+    version: timer.version,
+  });
+  const manualEntries = await db.query(
+    "select * from public.time_entries where workspace_id=$1 and task_details->>'id'=$2",
+    [ws, manual.taskId],
+  );
+  assert.equal(manualEntries.rowCount, 1);
+  assert.equal(manualEntries.rows[0].task, manual.task);
+  assert.equal(manualEntries.rows[0].project_id, pid);
+  assert.equal(manualEntries.rows[0].description, manual.description);
+  assert.equal(manualEntries.rows[0].task_details.trelloCard, undefined);
+  await assert.rejects(extensionTimerAction(client, user, manual), (e) => e.status === 409);
   console.log(
     "Extension QA: authorization, billing, start retry, pause/resume CAS, stop atomicity and Trello link passed.",
   );
