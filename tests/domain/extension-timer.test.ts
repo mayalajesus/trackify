@@ -1,7 +1,31 @@
 import { describe, it, expect } from "vitest";
-import { extensionCard, extensionElapsed } from "../../server/data/extension.mjs";
+import { extensionCard, extensionElapsed, extensionOptions } from "../../server/data/extension.mjs";
 import { taskDetailsValue } from "../../server/task-actions.mjs";
 describe("extension timer input", () => {
+  it("validates optional task controls and deduplicates recipients", () => {
+    const id = "12345678-1234-4234-8234-123456789abc";
+    expect(
+      extensionOptions({ description: "Nota", urgent: true, favorite: true, memberIds: [id, id] }),
+    ).toEqual({ description: "Nota", urgent: true, favorite: true, memberIds: [id] });
+    expect(extensionOptions({})).toEqual({
+      description: "",
+      urgent: false,
+      favorite: undefined,
+      memberIds: [],
+    });
+  });
+  it.each([
+    { description: 1 },
+    { description: "a".repeat(10001) },
+    { urgent: "true" },
+    { favorite: 1 },
+    { memberIds: null },
+    { memberIds: [""] },
+    { memberIds: [42] },
+    { memberIds: Array(51).fill("12345678-1234-4234-8234-123456789abc") },
+  ])("rejects invalid task controls", (body) => {
+    expect(() => extensionOptions(body)).toThrow();
+  });
   it("canonicalizes a Trello card without forwarding tracking parameters", () => {
     const card = extensionCard({
       url: "https://trello.com/c/AbCd1234/name?q=secret#x",

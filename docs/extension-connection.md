@@ -78,3 +78,12 @@ The persistent refresh credential is generated from 32 cryptographically random 
 Disconnect removes the active local session immediately and revokes both credentials server-side. Offline revocations are kept as tombstones, unavailable for timer use, and retried on startup/next panel request/next connection. Uninstalling cannot execute a server revocation; unused server sessions expire after 90 days. Account deletion cascades sessions; lifecycle and workspace membership checks still apply to use/renewal. Signing out of the web app alone does not disconnect the extension.
 
 Checks: extension worker tests cover renewal, concurrent requests, offline retention, restart, secret isolation, one-use handshake and deferred revocation. `node --test tests/integration/extension-sessions-unit.mjs` checks backend scope/hash/revocation guards with a query double; it is not a real-database integration test. Production rollout must apply the migration before the API and extension update.
+
+## Extensão 0.5.0 — 2026-10-28
+
+O painel passa a usar HeroUI e os tokens do site, com seleção de projetos agrupada
+por cliente. A API aceita observação, urgência, favorito e convite de membros no
+início e na edição do cronômetro. Essas gravações compartilham a transação do timer;
+conflitos de versão ou destinatários inválidos revertem a operação inteira.
+Não há nova migração nem ampliação de permissões da extensão nesta versão.
+Publique o backend antes de distribuir `trackify-0.5.0.zip`.

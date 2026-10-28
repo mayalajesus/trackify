@@ -1,11 +1,84 @@
 import { DataApiError } from "../data-api-error.mjs";
+import { randomUUID } from "node:crypto";
 import { requireWorkspaceAccess } from "./access.mjs";
-import { uuid, requiredText, MAX_INTEGER_SECONDS } from "./validation.mjs";
+import { uuid, requiredText, MAX_INTEGER_SECONDS, favoriteTasksValue } from "./validation.mjs";
 import { timerWithOwner, syncSharedTimers, clearOwnTimer } from "./timer.mjs";
 
 const timerQuery = `select t.*,t.workspace_id::text,t.project_id::text,
   t.started_date::text,t.start_clock::text,t.updated_at::text as version
   from public.active_timers t where t.user_id=$1 and t.workspace_id=$2`;
+
+export function extensionOptions(body) {
+  const description = body.description ?? "";
+  if (
+    typeof description !== "string" ||
+    description.length > 10000 ||
+    (body.urgent !== undefined && typeof body.urgent !== "boolean") ||
+    (body.favorite !== undefined && typeof body.favorite !== "boolean") ||
+    (body.memberIds !== undefined &&
+      (!Array.isArray(body.memberIds) ||
+        body.memberIds.length > 50 ||
+        body.memberIds.some((id) => typeof id !== "string" || !id.trim() || id.length > 255)))
+  )
+    throw new DataApiError(400, "Revise os dados da tarefa.");
+  return {
+    description,
+    urgent: body.urgent ?? false,
+    favorite: body.favorite,
+    memberIds: [...new Set(body.memberIds ?? [])],
+  };
+}
+
+// Runs inside the timer transaction: invalid recipients or failed preferences
+// roll back the start/update too. Retries do not duplicate invitations.
+async function saveOptions(client, userId, workspaceId, row, options) {
+  if (options.memberIds.length) {
+    const invitation = await client.query(
+      "select invited_by from public.task_invitations where workspace_id=$1 and task_id=$2 limit 1",
+      [workspaceId, row.task_details.id],
+    );
+    if (invitation.rows[0] && invitation.rows[0].invited_by !== userId)
+      throw new DataApiError(403, "Somente quem iniciou a tarefa pode convidar membros.");
+  }
+  if (options.favorite !== undefined) {
+    await client.query(
+      "insert into public.user_preferences(user_id) values($1) on conflict do nothing",
+      [userId],
+    );
+    const prefs = await client.query(
+      "select favorite_tasks from public.user_preferences where user_id=$1 for update",
+      [userId],
+    );
+    const favorites = favoriteTasksValue(prefs.rows[0]?.favorite_tasks);
+    const same = (item) =>
+      item.projectId === row.project_id &&
+      item.task.trim().toLowerCase() === row.task.trim().toLowerCase();
+    const items = (favorites[workspaceId] ?? []).filter((item) => !same(item));
+    if (options.favorite)
+      items.push({ task: row.task, projectId: row.project_id, billable: row.billable });
+    const next = favoriteTasksValue({ ...favorites, [workspaceId]: items });
+    await client.query(
+      "update public.user_preferences set favorite_tasks=$2::jsonb,updated_at=now() where user_id=$1",
+      [userId, JSON.stringify(next)],
+    );
+  }
+  for (const memberId of options.memberIds.filter((id) => id !== userId)) {
+    await requireWorkspaceAccess(client, memberId, workspaceId);
+    await client.query(
+      `insert into public.task_invitations(workspace_id,task_id,invited_by,recipient_id,project_id,task,task_details)
+      values($1,$2,$3,$4,$5,$6,$7) on conflict(workspace_id,task_id,recipient_id) do nothing`,
+      [
+        workspaceId,
+        row.task_details.id,
+        userId,
+        memberId,
+        row.project_id,
+        row.task,
+        row.task_details,
+      ],
+    );
+  }
+}
 
 export function extensionCard(value) {
   if (!value || typeof value.url !== "string") throw new DataApiError(400, "Cartão inválido.");
@@ -60,9 +133,21 @@ export async function extensionContext(client, user, body) {
     [workspaceId],
   );
   const timer = await client.query(timerQuery, [user.id, workspaceId]);
+  const members = await client.query(
+    `select p.id::text,p.name from public.profiles p
+    join public.workspace_members m on m.user_id=p.id
+    where m.workspace_id=$1 and m.status='active' and p.id<>$2 order by lower(p.name),p.id`,
+    [workspaceId, user.id],
+  );
+  const preferences = await client.query(
+    "select favorite_tasks from public.user_preferences where user_id=$1",
+    [user.id],
+  );
   return {
     workspaces: workspaces.rows,
     projects: projects.rows,
+    members: members.rows,
+    favorites: preferences.rows[0]?.favorite_tasks?.[workspaceId] ?? [],
     workspaceId,
     timer: await publicTimer(client, user.id, workspaceId, timer.rows[0]),
   };
@@ -70,7 +155,7 @@ export async function extensionContext(client, user, body) {
 
 export async function extensionTimerAction(client, user, body) {
   const workspaceId = uuid(body.workspaceId);
-  if (!["start", "pause", "resume", "stop"].includes(body.action))
+  if (!["start", "update", "pause", "resume", "stop"].includes(body.action))
     throw new DataApiError(400, "Ação inválida.");
   await client.query("begin");
   try {
@@ -82,7 +167,8 @@ export async function extensionTimerAction(client, user, body) {
     if (body.action === "start") {
       const taskId = uuid(body.taskId),
         projectId = uuid(body.projectId),
-        card = extensionCard(body.card);
+        card = extensionCard(body.card),
+        options = extensionOptions(body);
       // Retries of an already saved start must never create another interval.
       const completed = await client.query(
         `select id from public.time_entries
@@ -123,9 +209,16 @@ export async function extensionTimerAction(client, user, body) {
             p.timezone,
             p.hourly_rate,
             p.currency,
-            { id: taskId, urgent: false, trelloCard: card },
+            {
+              id: taskId,
+              urgent: options.urgent,
+              description: options.description,
+              trelloCard: card,
+            },
           ],
         );
+        row = (await client.query(timerQuery, [user.id, workspaceId])).rows[0];
+        await saveOptions(client, user.id, workspaceId, row, options);
       }
     } else if (row) {
       const timer = await timerWithOwner(client, user.id, workspaceId, row);
@@ -134,7 +227,22 @@ export async function extensionTimerAction(client, user, body) {
       if (body.version !== row.version)
         throw new DataApiError(409, "O cronômetro mudou. Atualize o painel antes de continuar.");
       const seconds = extensionElapsed(row, Date.now());
-      if (body.action === "stop") {
+      if (body.action === "update") {
+        const options = extensionOptions(body);
+        // Preserve identity, Trello association and all timing/billing fields.
+        row.task_details = {
+          id: randomUUID(),
+          ...row.task_details,
+          urgent: options.urgent,
+          description: options.description,
+        };
+        await client.query(
+          "update public.active_timers set task_details=$3,updated_at=clock_timestamp() where user_id=$1 and workspace_id=$2",
+          [user.id, workspaceId, row.task_details],
+        );
+        await saveOptions(client, user.id, workspaceId, row, options);
+        await syncSharedTimers(client, user.id, workspaceId);
+      } else if (body.action === "stop") {
         if (seconds < 1) throw new DataApiError(409, "Aguarde um segundo antes de finalizar.");
         // Existing paused timers keep their original start clock. PostgreSQL applies the user's timezone.
         await client.query(

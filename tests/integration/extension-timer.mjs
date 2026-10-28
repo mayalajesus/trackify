@@ -54,6 +54,9 @@ try {
     action: "start",
     projectId: pid,
     taskId,
+    description: "Observação da extensão",
+    urgent: true,
+    favorite: true,
     card: { url: "https://trello.com/c/AbCd1234/test?tracking=1", title: "QA Card" },
   };
   await assert.rejects(extensionTimerAction(client, stranger, start), (e) => e.status === 403);
@@ -65,6 +68,42 @@ try {
   assert.equal(timer.status, "running");
   assert.equal(timer.billable, true);
   assert.equal(timer.hourlyRate, 100);
+  assert.equal(timer.taskDetails.description, "Observação da extensão");
+  assert.equal(timer.taskDetails.urgent, true);
+  assert.equal(
+    (await extensionContext(client, user, { workspaceId: ws })).favorites[0].task,
+    "QA Card",
+  );
+  const startedAt = timer.startedAt;
+  ({ timer } = await extensionTimerAction(client, user, {
+    workspaceId: ws,
+    action: "update",
+    version: timer.version,
+    description: "Nota editada",
+    urgent: false,
+    favorite: false,
+  }));
+  assert.equal(timer.startedAt, startedAt);
+  assert.equal(timer.taskDetails.description, "Nota editada");
+  assert.equal(timer.taskDetails.id, taskId);
+  assert.equal((await extensionContext(client, user, { workspaceId: ws })).favorites.length, 0);
+  const updateVersion = timer.version;
+  await assert.rejects(
+    extensionTimerAction(client, user, {
+      workspaceId: ws,
+      action: "update",
+      version: timer.version,
+      description: "Must roll back",
+      urgent: true,
+      favorite: true,
+      memberIds: [stranger.id],
+    }),
+    (e) => e.status === 403,
+  );
+  ({ timer } = await extensionContext(client, user, { workspaceId: ws }));
+  assert.equal(timer.version, updateVersion);
+  assert.equal(timer.taskDetails.description, "Nota editada");
+  assert.equal((await extensionContext(client, user, { workspaceId: ws })).favorites.length, 0);
   assert.equal(timer.taskDetails.trelloCard.url, "https://trello.com/c/AbCd1234");
   await extensionTimerAction(client, user, start); // Idempotent retry.
   await assert.rejects(
@@ -127,10 +166,30 @@ try {
     [ws, stranger.id],
   );
   const sharedId = randomUUID();
-  ({ timer } = await extensionTimerAction(client, user, { ...start, taskId: sharedId }));
+  ({ timer } = await extensionTimerAction(client, user, {
+    ...start,
+    taskId: sharedId,
+    memberIds: [stranger.id, stranger.id],
+  }));
+  await extensionTimerAction(client, user, {
+    ...start,
+    taskId: sharedId,
+    memberIds: [stranger.id],
+  });
+  const invited = await db.query(
+    "select * from public.task_invitations where workspace_id=$1 and task_id=$2",
+    [ws, sharedId],
+  );
+  assert.equal(invited.rowCount, 1);
+  assert.equal(invited.rows[0].recipient_id, stranger.id);
+  assert.equal(invited.rows[0].task_details.description, "Observação da extensão");
+  assert.equal(
+    (await extensionContext(client, user, { workspaceId: ws })).members[0].id,
+    stranger.id,
+  );
   await db.query(
     `insert into public.task_invitations(workspace_id,task_id,invited_by,recipient_id,project_id,task,task_details,status)
-    values($1,$2,$3,$4,$5,'QA Card',$6,'accepted')`,
+    values($1,$2,$3,$4,$5,'QA Card',$6,'accepted') on conflict(workspace_id,task_id,recipient_id) do update set status='accepted'`,
     [ws, sharedId, user.id, stranger.id, pid, timer.taskDetails],
   );
   await db.query(
@@ -140,7 +199,7 @@ try {
     [ws, stranger.id, user.id],
   );
   const participant = (await extensionContext(client, stranger, { workspaceId: ws })).timer;
-  for (const action of ["pause", "resume", "stop"])
+  for (const action of ["update", "pause", "resume", "stop"])
     await assert.rejects(
       extensionTimerAction(client, stranger, {
         workspaceId: ws,
