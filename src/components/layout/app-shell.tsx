@@ -63,7 +63,11 @@ export function AppShell({ children }: { children: ReactNode }) {
     () =>
       typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches,
   );
-  const dark = preferences.theme === "dark" || (preferences.theme === "system" && systemDark);
+  // The extension connection flow stays light even while account preferences load.
+  // Keep the saved preference intact so other routes retain the user's theme.
+  const dark =
+    currentLocation.pathname.replace(/\/$/, "") !== "/extension/connect" &&
+    (preferences.theme === "dark" || (preferences.theme === "system" && systemDark));
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
