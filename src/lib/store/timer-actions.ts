@@ -134,8 +134,6 @@ export function createTimerActions({
     if (!can("track-own-time")) return { success: false, error: "Your account cannot track time." };
     if (timerRef.current.status !== "idle")
       return { success: false, error: "Stop the active timer before starting another one." };
-    const details = validateTimerDetails(task, projectId);
-    if (!details.success) return details;
     const projectValidation = validateProjectId(projectId);
     if (!projectValidation.success) return projectValidation;
     if (acceptingTaskRef.current)
@@ -302,8 +300,6 @@ export function createTimerActions({
       };
     if (current.status !== "paused" || current.workspaceId !== activeWorkspaceId)
       return { success: false, error: "There is no paused timer to resume." };
-    const details = validateTimerDetails(current.task, current.projectId);
-    if (!details.success) return details;
     const projectValidation = validateProjectId(current.projectId);
     if (!projectValidation.success) return projectValidation;
     const next = { ...current, status: "running" as const, startedAt: Date.now() };
@@ -321,7 +317,12 @@ export function createTimerActions({
     if (current.status === "idle" || current.workspaceId !== activeWorkspaceId)
       return { success: false, error: "There is no active timer to stop." };
     const details = validateTimerDetails(current.task, current.projectId);
-    if (!details.success) return details;
+    if (!details.success) {
+      pauseTimer();
+      return details;
+    }
+    const projectValidation = validateProjectId(current.projectId);
+    if (!projectValidation.success) return projectValidation;
     const total = elapsedForTimer(current);
     const startedDate = current.startedDate ?? getLocalToday(new Date(), preferences.timezone);
     if (total > 0) {

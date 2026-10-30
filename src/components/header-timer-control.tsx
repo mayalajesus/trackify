@@ -4,10 +4,9 @@ import { useI18n } from "@/lib/i18n";
 import { useStore, useTimerTicker } from "@/lib/store";
 import { TimerActionButton } from "@/components/timer-action-button";
 import { TimerDurationEditor } from "@/components/timer-duration-editor";
-import { focusTimerTaskInput } from "@/lib/timer-input";
 
 export function HeaderTimerControl() {
-  const { timer, pauseTimer, resumeTimer, setTimerElapsed } = useStore();
+  const { timer, startTimer, pauseTimer, resumeTimer, setTimerElapsed } = useStore();
   const navigate = useNavigate();
   const { elapsed } = useTimerTicker();
   const { t, error } = useI18n();
@@ -27,9 +26,9 @@ export function HeaderTimerControl() {
       return;
     }
 
-    void navigate({ to: "/tracker" }).then(() => {
-      requestAnimationFrame(() => focusTimerTaskInput(t("A task is required.")));
-    });
+    const result = startTimer("", null);
+    if (!result.success)
+      toast.danger(t("We couldn't start the timer"), { description: error(result.error) });
   };
 
   return (

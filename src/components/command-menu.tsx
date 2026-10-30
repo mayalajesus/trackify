@@ -23,7 +23,7 @@ import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { useStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
-import { focusTimerTaskInput } from "@/lib/timer-input";
+import { TimerCompletionModal } from "@/components/timer-completion-modal";
 import { ModalTriggerRegistration } from "@/components/overlay-trigger-registration";
 import { formatOverlapConflict } from "@/components/overlap-confirmation";
 
@@ -46,9 +46,10 @@ export function CommandMenu({
   onLogTime: () => void;
 }) {
   const navigate = useNavigate();
-  const { projects, clients, timer, stopTimer } = useStore();
+  const { projects, clients, timer, startTimer, stopTimer } = useStore();
   const { locale, t, error } = useI18n();
   const [query, setQuery] = useState("");
+  const [completionOpen, setCompletionOpen] = useState(false);
 
   const close = () => {
     setQuery("");
@@ -119,21 +120,21 @@ export function CommandMenu({
       {
         id: "action-timer",
         label: timer.status === "idle" ? t("Start timer") : t("Stop timer"),
-        hint:
-          timer.status === "idle"
-            ? t("Enter a task name and select a project before starting.")
-            : t("Save the running entry"),
+        hint: timer.status === "idle" ? t("Start timer") : t("Save the running entry"),
         icon: <Play className="size-4" />,
         group: "Actions",
         run: () => {
           if (timer.status === "idle") {
-            void navigate({ to: "/tracker" }).then(() => {
-              requestAnimationFrame(() => focusTimerTaskInput(t("A task is required.")));
-            });
+            const result = startTimer("", null);
+            if (!result.success) toast.danger(error(result.error));
             return;
           }
           const result = stopTimer();
           if (!result.success) {
+            if (!timer.task.trim() || !timer.projectId) {
+              setCompletionOpen(true);
+              return;
+            }
             toast.danger(error(result.error));
           } else if (result.warning) {
             toast.info(t("Overlapping time"), {
@@ -185,7 +186,21 @@ export function CommandMenu({
     }));
 
     return [...actions, ...nav, ...projectCommands, ...clientCommands];
-  }, [clients, error, locale, navigate, onLogTime, projects, query, stopTimer, t, timer.status]);
+  }, [
+    clients,
+    error,
+    locale,
+    navigate,
+    onLogTime,
+    projects,
+    query,
+    startTimer,
+    stopTimer,
+    t,
+    timer.status,
+    timer.task,
+    timer.projectId,
+  ]);
 
   const filtered = commands.filter((c) =>
     `${c.label} ${c.group}`.toLowerCase().includes(query.trim().toLowerCase()),
@@ -194,80 +209,85 @@ export function CommandMenu({
   const groups: Command["group"][] = ["Actions", "Navigation", "Projects", "Clients"];
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onOpenChange={(open) => {
-        if (!open) setQuery("");
-        onOpenChange(open);
-      }}
-    >
-      <ModalTriggerRegistration />
-      <Modal.Backdrop>
-        <Modal.Container placement="top" size="sm">
-          <Modal.Dialog className="tracker-command-menu">
-            <div className="tracker-command-search">
-              <TextField fullWidth name="command-search" value={query} onChange={setQuery}>
-                <Label className="sr-only">{t("Command menu search")}</Label>
-                <Input
-                  autoFocus
-                  placeholder={t("Search commands, projects, clients…")}
-                  variant="secondary"
-                />
-              </TextField>
-            </div>
-            <div className="tracker-command-list">
-              {filtered.length === 0 ? (
-                <Typography type="body-sm" color="muted" align="center" className="px-3 py-8">
-                  {t("No results for “{query}”.", { query })}
+    <>
+      {completionOpen && timer.status !== "idle" && (
+        <TimerCompletionModal onClose={() => setCompletionOpen(false)} />
+      )}
+      <Modal
+        isOpen={isOpen}
+        onOpenChange={(open) => {
+          if (!open) setQuery("");
+          onOpenChange(open);
+        }}
+      >
+        <ModalTriggerRegistration />
+        <Modal.Backdrop>
+          <Modal.Container placement="top" size="sm">
+            <Modal.Dialog className="tracker-command-menu">
+              <div className="tracker-command-search">
+                <TextField fullWidth name="command-search" value={query} onChange={setQuery}>
+                  <Label className="sr-only">{t("Command menu search")}</Label>
+                  <Input
+                    autoFocus
+                    placeholder={t("Search commands, projects, clients…")}
+                    variant="secondary"
+                  />
+                </TextField>
+              </div>
+              <div className="tracker-command-list">
+                {filtered.length === 0 ? (
+                  <Typography type="body-sm" color="muted" align="center" className="px-3 py-8">
+                    {t("No results for “{query}”.", { query })}
+                  </Typography>
+                ) : (
+                  <ListBox
+                    aria-label={t("Commands")}
+                    selectionMode="none"
+                    onAction={(key) => {
+                      const cmd = commands.find((c) => c.id === String(key));
+                      close();
+                      cmd?.run();
+                    }}
+                  >
+                    {groups
+                      .filter((g) => filtered.some((c) => c.group === g))
+                      .map((group) => (
+                        <ListBox.Section key={group}>
+                          <ListBox.Item
+                            key={`${group}-header`}
+                            id={`${group}-header`}
+                            isDisabled
+                            textValue={group}
+                          >
+                            <Label>{t(group)}</Label>
+                          </ListBox.Item>
+                          {filtered
+                            .filter((c) => c.group === group)
+                            .map((c) => (
+                              <ListBox.Item key={c.id} id={c.id} textValue={c.label}>
+                                <span className="flex items-center gap-2">
+                                  {c.icon}
+                                  <Label>{c.label}</Label>
+                                </span>
+                              </ListBox.Item>
+                            ))}
+                        </ListBox.Section>
+                      ))}
+                  </ListBox>
+                )}
+              </div>
+              <div className="tracker-command-footer">
+                <Typography type="body-xs" color="muted">
+                  {t("Navigate with arrow keys")}
                 </Typography>
-              ) : (
-                <ListBox
-                  aria-label={t("Commands")}
-                  selectionMode="none"
-                  onAction={(key) => {
-                    const cmd = commands.find((c) => c.id === String(key));
-                    close();
-                    cmd?.run();
-                  }}
-                >
-                  {groups
-                    .filter((g) => filtered.some((c) => c.group === g))
-                    .map((group) => (
-                      <ListBox.Section key={group}>
-                        <ListBox.Item
-                          key={`${group}-header`}
-                          id={`${group}-header`}
-                          isDisabled
-                          textValue={group}
-                        >
-                          <Label>{t(group)}</Label>
-                        </ListBox.Item>
-                        {filtered
-                          .filter((c) => c.group === group)
-                          .map((c) => (
-                            <ListBox.Item key={c.id} id={c.id} textValue={c.label}>
-                              <span className="flex items-center gap-2">
-                                {c.icon}
-                                <Label>{c.label}</Label>
-                              </span>
-                            </ListBox.Item>
-                          ))}
-                      </ListBox.Section>
-                    ))}
-                </ListBox>
-              )}
-            </div>
-            <div className="tracker-command-footer">
-              <Typography type="body-xs" color="muted">
-                {t("Navigate with arrow keys")}
-              </Typography>
-              <span className="flex items-center gap-1">
-                <Kbd>esc</Kbd> {t("to close")}
-              </span>
-            </div>
-          </Modal.Dialog>
-        </Modal.Container>
-      </Modal.Backdrop>
-    </Modal>
+                <span className="flex items-center gap-1">
+                  <Kbd>esc</Kbd> {t("to close")}
+                </span>
+              </div>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
+      </Modal>
+    </>
   );
 }

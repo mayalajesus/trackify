@@ -74,8 +74,6 @@ export function createRunningTimer(
     startClock: string;
   } & BillingPreference,
 ): TimerState {
-  const validation = validateTimerDetails(preset.task, preset.projectId);
-  if (!validation.success) throw new Error(validation.error);
   return {
     status: "running",
     workspaceId: context.workspaceId,

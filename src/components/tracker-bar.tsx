@@ -34,6 +34,7 @@ import { TimerActionButton } from "@/components/timer-action-button";
 import { TimerDurationEditor } from "@/components/timer-duration-editor";
 import { TimerStartEditor } from "@/components/timer-start-editor";
 import { TimerNoteModal } from "@/components/timer-note-modal";
+import { TimerCompletionModal } from "@/components/timer-completion-modal";
 import { Comment } from "@gravity-ui/icons";
 import { useI18n } from "@/lib/i18n";
 import { useStore, useTimerTicker } from "@/lib/store";
@@ -80,6 +81,7 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
   }));
   const [taskModal, setTaskModal] = useState<"members" | "trello" | null>(null);
   const [noteOpen, setNoteOpen] = useState(false);
+  const [completionOpen, setCompletionOpen] = useState(false);
   const active = timer.status !== "idle";
   const details = active ? (timer.taskDetails ?? taskDetails) : taskDetails;
   const changeDetails = (next: TaskDetails) => {
@@ -90,6 +92,7 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
     setTaskDetails({ id: crypto.randomUUID(), urgent: false });
     setTaskModal(null);
     setNoteOpen(false);
+    setCompletionOpen(false);
   }, [activeWorkspaceId]);
   const taskSuggestions = useMemo(() => {
     const uniqueTasks = new Map<string, string>();
@@ -203,7 +206,7 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
                   if (!active) return;
                   if (activeTask.trim()) {
                     updateActiveTimer({ task: activeTask });
-                  } else {
+                  } else if (timer.task.trim()) {
                     setActiveTask(timer.task);
                     setTimerError(t("A task is required."));
                   }
@@ -385,20 +388,6 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
                 status={timer.status}
                 onPress={() => {
                   if (timer.status === "idle") {
-                    if (!task.trim()) {
-                      setProjectValidationVisible(false);
-                      setTimerError(null);
-                      focusTimerTaskInput(t("A task is required."));
-                      return;
-                    }
-                    if (!projectId) {
-                      setTimerError(null);
-                      projectTriggerRef.current
-                        ?.querySelector<HTMLButtonElement>("button")
-                        ?.focus();
-                      setProjectValidationVisible(true);
-                      return;
-                    }
                     const result = startTimer(task, projectId, billable, taskDetails);
                     setTimerError(result.success ? null : result.error);
                     return;
@@ -437,6 +426,11 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
                       onPress={() => {
                         const result = stopTimer();
                         if (!result.success) {
+                          if (!timer.task.trim() || !timer.projectId) {
+                            setTimerError(null);
+                            setCompletionOpen(true);
+                            return;
+                          }
                           setTimerError(result.error);
                           return;
                         }
@@ -470,6 +464,9 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
         <FormAlert title={t("We couldn't update the timer")} description={error(timerError)} />
       ) : null}
 
+      {completionOpen && active && (
+        <TimerCompletionModal onClose={() => setCompletionOpen(false)} />
+      )}
       <TrackerTaskModal
         mode={taskModal}
         onClose={() => setTaskModal(null)}

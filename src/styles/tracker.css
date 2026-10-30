@@ -567,6 +567,14 @@
   border-radius: 18px;
   font-weight: 400;
 }
+.tracker-completion-modal .modal__body {
+  padding-inline: 2px;
+  margin-inline: -2px;
+}
+.tracker-task-modal.tracker-completion-modal .modal__footer {
+  border-top: 0;
+  margin-top: 0;
+}
 .tracker-task-modal .modal__close-trigger {
   top: 18px;
   right: 18px;

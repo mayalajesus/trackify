@@ -320,10 +320,10 @@ async function operation(request, user, config, body) {
       if (timer.status !== "running" && timer.status !== "paused") {
         throw new DataApiError(400, "Invalid timer status.");
       }
-      const task = requiredText(timer.task, "Task", 240);
-      if (!timer.projectId) {
-        throw new DataApiError(400, "Select a project before starting the timer.");
-      }
+      // Active timers may be drafts; finished entries still require task and project.
+      if (typeof timer.task !== "string" || timer.task.trim().length > 240)
+        throw new DataApiError(400, "Invalid task.");
+      const task = timer.task.trim();
       const accumulated = Number(timer.accumulated);
       if (!Number.isFinite(accumulated) || accumulated < 0 || accumulated > MAX_INTEGER_SECONDS) {
         throw new DataApiError(400, "The data payload contains an invalid timer duration.");

@@ -1,6 +1,5 @@
 import { useEffect, useRef, type Dispatch, type RefObject, type SetStateAction } from "react";
 import type { AccountDataSource } from "../account-data-source";
-import { validateTimerDetails } from "../timer-start";
 import { initialTimer } from "./defaults";
 import { elapsedForTimer } from "./timer";
 import {
@@ -227,9 +226,7 @@ export function useTimerPersistence({
 
   useEffect(() => {
     if (!hydrated || !timerHydrated || !authenticatedUserId || !activeWorkspaceId) return;
-    // Let users complete older timers in the editor before persisting them.
-    if (timer.status !== "idle" && !validateTimerDetails(timer.task, timer.projectId).success)
-      return;
+    // Draft timers must be persisted too, so their elapsed time survives reloads.
     let cancelled = false;
     const isCurrent = () => !cancelled && accountScopeRef.current === accountScope;
     const previous = timerSyncPromiseRef.current ?? Promise.resolve();

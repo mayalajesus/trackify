@@ -41,6 +41,7 @@ describe("overlap warnings only when editing time", () => {
       preferences: { timezone: "UTC" },
       workspaceBilling: { hourlyRate: 0, currency: "BRL" },
       billableForProject: () => false,
+      validateProjectId: () => ({ success: true }),
       timerRevisionRef: { current: 0 },
       setTimer: vi.fn(),
       setElapsed: vi.fn(),
