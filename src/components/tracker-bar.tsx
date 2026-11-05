@@ -181,11 +181,13 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
         >
           <ComboBox
             key={taskInputVersion}
-            isRequired
             allowsCustomValue
             className="min-w-0"
             fullWidth
-            inputValue={active ? activeTask : task}
+            inputValue={currentTask.task}
+            // Control selection together with text so switching to an active timer
+            // cannot reset the input through a stale internal selection.
+            selectedKey={taskSuggestions.includes(currentTask.task) ? currentTask.task : null}
             menuTrigger="input"
             name="timer-task"
             variant="secondary"
