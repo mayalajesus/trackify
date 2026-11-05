@@ -574,6 +574,7 @@ const ptBR: Record<string, string> = {
   "Average entry duration": "Duração média por lançamento",
   "Detailed entries": "Lançamentos detalhados",
   "Detailed report": "Relatório detalhado",
+  "Overview report": "Relatório geral",
   Billing: "Faturamento",
   View: "Visualização",
   Grouping: "Agrupamento",

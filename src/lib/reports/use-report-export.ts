@@ -25,6 +25,7 @@ import {
   shiftLabels,
 } from "./overview-model";
 import { parseIds } from "./search";
+import { reportExportFilename } from "./export-filename";
 
 export function useReportExport({
   t,
@@ -155,6 +156,15 @@ export function useReportExport({
   ]);
 
   const exportPayload = useMemo<ReportExportPayload>(() => {
+    const title = reportExportFilename({
+      memberIds: filterValues.memberIds,
+      memberMap,
+      workspaceName: currentWorkspace?.name ?? null,
+      view: exportView,
+      startDate: range.startDate,
+      endDate: range.endDate,
+      locale,
+    });
     if (exportView === "overview") {
       const summary = reportAnalytics.summary;
       const exportedProjects = overviewProjectRows(reportAnalytics, projects, clients);
@@ -168,7 +178,7 @@ export function useReportExport({
       const weekdayRows = overviewWeekdayRows(reportAnalytics, locale);
       return {
         ...exportContext,
-        title: `trackify-${exportView}`,
+        title,
         columns: [t("Metric"), t("Value")],
         rows: [
           {
@@ -383,7 +393,7 @@ export function useReportExport({
       ];
       return {
         ...exportContext,
-        title: `trackify-${exportView}`,
+        title,
         pdf: {
           kind: "detailed",
           startDate: range.startDate,
@@ -480,7 +490,7 @@ export function useReportExport({
         : groups.map((group) => ({ primaryLabel: group.label, secondaryLabel: "", group }));
       return {
         ...exportContext,
-        title: `trackify-${exportView}`,
+        title,
         columns: [
           t("Group"),
           ...(hasSubgroup ? [t("Subgroup")] : []),
@@ -519,6 +529,8 @@ export function useReportExport({
     exportTotal,
     filteredEntries,
     filterValues.currency,
+    filterValues.memberIds,
+    currentWorkspace?.name,
     groups,
     memberMap,
     projects,
