@@ -5,6 +5,8 @@ import { randomUUID } from "node:crypto";
 import pg from "pg";
 import { syncEntries, timeEntryFromRow } from "../../server/data/entries.mjs";
 import { clearOwnTimer, syncSharedTimers } from "../../server/data/timer.mjs";
+import { handleTaskAction } from "../../server/task-actions.mjs";
+import { requireWorkspaceAccess } from "../../server/data/access.mjs";
 
 if (process.env.DATABASE_ENV !== "qa") throw Error("QA only");
 const db = new pg.Client({ connectionString: process.env.DATABASE_URL });
@@ -51,6 +53,21 @@ try {
     "insert into public.task_invitations(workspace_id,task_id,invited_by,recipient_id,project_id,task,task_details,status) values($1,$2,$3,$4,$5,'Task',$6,'accepted')",
     [ws, task, owner, member, project, { id: task, urgent: false }],
   );
+  await db.query(
+    "insert into public.task_invitations(workspace_id,task_id,invited_by,recipient_id,project_id,task,task_details) values($1,$2,$3,$4,$5,'Task',$6)",
+    [ws, task, owner, other, project, { id: task, urgent: false }],
+  );
+  const inbox = () =>
+    handleTaskAction(
+      db,
+      { id: other },
+      {
+        operation: "listTaskInvitations",
+        workspaceId: ws,
+      },
+      { requireWorkspaceAccess, uuid: String },
+    );
+  assert.equal((await inbox()).length, 0);
   for (const id of [owner, member, other])
     await db.query(
       "insert into public.active_timers(user_id,workspace_id,status,task,project_id,started_at,started_date,start_clock,task_details,hourly_rate,currency) values($1,$2,'running','Task',$3,now(),current_date,'09:00',$4,25,'BRL')",
@@ -61,6 +78,7 @@ try {
     [owner, ws],
   );
   await syncSharedTimers(db, owner, ws);
+  assert.equal((await inbox()).length, 1);
   const timers = (
     await db.query(
       "select user_id,task,status,accumulated_seconds from public.active_timers where workspace_id=$1",
@@ -88,6 +106,7 @@ try {
   };
   await syncEntries(db, owner, ws, [entry]);
   await clearOwnTimer(tx, owner, ws);
+  assert.equal((await inbox()).length, 1);
   const readCopies = async () =>
     (
       await db.query(
@@ -110,6 +129,7 @@ try {
   await syncEntries(db, member, ws, [timeEntryFromRow(first)]);
   assert.equal((await readCopies())[0].description, "Edited");
   await syncEntries(db, owner, ws, []);
+  assert.equal((await inbox()).length, 0);
   assert.equal((await readCopies()).length, 0);
   await syncEntries(db, member, ws, [timeEntryFromRow(first)]);
   assert.equal((await readCopies()).length, 0);

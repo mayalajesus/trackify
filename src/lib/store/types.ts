@@ -38,7 +38,7 @@ export type StoreResult =
       warning?: string;
       conflict?: TimeEntry;
     }
-  | { success: false; error: string };
+  | { success: false; error: string; code?: string };
 
 export type AddEntryOptions = {
   allowWhileTimerActive?: boolean;

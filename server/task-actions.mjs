@@ -81,10 +81,18 @@ export async function handleTaskAction(
   }
   if (body.operation === "listTaskInvitations") {
     const result = await client.query(
-      `select i.id::text,i.task,i.project_id::text as "projectId",i.task_details as "taskDetails",p.name as "senderName"
+      `select i.id::text,i.task,i.project_id::text as "projectId",i.task_details as "taskDetails",p.name as "senderName",
+              extract(epoch from (i.expires_at-now())) * 1000 as "validForMs"
       from public.task_invitations i join public.profiles p on p.id=i.invited_by
       join public.workspace_members m on m.workspace_id=i.workspace_id and m.user_id=i.invited_by and m.status='active'
+      left join public.active_timers source on source.workspace_id=i.workspace_id
+        and source.user_id=i.invited_by and source.task_details->>'id'=i.task_id::text
+      left join public.projects project on project.workspace_id=i.workspace_id and project.id=source.project_id
       where i.workspace_id=$1 and i.recipient_id=$2 and i.status='pending' and i.expires_at>now()
+        and (project.status='active' or (source.user_id is null and exists (
+          select 1 from public.time_entries e where e.workspace_id=i.workspace_id
+            and e.user_id=i.invited_by and e.task_details->>'id'=i.task_id::text
+        )))
       order by i.created_at limit 50`,
       [workspaceId, user.id],
     );
@@ -144,7 +152,10 @@ export async function handleTaskAction(
       [uuid(body.invitationId), workspaceId, user.id],
     );
     const invitation = found.rows[0];
-    if (!invitation) throw new DataApiError(409, "This task invitation is no longer available.");
+    if (!invitation)
+      throw new DataApiError(409, "This task invitation is no longer available.", {
+        code: "invitation_unavailable",
+      });
     let acceptedTimer = null;
     let acceptedEntries = [];
     if (body.response === "accepted") {
@@ -175,7 +186,9 @@ export async function handleTaskAction(
           [workspaceId, invitation.invited_by, user.id, String(invitation.task_id)],
         );
         if (!saved.rowCount)
-          throw new DataApiError(409, "The original task timer is no longer active.");
+          throw new DataApiError(409, "The original task timer is no longer active.", {
+            code: "invitation_unavailable",
+          });
         acceptedEntries = saved.rows.map(timeEntryFromRow);
       } else {
         await requireProject(client, workspaceId, sourceTimer.project_id, user.id);
@@ -230,6 +243,10 @@ export async function handleTaskAction(
     };
   } catch (error) {
     await client.query("rollback");
+    if (error instanceof DataApiError && error.status === 403)
+      throw new DataApiError(403, "This task invitation is no longer available.", {
+        code: "invitation_unavailable",
+      });
     throw error;
   }
 }

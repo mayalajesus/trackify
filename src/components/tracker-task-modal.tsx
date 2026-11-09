@@ -18,6 +18,7 @@ import { FormAlert } from "./form-feedback";
 import { useStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
 import { request } from "@/lib/api-data-source";
+import { watchTaskInvitations } from "@/lib/watch-task-invitations";
 import type { TaskDetails } from "@/lib/domain";
 import {
   authorizeTrello,
@@ -369,7 +370,12 @@ export function TrackerTaskModal({
 }
 
 export function TaskInvitationInbox() {
-  const { activeWorkspaceId, currentUserId, timer, acceptTaskInvitation } = useStore();
+  const { activeWorkspaceId, currentUserId } = useStore();
+  return <WorkspaceInvitationInbox key={`${currentUserId}:${activeWorkspaceId}`} />;
+}
+
+function WorkspaceInvitationInbox() {
+  const { activeWorkspaceId, timer, acceptTaskInvitation } = useStore();
   const inboxRevision = useRef(0);
   const { t } = useI18n();
   const [invitations, setInvitations] = useState<
@@ -379,36 +385,58 @@ export function TaskInvitationInbox() {
       projectId: string;
       taskDetails: TaskDetails;
       senderName: string;
+      expiresAt: number;
     }>
   >([]);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   useEffect(() => {
-    let cancelled = false;
-    setInvitations([]);
-    setFailure(null);
-    const load = async () => {
-      const revision = inboxRevision.current;
-      const result = await request<typeof invitations>("listTaskInvitations", {
-        workspaceId: activeWorkspaceId,
-      });
-      if (!cancelled && revision === inboxRevision.current && result.success)
-        setInvitations(result.data);
-    };
-    void load();
-    const interval = window.setInterval(() => {
-      if (document.visibilityState === "visible") void load();
-    }, 30000);
-    return () => {
-      cancelled = true;
-      window.clearInterval(interval);
-    };
-  }, [activeWorkspaceId, currentUserId]);
+    return watchTaskInvitations(
+      async (isCurrent) => {
+        const revision = inboxRevision.current;
+        const started = Date.now();
+        const result = await request<
+          Array<Omit<(typeof invitations)[number], "expiresAt"> & { validForMs: number | string }>
+        >("listTaskInvitations", {
+          workspaceId: activeWorkspaceId,
+        });
+        if (isCurrent() && revision === inboxRevision.current) {
+          setInvitations(
+            result.success
+              ? result.data
+                  .map(({ validForMs, ...item }) => ({
+                    ...item,
+                    expiresAt: started + Number(validForMs),
+                  }))
+                  .filter((item) => item.expiresAt > Date.now())
+              : [],
+          );
+        }
+        return result.success ? undefined : result.retryAfter;
+      },
+      () => setInvitations([]),
+    );
+  }, [activeWorkspaceId]);
   const [dismissed, setDismissed] = useState<string[]>([]);
   useEffect(() => {
     if (timer.status === "idle") setDismissed([]);
   }, [timer.status, activeWorkspaceId]);
   const invitation = invitations.find((item) => !dismissed.includes(item.id));
+  const invitationId = invitation?.id;
+  const expiresAt = invitation?.expiresAt;
+  useEffect(() => {
+    setFailure(null);
+  }, [invitationId]);
+  useEffect(() => {
+    if (!invitationId || !expiresAt) return;
+    const timeout = window.setTimeout(
+      () => {
+        setInvitations((items) => items.filter((item) => item.expiresAt > Date.now()));
+      },
+      Math.max(0, expiresAt - Date.now()),
+    );
+    return () => window.clearTimeout(timeout);
+  }, [invitationId, expiresAt]);
   const respond = async (response: "accepted" | "declined") => {
     if (!invitation || busy) return;
     inboxRevision.current += 1;
@@ -423,7 +451,13 @@ export function TaskInvitationInbox() {
             response,
           });
     setBusy(false);
+    inboxRevision.current += 1;
     if (!result.success) {
+      if (result.code === "invitation_unavailable") {
+        setInvitations((items) => items.filter((item) => item.id !== invitation.id));
+        toast.info(t("This task invitation is no longer available."));
+        return;
+      }
       setFailure(t(result.error));
       return;
     }
