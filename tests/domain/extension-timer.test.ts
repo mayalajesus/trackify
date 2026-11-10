@@ -14,7 +14,6 @@ describe("extension timer input", () => {
     });
   });
   it.each([
-    { source: "manual", task: " " },
     { source: "manual", task: 12 },
     { source: "manual", task: "x".repeat(241) },
     { source: "manual", task: "Nome", card: { url: "https://trello.com/c/AbCd1234" } },

@@ -271,6 +271,36 @@ try {
   assert.equal(manualEntries.rows[0].description, manual.description);
   assert.equal(manualEntries.rows[0].task_details.trelloCard, undefined);
   await assert.rejects(extensionTimerAction(client, user, manual), (e) => e.status === 409);
+  const draft = { workspaceId: ws, taskId: randomUUID(), source: "manual", action: "start" };
+  ({ timer } = await extensionTimerAction(client, user, draft));
+  assert.equal(timer.task, "");
+  assert.equal(timer.projectId, null);
+  await db.query(
+    "update public.active_timers set accumulated_seconds=65 where workspace_id=$1 and user_id=$2",
+    [ws, user.id],
+  );
+  timer = (await extensionContext(client, user, { workspaceId: ws })).timer;
+  const finish = { workspaceId: ws, action: "stop", version: timer.version };
+  for (const fields of [
+    { projectId: pid },
+    { task: "Reunião" },
+    { task: "Reunião", projectId: randomUUID() },
+  ]) {
+    await assert.rejects(
+      extensionTimerAction(client, user, { ...finish, ...fields }),
+      (e) => e.status === 400,
+    );
+  }
+  await extensionTimerAction(client, user, { ...finish, task: "Reunião", projectId: pid });
+  const saved = await db.query(
+    "select task,project_id,duration_seconds,billable from public.time_entries where task_details->>'id'=$1",
+    [draft.taskId],
+  );
+  assert.equal(saved.rowCount, 1);
+  assert.equal(saved.rows[0].task, "Reunião");
+  assert.equal(saved.rows[0].project_id, pid);
+  assert.ok(saved.rows[0].duration_seconds >= 65);
+  assert.equal(saved.rows[0].billable, true);
   console.log(
     "Extension QA: authorization, billing, start retry, pause/resume CAS, stop atomicity and Trello link passed.",
   );

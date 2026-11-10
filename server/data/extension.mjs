@@ -32,6 +32,10 @@ export function extensionOptions(body) {
 // Runs inside the timer transaction: invalid recipients or failed preferences
 // roll back the start/update too. Retries do not duplicate invitations.
 async function saveOptions(client, userId, workspaceId, row, options) {
+  if (options.memberIds.length && !row.project_id)
+    throw new DataApiError(400, "Selecione um projeto para convidar membros.");
+  if (options.favorite && (!row.project_id || !row.task.trim()))
+    throw new DataApiError(400, "Preencha o título e o projeto para favoritar.");
   if (options.memberIds.length) {
     const invitation = await client.query(
       "select invited_by from public.task_invitations where workspace_id=$1 and task_id=$2 limit 1",
@@ -114,9 +118,10 @@ export function extensionTask(body) {
   if (body.source === "manual") {
     if (body.card != null)
       throw new DataApiError(400, "Uma tarefa manual não deve ter cartão vinculado.");
-    if (typeof body.task !== "string" || !body.task.trim() || body.task.trim().length > 240)
-      throw new DataApiError(400, "Informe o nome da tarefa com até 240 caracteres.");
-    return { name: body.task.trim(), card: null };
+    const name = body.task ?? "";
+    if (typeof name !== "string" || name.trim().length > 240)
+      throw new DataApiError(400, "Informe um título com até 240 caracteres.");
+    return { name: name.trim(), card: null };
   }
   if (body.source !== undefined && body.source !== "trello")
     throw new DataApiError(400, "Origem da tarefa inválida.");
@@ -125,9 +130,19 @@ export function extensionTask(body) {
 }
 
 async function publicTimer(client, userId, workspaceId, row) {
-  return row
-    ? { ...(await timerWithOwner(client, userId, workspaceId, row)), version: row.version }
-    : null;
+  if (!row) return null;
+  const timer = await timerWithOwner(client, userId, workspaceId, row);
+  let invitedMemberIds = [];
+  if (row.task_details?.id && !timer.collaborationOwnerId) {
+    const result = await client.query(
+      `select recipient_id from public.task_invitations
+       where workspace_id=$1 and task_id=$2 and invited_by=$3
+         and (status='accepted' or (status='pending' and expires_at>now()))`,
+      [workspaceId, row.task_details.id, userId],
+    );
+    invitedMemberIds = result.rows.map((invitation) => invitation.recipient_id);
+  }
+  return { ...timer, version: row.version, invitedMemberIds };
 }
 
 export async function extensionContext(client, user, body) {
@@ -140,6 +155,22 @@ export async function extensionContext(client, user, body) {
   const workspaceId = body.workspaceId ? uuid(body.workspaceId) : workspaces.rows[0]?.id;
   if (!workspaceId) return { workspaces: [], projects: [], timer: null, workspaceId: null };
   await requireWorkspaceAccess(client, user.id, workspaceId);
+  if (body.recent === true) {
+    const offset = body.offset ?? 0;
+    if (!Number.isSafeInteger(offset) || offset < 0 || offset > 1000000)
+      throw new DataApiError(400, "Página inválida.");
+    const result = await client.query(
+      `select e.id::text,e.task,e.date::text,e.duration_seconds as seconds,
+        p.name as "projectName",c.name as "clientName",c.color as "clientColor"
+      from public.time_entries e
+      left join public.projects p on p.id=e.project_id and p.workspace_id=e.workspace_id
+      left join public.clients c on c.id=p.client_id and c.workspace_id=e.workspace_id
+      where e.workspace_id=$1 and e.user_id=$2
+      order by e.date desc,e.start_time desc,e.id desc limit 21 offset $3`,
+      [workspaceId, user.id, offset],
+    );
+    return { entries: result.rows.slice(0, 20), hasMore: result.rows.length > 20 };
+  }
   const projects = await client.query(
     `select p.id::text,p.name,c.name as "clientName",c.color as "clientColor"
     from public.projects p join public.clients c on c.id=p.client_id and c.workspace_id=p.workspace_id
@@ -180,7 +211,7 @@ export async function extensionTimerAction(client, user, body) {
     let row = current.rows[0];
     if (body.action === "start") {
       const taskId = uuid(body.taskId),
-        projectId = uuid(body.projectId),
+        projectId = body.projectId ? uuid(body.projectId) : null,
         task = extensionTask(body),
         options = extensionOptions(body);
       // Retries of an already saved start must never create another interval.
@@ -198,16 +229,18 @@ export async function extensionTimerAction(client, user, body) {
         );
       if (!row) {
         const project = await client.query(
-          `select p.id,p.billable or coalesce(c.billable,false) as billable,
+          `select p.id,coalesce(p.billable,false) or coalesce(c.billable,false) as billable,
           m.hourly_rate,m.currency,coalesce(u.timezone,'UTC') as timezone
-          from public.projects p join public.clients c on c.id=p.client_id and c.workspace_id=p.workspace_id
-          join public.workspace_members m on m.workspace_id=p.workspace_id and m.user_id=$3 and m.status='active'
+          from public.workspace_members m
+          left join public.projects p on p.workspace_id=m.workspace_id and p.id=$2 and p.status='active'
+          left join public.clients c on c.id=p.client_id and c.workspace_id=p.workspace_id
           left join public.user_preferences u on u.user_id=m.user_id
-          where p.workspace_id=$1 and p.id=$2 and p.status='active'`,
+          where m.workspace_id=$1 and m.user_id=$3 and m.status='active'`,
           [workspaceId, projectId, user.id],
         );
         const p = project.rows[0];
-        if (!p) throw new DataApiError(403, "Projeto indisponível neste workspace.");
+        if (!p || (projectId && !p.id))
+          throw new DataApiError(403, "Projeto indisponível neste workspace.");
         await client.query(
           `insert into public.active_timers
           (user_id,workspace_id,status,task,project_id,billable,started_at,started_date,start_clock,
@@ -258,6 +291,25 @@ export async function extensionTimerAction(client, user, body) {
         await syncSharedTimers(client, user.id, workspaceId);
       } else if (body.action === "stop") {
         if (seconds < 1) throw new DataApiError(409, "Aguarde um segundo antes de finalizar.");
+        if (!row.task.trim() || !row.project_id) {
+          const title = row.task.trim() || (typeof body.task === "string" ? body.task.trim() : "");
+          if (!title || title.length > 240)
+            throw new DataApiError(400, "Informe um título com até 240 caracteres para encerrar.");
+          if (!row.project_id && !body.projectId)
+            throw new DataApiError(400, "Selecione um projeto para encerrar.");
+          const projectId = row.project_id ?? uuid(body.projectId);
+          const completed = await client.query(
+            `update public.active_timers t set task=$3, project_id=p.id,
+               billable=case when t.project_id is null then p.billable or coalesce(c.billable,false) else t.billable end
+             from public.projects p join public.clients c on c.id=p.client_id and c.workspace_id=p.workspace_id
+             where t.user_id=$1 and t.workspace_id=$2 and p.workspace_id=t.workspace_id and p.id=$4
+               and (t.project_id=p.id or p.status='active')`,
+            [user.id, workspaceId, title, projectId],
+          );
+          if (!completed.rowCount)
+            throw new DataApiError(400, "Projeto indisponível neste workspace.");
+          await syncSharedTimers(client, user.id, workspaceId);
+        }
         // Existing paused timers keep their original start clock. PostgreSQL applies the user's timezone.
         await client.query(
           `insert into public.time_entries
