@@ -21,6 +21,7 @@ export async function clearOwnTimer(
   workspaceId,
   manageTransaction = true,
   expectedTimer,
+  discard = false,
 ) {
   if (manageTransaction) await client.query("begin");
   try {
@@ -40,7 +41,20 @@ export async function clearOwnTimer(
       if (timer.collaborationOwnerId && timer.collaborationOwnerId !== userId)
         throw new DataApiError(403, "Only the person who started this shared task can stop it.");
       const taskId = result.rows[0].task_details?.id;
-      if (taskId) {
+      if (discard && taskId) {
+        const params = [workspaceId, userId, taskId];
+        await client.query(
+          `delete from public.active_timers t where t.workspace_id=$1 and t.task_details->>'id'=$3
+             and exists (select 1 from public.task_invitations i where i.workspace_id=$1
+               and i.task_id::text=$3 and i.invited_by=$2 and i.recipient_id=t.user_id and i.status='accepted')`,
+          params,
+        );
+        await client.query(
+          `update public.task_invitations set expires_at=least(expires_at,now())
+           where workspace_id=$1 and invited_by=$2 and task_id::text=$3 and status='pending'`,
+          params,
+        );
+      } else if (taskId) {
         // The owner entry is persisted before clearing the timer. Copy its exact
         // interval while preserving each participant's billing snapshot.
         const saved = await client.query(

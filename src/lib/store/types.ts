@@ -99,6 +99,7 @@ export interface StoreValue {
   pauseTimer: (effectiveAt?: number) => void;
   resumeTimer: () => StoreResult;
   stopTimer: () => StoreResult;
+  discardTimer: (expected: TimerState) => Promise<StoreResult>;
   addEntry: (entry: Omit<TimeEntry, "id">, options?: AddEntryOptions) => StoreResult;
   updateEntry: (id: string, patch: Partial<Omit<TimeEntry, "id">>) => StoreResult;
   deleteEntry: (id: string) => StoreResult;

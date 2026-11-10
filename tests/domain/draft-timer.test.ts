@@ -1,9 +1,42 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { createTimerActions } from "../../src/lib/store/timer-actions";
 import { initialTimer } from "../../src/lib/store/defaults";
+import { request } from "../../src/lib/api-data-source";
+import type { TimerState } from "../../src/lib/store/types";
 import type { TimeEntry } from "../../src/lib/domain";
 vi.mock("../../src/lib/api-data-source", () => ({ request: vi.fn() }));
 afterEach(() => vi.restoreAllMocks());
+
+it.each(["running", "paused"] as const)(
+  "discards a %s timer only after the server confirms",
+  async (status) => {
+    const scope = { userId: "owner", reloadKey: 0 };
+    const expected = { ...initialTimer, workspaceId: "workspace", status, accumulated: 120 };
+    const timerRef = { current: expected as TimerState };
+    const setEntries = vi.fn();
+    const actions = createTimerActions({
+      timerRef,
+      accountScope: scope,
+      accountScopeRef: { current: scope },
+      activeMemberId: "owner",
+      activeWorkspaceId: "workspace",
+      timerWorkspaceRef: { current: "workspace" },
+      timerSyncPromiseRef: { current: null },
+      persistedTimerRef: { current: null },
+      timerRevisionRef: { current: 1 },
+      setTimer: vi.fn(),
+      setElapsed: vi.fn(),
+      setEntries,
+    } as unknown as Parameters<typeof createTimerActions>[0]);
+    vi.mocked(request).mockResolvedValueOnce({ success: false, error: "Offline" });
+    expect((await actions.discardTimer(expected)).success).toBe(false);
+    expect(timerRef.current).toBe(expected);
+    vi.mocked(request).mockResolvedValueOnce({ success: true, data: null });
+    expect((await actions.discardTimer(expected)).success).toBe(true);
+    expect(timerRef.current.status).toBe("idle");
+    expect(setEntries).not.toHaveBeenCalled();
+  },
+);
 
 it("starts empty, preserves elapsed time on incomplete stop and saves only after completion", () => {
   let now = Date.parse("2026-10-30T09:00:00Z");

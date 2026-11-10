@@ -1,3 +1,4 @@
+import { accountsEqual } from "../../../shared/account-merge.mjs";
 import { request } from "../api-data-source";
 import type { TimeEntry } from "../domain";
 import { addSecondsToDateTime, dateTimeToTimestamp, getLocalToday, nowTime } from "../format";
@@ -310,6 +311,48 @@ export function createTimerActions({
     return { success: true };
   };
 
+  const discardTimer = async (expected: TimerState): Promise<StoreResult> => {
+    const changed = { success: false, error: "The timer changed. Please try again." } as const;
+    if (expected.status === "idle" || expected.workspaceId !== activeWorkspaceId) return changed;
+    if (expected.collaborationOwnerId && expected.collaborationOwnerId !== activeMemberId)
+      return { success: false, error: "Only the person who started this shared task can stop it." };
+    const previous = timerSyncPromiseRef.current;
+    const isCurrent = () =>
+      accountScopeRef.current === accountScope && timerWorkspaceRef.current === activeWorkspaceId;
+    const operation = async (): Promise<StoreResult> => {
+      await previous;
+      if (!isCurrent() || !accountsEqual(timerRef.current, expected)) return changed;
+      const result = await request<null>("discardActiveTimer", {
+        workspaceId: activeWorkspaceId,
+        expectedTimer: expected,
+      });
+      if (!result.success) return result;
+      if (!isCurrent()) return { success: true };
+      persistedTimerRef.current = {
+        scope: accountScope,
+        workspaceId: activeWorkspaceId,
+        value: JSON.stringify(initialTimer),
+      };
+      if (!accountsEqual(timerRef.current, expected)) return changed;
+      timerRevisionRef.current += 1;
+      timerRef.current = initialTimer;
+      setTimer(initialTimer);
+      setElapsed(0);
+      return { success: true };
+    };
+    const result = operation();
+    const tracked = result.then(
+      () => {},
+      () => {},
+    );
+    timerSyncPromiseRef.current = tracked;
+    try {
+      return await result;
+    } finally {
+      if (timerSyncPromiseRef.current === tracked) timerSyncPromiseRef.current = null;
+    }
+  };
+
   const stopTimer = (): StoreResult => {
     const current = timerRef.current;
     if (current.collaborationOwnerId && current.collaborationOwnerId !== activeMemberId)
@@ -386,6 +429,7 @@ export function createTimerActions({
     setTimerStart,
     pauseTimer,
     resumeTimer,
+    discardTimer,
     stopTimer,
   };
 }

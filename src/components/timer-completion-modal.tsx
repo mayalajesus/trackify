@@ -8,6 +8,7 @@ import { ModalLayout } from "./modal-layout";
 import { ModalTriggerRegistration } from "./overlay-trigger-registration";
 import { ProjectSelect } from "./project-select";
 import { useStore } from "@/lib/store";
+import { DiscardTimerDialog } from "./discard-timer-dialog";
 import { useI18n } from "@/lib/i18n";
 
 export function TimerCompletionModal({ onClose }: { onClose: () => void }) {
@@ -16,6 +17,9 @@ export function TimerCompletionModal({ onClose }: { onClose: () => void }) {
   const [task, setTask] = useState(timer.task);
   const [projectId, setProjectId] = useState(timer.projectId);
   const [failure, setFailure] = useState<string | null>(null);
+  const [discardOpen, setDiscardOpen] = useState(false);
+  if (discardOpen)
+    return <DiscardTimerDialog onCancel={() => setDiscardOpen(false)} onDiscard={onClose} />;
   return (
     <Modal
       isOpen
@@ -65,6 +69,9 @@ export function TimerCompletionModal({ onClose }: { onClose: () => void }) {
               )}
             </ModalLayout.Body>
             <ModalLayout.Footer>
+              <Button variant="ghost" className="text-danger" onPress={() => setDiscardOpen(true)}>
+                {t("Discard task")}
+              </Button>
               <Button variant="secondary" onPress={onClose}>
                 {t("Cancel")}
               </Button>

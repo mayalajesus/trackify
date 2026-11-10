@@ -14,6 +14,7 @@ import { Button } from "@heroui/react/button";
 import { useFavoriteTasks } from "@/lib/use-favorite-tasks";
 import { type FavoriteTask } from "@/lib/favorite-tasks";
 import {
+  TrashBin,
   Star,
   StarFill,
   Square,
@@ -36,6 +37,7 @@ import { TimerStartEditor } from "@/components/timer-start-editor";
 import { TimerNoteModal } from "@/components/timer-note-modal";
 import { TimerCompletionModal } from "@/components/timer-completion-modal";
 import { Comment } from "@gravity-ui/icons";
+import { DiscardTimerDialog } from "./discard-timer-dialog";
 import { useI18n } from "@/lib/i18n";
 import { useStore, useTimerTicker } from "@/lib/store";
 import { focusTimerTaskInput } from "@/lib/timer-input";
@@ -82,7 +84,21 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
   const [taskModal, setTaskModal] = useState<"members" | "trello" | null>(null);
   const [noteOpen, setNoteOpen] = useState(false);
   const [completionOpen, setCompletionOpen] = useState(false);
+  const [discardOpen, setDiscardOpen] = useState(false);
   const active = timer.status !== "idle";
+  const wasActive = useRef(active);
+  useEffect(() => {
+    if (wasActive.current && !active) {
+      setTaskDetails({ id: crypto.randomUUID(), urgent: false });
+      setTaskInputVersion((version) => version + 1);
+      setTask("");
+      setProjectId(null);
+      setTimerError(null);
+      setDiscardOpen(false);
+      setCompletionOpen(false);
+    }
+    wasActive.current = active;
+  }, [active]);
   const details = active ? (timer.taskDetails ?? taskDetails) : taskDetails;
   const changeDetails = (next: TaskDetails) => {
     setTaskDetails(next);
@@ -334,8 +350,23 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
                   label: t("Link to Trello"),
                   icon: <LayoutColumns className="size-4 text-[#0052CC]" />,
                 },
+                ...(active &&
+                (!timer.collaborationOwnerId || timer.collaborationOwnerId === currentMember?.id)
+                  ? [
+                      {
+                        id: "discard",
+                        label: t("Discard task"),
+                        icon: <TrashBin className="size-4" />,
+                        tone: "danger" as const,
+                      },
+                    ]
+                  : []),
               ]}
               onAction={(key) => {
+                if (key === "discard") {
+                  setDiscardOpen(true);
+                  return;
+                }
                 if (key === "note") {
                   setNoteOpen(true);
                   return;
@@ -443,13 +474,6 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
                               : error(result.warning),
                           });
                         }
-                        setTaskDetails({ id: crypto.randomUUID(), urgent: false });
-                        // Reset the combobox's internal selection/open state along with the draft.
-                        setTaskInputVersion((version) => version + 1);
-                        setTask("");
-                        setTimerError(null);
-                        setActiveTask("");
-                        setProjectId(null);
                       }}
                     >
                       <Square aria-hidden="true" />
@@ -466,6 +490,12 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
         <FormAlert title={t("We couldn't update the timer")} description={error(timerError)} />
       ) : null}
 
+      {discardOpen && active && (
+        <DiscardTimerDialog
+          onCancel={() => setDiscardOpen(false)}
+          onDiscard={() => setDiscardOpen(false)}
+        />
+      )}
       {completionOpen && active && (
         <TimerCompletionModal onClose={() => setCompletionOpen(false)} />
       )}

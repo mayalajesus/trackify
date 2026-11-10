@@ -753,6 +753,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setTimerStart,
       pauseTimer,
       resumeTimer,
+      discardTimer,
       stopTimer,
     } = createTimerActions({
       acceptingTaskRef,
@@ -1114,6 +1115,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setTimerStart,
       pauseTimer,
       resumeTimer,
+      discardTimer,
       stopTimer,
       addEntry,
       updateEntry,

@@ -49,7 +49,6 @@ import {
   dateValue,
   MAX_INTEGER_SECONDS,
   optionalCurrency,
-  requiredText,
   timeValue,
   uuid,
 } from "./data/validation.mjs";
@@ -427,10 +426,13 @@ async function operation(request, user, config, body) {
         throw error;
       }
     }
-    if (body.operation === "clearActiveTimer") {
+    if (body.operation === "clearActiveTimer" || body.operation === "discardActiveTimer") {
       const workspaceId = uuid(body.workspaceId);
       await requireWorkspaceAccess(client, user.id, workspaceId, true);
-      await clearOwnTimer(client, user.id, workspaceId, true, body.expectedTimer);
+      const discard = body.operation === "discardActiveTimer";
+      if (discard && !["running", "paused"].includes(body.expectedTimer?.status))
+        throw new DataApiError(400, "An active timer is required.");
+      await clearOwnTimer(client, user.id, workspaceId, true, body.expectedTimer, discard);
       return null;
     }
     throw new DataApiError(400, "Unsupported data operation.");

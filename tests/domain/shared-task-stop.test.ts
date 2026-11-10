@@ -33,6 +33,35 @@ describe("shared task stop permissions", () => {
     expect(query).toHaveBeenCalledWith("rollback");
     expect(query.mock.calls.some(([sql]) => /delete|insert|update set/.test(sql))).toBe(false);
   });
+  it.each(["running", "paused"])(
+    "discards a %s task without writing time entries",
+    async (status) => {
+      const row = {
+        status,
+        workspace_id: "workspace",
+        task: "",
+        project_id: null,
+        billable: false,
+        started_at: null,
+        started_date: "2026-11-09",
+        accumulated_seconds: 90,
+        start_clock: "09:00",
+        task_details: { id: "task", urgent: false },
+        hourly_rate: null,
+      };
+      const query = vi.fn(async (sql: string) => ({
+        rows: sql.startsWith("select *,") ? [row] : [],
+      }));
+      const expected = await timerWithOwner({ query }, "creator", "workspace", row);
+      await clearOwnTimer({ query }, "creator", "workspace", true, expected, true);
+      expect(query.mock.calls.some(([sql]) => sql.includes("time_entries"))).toBe(false);
+      expect(query).toHaveBeenCalledWith(
+        expect.stringContaining("delete from public.active_timers where user_id="),
+        ["creator", "workspace"],
+      );
+      expect(query).toHaveBeenLastCalledWith("commit");
+    },
+  );
   it.each([true, false])(
     "commits participant stop only when their hours were saved: %s",
     async (saved) => {

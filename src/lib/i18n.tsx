@@ -768,6 +768,11 @@ const ptBR: Record<string, string> = {
     "Esta conta não pode atualizar o cronômetro ativo.",
   "There is no active timer to update.": "Ainda não há um cronômetro ativo para atualizar.",
   "A task is required.": "Uma tarefa é obrigatória.",
+  "Discard task": "Descartar tarefa",
+  "Discard this task?": "Descartar esta tarefa?",
+  "Elapsed time will be discarded for everyone tracking this task.":
+    "O tempo desta tarefa será descartado para todos que estão cronometrando.",
+  "The timer changed. Please try again.": "O cronômetro mudou. Tente novamente.",
   "Complete time entry": "Concluir registro de tempo",
   "The timer is paused. Add the task and project to save your time.":
     "O cronômetro está pausado. Informe a tarefa e o projeto para salvar o tempo registrado.",
