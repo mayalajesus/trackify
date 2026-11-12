@@ -347,7 +347,7 @@ export function useEntryEditor(
     }
     if (event.key === "Enter") {
       event.preventDefault();
-      if (commitField(field, draft[field])) onDeactivate();
+      if (commitField(field, event.currentTarget.value)) onDeactivate();
     }
   };
 

@@ -256,7 +256,9 @@ export function TrackerEntryRow({
                   className="min-w-0 flex-1"
                   fullWidth
                   name={`task-${entry.id}`}
-                  value={draft.task}
+                  // Keep typing local to the mounted field: table collection updates
+                  // otherwise reapply controlled values after the native input event.
+                  defaultValue={draft.task}
                   isInvalid={Boolean(validationMessage)}
                   onChange={(value) =>
                     setDraft((current) => ({
@@ -328,7 +330,7 @@ export function TrackerEntryRow({
                 className="min-w-0 flex-1"
                 fullWidth
                 name={`description-${entry.id}`}
-                value={draft.description}
+                defaultValue={draft.description}
                 isInvalid={Boolean(validationMessage)}
                 onChange={(value) =>
                   setDraft((current) => ({
