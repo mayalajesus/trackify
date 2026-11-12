@@ -1,6 +1,17 @@
 import type { TimeEntry } from "@/lib/domain";
+import type { ReportExportNumericCell } from "@/lib/report-export";
+import { formatClock } from "@/lib/format";
 import { getEndDateForEntry, getEntryEndDayOffset } from "@/lib/format";
 import { type ReportView } from "@/lib/report-views";
+
+export function exportDuration(seconds: number): ReportExportNumericCell {
+  const duration = Math.max(0, seconds);
+  return { value: duration / 86400, format: "[h]:mm:ss", text: formatClock(duration) };
+}
+
+export function exportDecimal(value: number): ReportExportNumericCell {
+  return { value, format: "0.00", text: value.toFixed(2) };
+}
 
 export function endLabel(entry: TimeEntry): string {
   const offset = getEntryEndDayOffset(entry);

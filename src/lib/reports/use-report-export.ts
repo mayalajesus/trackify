@@ -5,17 +5,11 @@ import {
   formatMoney,
   formatMoneyTotals,
 } from "@/lib/billing";
-import {
-  formatClock,
-  formatDate,
-  formatDateRange,
-  formatDuration,
-  getEndDateForEntry,
-} from "@/lib/format";
+import { formatDate, formatDateRange, formatDuration, getEndDateForEntry } from "@/lib/format";
 import type { ReportExportPayload, ReportPdfEntry } from "@/lib/report-export";
 import { clientNameFor, projectNameFor } from "@/lib/report-groups";
 import { useMemo } from "react";
-import { endLabel, exportDate, exportTime } from "./export-format";
+import { endLabel, exportDate, exportTime, exportDuration, exportDecimal } from "./export-format";
 import {
   overviewActivityTime,
   overviewConsistencyPercentage,
@@ -441,10 +435,10 @@ export function useReportExport({
               exportTime(entry.start),
               exportDate(endDate),
               exportTime(entry.end),
-              formatClock(Math.max(0, entry.seconds)),
-              (Math.max(0, entry.seconds) / 3600).toFixed(2),
-              billing.hourlyRate.toFixed(2),
-              billableValue(entry, billing).toFixed(2),
+              exportDuration(entry.seconds),
+              exportDecimal(Math.max(0, entry.seconds) / 3600),
+              exportDecimal(billing.hourlyRate),
+              exportDecimal(billableValue(entry, billing)),
             ];
           }),
         },

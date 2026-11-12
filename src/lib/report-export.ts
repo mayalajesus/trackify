@@ -1,4 +1,5 @@
 import { defaultLocale, translate, type Locale } from "./i18n";
+import type { Cell } from "write-excel-file/browser";
 
 export type ReportExportFormat = "csv" | "xlsx" | "pdf";
 
@@ -20,7 +21,14 @@ export type ReportExportSection = {
 
 export type ReportExportTable = {
   columns: string[];
-  rows: Array<Array<string | number>>;
+  rows: Array<Array<string | number | ReportExportNumericCell>>;
+};
+
+/** Preserve CSV text while giving Excel a numeric value and display format. */
+export type ReportExportNumericCell = {
+  value: number;
+  format: string;
+  text: string;
 };
 
 export type ReportPdfEntry = {
@@ -89,7 +97,12 @@ function downloadBlob(blob: Blob, filename: string): void {
 function exportCsv(payload: ReportExportPayload): ReportExportResult {
   try {
     if (payload.detailedTable) {
-      const rows = [payload.detailedTable.columns, ...payload.detailedTable.rows];
+      const rows = [
+        payload.detailedTable.columns,
+        ...payload.detailedTable.rows.map((row) =>
+          row.map((cell) => (typeof cell === "object" ? cell.text : cell)),
+        ),
+      ];
       const csv = `\uFEFF${rows.map((row) => row.map(escapeCsv).join(",")).join("\n")}`;
       downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), `${payload.title}.csv`);
       return { success: true };
@@ -118,15 +131,21 @@ function exportCsv(payload: ReportExportPayload): ReportExportResult {
   }
 }
 
-function spreadsheetRows(rows: Array<Array<string | number>>): Array<Array<string | number>> {
-  return rows.map((row) => row.map(sanitizeSpreadsheetCell));
+export function spreadsheetRows(rows: ReportExportTable["rows"]): Cell[][] {
+  return rows.map((row) =>
+    row.map((cell) =>
+      typeof cell === "object"
+        ? { type: Number, value: cell.value, format: cell.format }
+        : sanitizeSpreadsheetCell(cell),
+    ),
+  );
 }
 
 async function exportXlsx(payload: ReportExportPayload): Promise<ReportExportResult> {
   try {
     const { default: writeXlsxFile } = await import("write-excel-file/browser");
     const sheets: Array<{
-      data: Array<Array<string | number>>;
+      data: Cell[][];
       sheet: string;
       stickyRowsCount?: number;
     }> = [];
