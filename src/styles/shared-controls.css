@@ -15,6 +15,22 @@ body {
   min-height: 100vh;
 }
 
+/* One comfortable option target for the shared HeroUI selectors. Keep state
+   colors/focus treatment in HeroUI so light and dark themes remain consistent. */
+:is(.autocomplete__popover, .select__popover, .combo-box__popover) .list-box-item {
+  min-height: 36px;
+  padding: 8px 12px;
+  border-radius: var(--field-radius);
+  line-height: 20px;
+}
+:is(.autocomplete__popover, .select__popover, .combo-box__popover)
+  .list-box-item:has(.list-box-item__indicator) {
+  padding-inline-end: 36px;
+}
+:is(.autocomplete__popover, .select__popover, .combo-box__popover) .list-box-item__indicator {
+  inset-inline-end: 12px;
+}
+
 /* UI Kit / Toggle: 28 × 16 track, 12px indicator with a 2px inset. */
 :where(.light, [data-theme="light"]) .switch {
   --default: #c7ccd1;
