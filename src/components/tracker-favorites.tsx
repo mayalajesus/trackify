@@ -10,7 +10,7 @@ export function TrackerFavorites({ onSelect }: { onSelect: (favorite: FavoriteTa
   const { favorites, toggleFavorite } = useFavoriteTasks();
   const { projects, timer } = useStore();
   const { t } = useI18n();
-  const active = timer.status !== "idle";
+  const hasActiveTask = timer.status !== "idle" && Boolean(timer.task.trim());
 
   return favorites.length > 0 ? (
     <div
@@ -30,7 +30,7 @@ export function TrackerFavorites({ onSelect }: { onSelect: (favorite: FavoriteTa
               size="sm"
               variant="ghost"
               className="h-7 min-h-7 min-w-0 shrink gap-1.5 rounded-full px-2 text-xs"
-              isDisabled={active || unavailable}
+              isDisabled={hasActiveTask || unavailable}
               aria-label={t("Use favorite {task}, {project}", {
                 task: favorite.task,
                 project: project?.name ?? t("Project unavailable"),

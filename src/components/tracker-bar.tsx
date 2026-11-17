@@ -166,19 +166,28 @@ export function TrackerBar({ ref }: { ref?: Ref<TrackerBarHandle> }) {
     billable: active ? timer.billable : billable,
   };
   const selectFavorite = (favorite: FavoriteTask) => {
-    if (active) return;
     if (
+      (active && timer.task.trim()) ||
       !projects.some((project) => project.id === favorite.projectId && project.status === "active")
     )
       return;
-    setTaskDetails({ id: crypto.randomUUID(), urgent: false });
-    setTask(favorite.task);
-    setProjectId(favorite.projectId);
-    setBillable(favorite.billable);
+    if (active) {
+      const result = updateTimer({ task: favorite.task, projectId: favorite.projectId });
+      if (!result.success) {
+        setTimerError(result.error);
+        return;
+      }
+      setActiveTask(favorite.task);
+    } else {
+      setTaskDetails({ id: crypto.randomUUID(), urgent: false });
+      setTask(favorite.task);
+      setProjectId(favorite.projectId);
+      setBillable(favorite.billable);
+    }
     setTimerError(null);
     setProjectValidationVisible(false);
     taskInputRef.current?.setCustomValidity("");
-    taskInputRef.current?.focus();
+    if (!active) taskInputRef.current?.focus();
   };
 
   useImperativeHandle(ref, () => ({ selectFavorite }));

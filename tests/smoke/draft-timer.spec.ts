@@ -2,6 +2,34 @@ import { expect, test } from "@playwright/test";
 import { installAccountFixture } from "../support/account-fixture";
 import { signInAs } from "../support/qa-auth";
 
+test("a favorite fills the running empty timer without restarting it", async ({ page }) => {
+  const fixture = await installAccountFixture(page);
+  await signInAs(page, "owner");
+  const account = fixture.account!;
+  const { workspace, projects, entries } = account.workspaces[0]!;
+  const favorite = { task: entries[0]!.task, projectId: projects[0]!.id, billable: false };
+  account.preferencesByUserId[workspace.ownerId]!.favoriteTasks = { [workspace.id]: [favorite] };
+  await page.reload();
+
+  const header = page.locator("[data-header-timer-control]");
+  await header.getByRole("button", { name: /^(Iniciar|Start)$/ }).click();
+  await expect.poll(() => fixture.timer?.status).toBe("running");
+  const original = fixture.timer!;
+  expect(original.task).toBe("");
+  const button = page.getByRole("button", { name: /^(Use favorite|Usar favorita) / });
+  await button.click();
+  await expect
+    .poll(() => fixture.timer)
+    .toMatchObject({
+      ...original,
+      ...favorite,
+    });
+  await expect(button).toBeDisabled();
+  await page.reload();
+  await expect(header).toHaveAttribute("data-status", "running");
+  await expect(page.locator("[data-timer-task-input]")).toHaveValue(favorite.task);
+});
+
 test("header starts an empty timer, reload preserves it and completion saves one valid entry", async ({
   page,
 }) => {
