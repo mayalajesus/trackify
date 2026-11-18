@@ -126,13 +126,15 @@ export async function loadAccount(client, user, config, { profileEnsured = false
   // lock/rewrite the preferences of its members just to fill a display fallback.
   const hasAvatarData = column("user_preferences", "avatar_data_url");
   const preferences = await client.query(
-    `select user_id, language, theme, timezone, ${
-      hasAvatarData ? "avatar_data_url" : "null::text as avatar_data_url"
-    }, ${hasActiveWorkspace ? "active_workspace_id::text" : "null::text as active_workspace_id"},
-       ${hasReportFilters ? "report_filters" : "'{}'::jsonb as report_filters"},
-       ${column("user_preferences", "favorite_tasks") ? "favorite_tasks" : "'{}'::jsonb as favorite_tasks"}
+    `select user_id, case when user_id=$2 then language else 'pt-BR' end as language,
+       case when user_id=$2 then theme else 'system' end as theme,
+       case when user_id=$2 then timezone else 'UTC' end as timezone, ${
+         hasAvatarData ? "avatar_data_url" : "null::text as avatar_data_url"
+       }, ${hasActiveWorkspace ? "case when user_id=$2 then active_workspace_id::text end as active_workspace_id" : "null::text as active_workspace_id"},
+       ${hasReportFilters ? "case when user_id=$2 then report_filters else '{}'::jsonb end as report_filters" : "'{}'::jsonb as report_filters"},
+       ${column("user_preferences", "favorite_tasks") ? "case when user_id=$2 then favorite_tasks else '{}'::jsonb end as favorite_tasks" : "'{}'::jsonb as favorite_tasks"}
        from public.user_preferences where user_id = any($1::text[])`,
-    [profileIds],
+    [profileIds, user.id],
   );
   const settingsByWorkspace = new Map(settings.rows.map((row) => [row.workspace_id, row]));
   const membershipsByWorkspace = new Map();

@@ -21,6 +21,7 @@ import {
 import { DataApiError } from "./data-api-error.mjs";
 import { requirePayloadUser, requireWorkspaceAccess } from "./data/access.mjs";
 import { loadAccount } from "./data/account.mjs";
+import { conditionalRead, conditionalOperations } from "./data/conditional-read.mjs";
 import { getPool, getSupabaseAdmin, providerEnv } from "./data/connections.mjs";
 import { loadReportEntries } from "./data/entries.mjs";
 import {
@@ -126,6 +127,34 @@ async function operation(request, user, config, body) {
     if (operationName === "disconnectOwnExtensions")
       return await disconnectOwnExtensions(client, user);
     await enforceAccountLifecycle(client, user.id, operationName);
+    if (
+      body.readProtocol === 1 &&
+      conditionalOperations.has(operationName) &&
+      body.recent !== true
+    ) {
+      await client.query("begin isolation level repeatable read read only");
+      let result;
+      try {
+        result = await conditionalRead(client, user, body, async () => {
+          if (operationName === "loadAccount")
+            return loadAccount(client, user, config, { profileEnsured: true });
+          if (operationName === "loadReportEntries") return loadReportEntries(client, user, body);
+          if (operationName === "getExtensionContext") return extensionContext(client, user, body);
+          return handleTaskAction(client, user, body, {
+            requireWorkspaceAccess,
+            uuid,
+            timerFromRow,
+          });
+        });
+        await client.query("commit");
+      } catch (error) {
+        await rollback(error);
+        throw error;
+      }
+      if (operationName === "loadAccount" && !result.notModified)
+        await welcomeOnAccess(client, user, config);
+      return result;
+    }
     if (operationName === "getOwnExtensionConnections")
       return await getOwnExtensionConnections(client, user);
     if (operationName === "createExtensionSession")
