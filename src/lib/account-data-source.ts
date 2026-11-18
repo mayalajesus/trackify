@@ -75,6 +75,7 @@ export type AccountExport = {
 };
 
 export interface AccountDataSource {
+  resetReadFailures?(): void;
   loadAccount(userId: string): Promise<DataSourceResult<PersistedAccount>>;
   loadReportEntries(
     userId: string,

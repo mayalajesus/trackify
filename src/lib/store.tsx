@@ -225,7 +225,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (timer.status === "idle" || timer.workspaceId !== activeWorkspaceId) return recent;
     return rememberRecentTimerTask(recent, timer);
   }, [activeMemberId, activeWorkspaceId, entries, timer]);
-  const retryAccountLoad = useCallback(() => setAccountReloadKey((value) => value + 1), []);
+  const retryAccountLoad = useCallback(() => {
+    dataSource.resetReadFailures?.();
+    setAccountReloadKey((value) => value + 1);
+  }, [dataSource]);
 
   const applySavedAccount = useCallback((next: PersistedAccount) => {
     accountRef.current = next;
@@ -323,6 +326,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const result = await dataSource.loadAccount(authenticatedUserId);
       if (accountScopeRef.current !== scope || accountForSyncRef.current !== snapshot) return false;
       if (!result.success) {
+        if (result.code === "read_superseded") return false;
         setAccountPersistenceError(result.error);
         return false;
       }
@@ -506,14 +510,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!hydrated || !authenticatedUserId) return;
     const refreshWhenVisible = () => {
-      if (document.visibilityState === "visible") void refreshAccount();
+      if (document.visibilityState === "visible" && navigator.onLine) void refreshAccount();
     };
     const id = window.setInterval(refreshWhenVisible, 30_000);
     window.addEventListener("focus", refreshWhenVisible);
+    window.addEventListener("online", refreshWhenVisible);
     document.addEventListener("visibilitychange", refreshWhenVisible);
     return () => {
       window.clearInterval(id);
       window.removeEventListener("focus", refreshWhenVisible);
+      window.removeEventListener("online", refreshWhenVisible);
       document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
   }, [hydrated, refreshAccount, authenticatedUserId]);

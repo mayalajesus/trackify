@@ -12,20 +12,36 @@ export function TaskParticipantsProvider({ children }: { children: ReactNode }) 
   const [participants, setParticipants] = useState<Array<{ taskId: string; userId: string }>>([]);
   useEffect(() => {
     let cancelled = false;
+    let busy = false;
     setParticipants([]);
     const load = async () => {
-      const result = await request<typeof participants>("listTaskParticipants", {
-        workspaceId: activeWorkspaceId,
-      });
-      if (!cancelled && result.success) setParticipants(result.data);
+      if (cancelled || busy || document.visibilityState !== "visible" || !navigator.onLine) return;
+      busy = true;
+      try {
+        const result = await request<typeof participants>("listTaskParticipants", {
+          workspaceId: activeWorkspaceId,
+        });
+        if (!cancelled && result.success) setParticipants(result.data);
+      } finally {
+        busy = false;
+      }
     };
     void load();
     const interval = window.setInterval(() => {
       if (document.visibilityState === "visible") void load();
     }, 30000);
+    const wake = () => {
+      void load();
+    };
+    window.addEventListener("online", wake);
+    window.addEventListener("focus", wake);
+    document.addEventListener("visibilitychange", wake);
     return () => {
       cancelled = true;
       window.clearInterval(interval);
+      window.removeEventListener("online", wake);
+      window.removeEventListener("focus", wake);
+      document.removeEventListener("visibilitychange", wake);
     };
   }, [activeWorkspaceId, currentUserId]);
   return (

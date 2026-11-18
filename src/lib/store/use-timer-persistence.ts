@@ -142,6 +142,7 @@ export function useTimerPersistence({
         checking ||
         cancelled ||
         document.visibilityState !== "visible" ||
+        !navigator.onLine ||
         timerSyncPromiseRef.current ||
         !isTimerAcknowledged(
           timerRef.current,
@@ -199,11 +200,13 @@ export function useTimerPersistence({
     };
     const interval = window.setInterval(check, 3000);
     window.addEventListener("focus", check);
+    window.addEventListener("online", check);
     document.addEventListener("visibilitychange", check);
     return () => {
       cancelled = true;
       window.clearInterval(interval);
       window.removeEventListener("focus", check);
+      window.removeEventListener("online", check);
       document.removeEventListener("visibilitychange", check);
     };
   }, [

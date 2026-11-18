@@ -64,13 +64,14 @@ export function useAccountPersistence({
   );
 
   const retryAccountSave = useCallback(() => {
+    dataSource.resetReadFailures?.();
     void persistAccount().then((saved) => {
       if (saved && scopeRef.current === scope) {
         if (timerHydrated) setTimerSaveRetryKey((key) => key + 1);
         else setTimerLoadRetryKey((key) => key + 1);
       }
     });
-  }, [persistAccount, scope, scopeRef, timerHydrated]);
+  }, [dataSource, persistAccount, scope, scopeRef, timerHydrated]);
 
   useEffect(() => {
     if (!userId || !hydrated) return;

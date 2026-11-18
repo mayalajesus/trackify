@@ -26,6 +26,38 @@ database URL, service-role key or access token with `VITE_`.
 
 ## Production release
 
+### Conditional reads (November 2026)
+
+Apply `20261118120000_conditional_reads.sql` and
+`20261118121000_private_read_revisions.sql` before deploying the API. They add
+private invalidation markers and transactional triggers; existing account data
+is not rewritten. Restore the previous application deployment to roll back;
+the additive tables/triggers may remain in place.
+
+The optional `readProtocol: 1` / `ifRevision` request fields enable conditional
+reads. The response is `{readProtocol: 1, revision, notModified, data?}`. Legacy
+requests retain their previous shape, and new clients accept legacy responses.
+Authorization runs before revision comparison. Full snapshots used for saves
+and conflict resolution still load inside their existing transaction.
+
+Supabase ES256/RS256 access tokens use public JWKS (maximum ten-minute cache)
+and a live, minimal `auth.users`/`auth.sessions` check. The server database role
+must have SELECT access to these tables. Legacy HS256 tokens continue through
+Auth. No private JWT signing key is used or distributed. Provider quota/network
+failures return temporary unavailability instead of invalidating a session.
+
+Run `node --env-file=.env tests/integration/conditional-reads.mjs` against QA
+to verify invalidation and compare returned database row bytes and p95 latency.
+This guarded test rolls back its fixtures. It simulates twenty account checks
+(ten minutes at the existing polling cadence) with 1,000 synthetic entries;
+it does not measure total billed egress. Also run the account concurrency,
+shared-task, recovery and extension suites before publishing.
+
+Publish the server before distributing extension 0.6.18. Replace the existing
+shared Drive ZIP, preserving its ID and permissions. Keep a production Google
+login / Trello smoke test pending if Supabase still restricts the project for
+`exceed_egress_quota`; code changes do not reset consumed quota.
+
 Apply `20261013120000_default_portuguese.sql` with the Portuguese-default release.
 It changes only the default for newly inserted preferences, including profiles
 created by Supabase Auth triggers. Existing language choices are preserved.

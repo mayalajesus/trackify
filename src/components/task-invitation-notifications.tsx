@@ -30,7 +30,7 @@ export function TaskInvitationNotifications() {
     let cancelled = false;
     let busy = false;
     const load = async () => {
-      if (cancelled || busy || document.visibilityState !== "visible") return;
+      if (cancelled || busy || document.visibilityState !== "visible" || !navigator.onLine) return;
       busy = true;
       try {
         const result = await request<TaskInvitationResponse[]>("listTaskInvitationResponses", {
@@ -63,11 +63,13 @@ export function TaskInvitationNotifications() {
     check();
     const interval = window.setInterval(check, 5000);
     window.addEventListener("focus", check);
+    window.addEventListener("online", check);
     document.addEventListener("visibilitychange", check);
     return () => {
       cancelled = true;
       window.clearInterval(interval);
       window.removeEventListener("focus", check);
+      window.removeEventListener("online", check);
       document.removeEventListener("visibilitychange", check);
     };
   }, [activeWorkspaceId, currentUserId, t]);

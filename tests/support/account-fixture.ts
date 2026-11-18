@@ -3,8 +3,9 @@ import type { PersistedAccount } from "../../src/lib/account-types";
 import type { TimerState } from "../../src/lib/store/types";
 import { initialPreferences, initialSettings, initialTrello } from "../../src/lib/store/defaults";
 import { mergeAccountChanges } from "../../shared/account-merge.mjs";
+import { createHash } from "node:crypto";
 
-export async function installAccountFixture(page: Page) {
+export async function installAccountFixture(page: Page, conditional = false) {
   const workspaceId = "11111111-1111-4111-8111-111111111111";
   const projectId = "22222222-2222-4222-8222-222222222222";
   const clientId = "33333333-3333-4333-8333-333333333333";
@@ -17,6 +18,8 @@ export async function installAccountFixture(page: Page) {
     timerReads: 0,
     timerWrites: [] as TimerState[],
     accountSaveFailures: 0,
+    accountPayloads: 0,
+    accountRevalidations: 0,
   };
   await page.route("**/api/data", async (route) => {
     const body = route.request().postDataJSON();
@@ -100,6 +103,18 @@ export async function installAccountFixture(page: Page) {
             },
           ],
         };
+      }
+      if (conditional && body.readProtocol === 1) {
+        const revision = createHash("sha256").update(JSON.stringify(state.account)).digest("hex");
+        const notModified = body.ifRevision === revision;
+        if (notModified) state.accountRevalidations++;
+        else state.accountPayloads++;
+        return reply({
+          readProtocol: 1,
+          revision,
+          notModified,
+          ...(notModified ? {} : { data: state.account }),
+        });
       }
       return reply(state.account);
     }

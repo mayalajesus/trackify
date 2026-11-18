@@ -3,6 +3,7 @@ import { prepareAccountSync } from "../../shared/account-merge.mjs";
 import type { Session } from "@supabase/supabase-js";
 import { getAuthClient } from "./auth-client";
 import { defaultLocale } from "./i18n";
+import { createConditionalReads, readOperations, readsAffectedBy } from "./conditional-reads";
 import type {
   AccountDataSource,
   AccountDeletionStatus,
@@ -19,6 +20,9 @@ import type { TimerState } from "./store";
 
 const apiBaseUrl = (import.meta.env["VITE_API_BASE_URL"] ?? "").replace(/\/$/, "");
 const endpoint = `${apiBaseUrl}/api/data`;
+const conditionalReads = createConditionalReads();
+if (typeof window !== "undefined")
+  window.addEventListener("online", conditionalReads.resetFailures);
 
 function fail<T>(
   error: string,
@@ -58,8 +62,31 @@ export async function request<T>(
 ): Promise<DataSourceResult<T>> {
   if (typeof navigator !== "undefined" && navigator.onLine === false) return fail(offlineMessage);
   const currentSession = await session();
-  if (!currentSession.success) return fail<T>(currentSession.error);
+  if (!currentSession.success) {
+    conditionalReads.setScope("");
+    return fail<T>(currentSession.error);
+  }
+  conditionalReads.setScope(
+    JSON.stringify([currentSession.data.user.id, currentSession.data.access_token]),
+  );
+  if (readOperations.has(operation))
+    return conditionalReads.read<T>(operation, payload, (next) =>
+      transport(operation, next, currentSession.data),
+    );
+  const mutation = !readOperations.has(operation);
+  if (mutation) conditionalReads.invalidate(readsAffectedBy(operation));
+  try {
+    return await transport<T>(operation, payload, currentSession.data);
+  } finally {
+    if (mutation) conditionalReads.invalidate(readsAffectedBy(operation));
+  }
+}
 
+async function transport<T>(
+  operation: string,
+  payload: Record<string, unknown>,
+  currentSession: Session,
+): Promise<DataSourceResult<T>> {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 25_000);
   try {
@@ -69,7 +96,7 @@ export async function request<T>(
       signal: controller.signal,
       headers: {
         "content-type": "application/json",
-        authorization: `Bearer ${await token(currentSession.data)}`,
+        authorization: `Bearer ${await token(currentSession)}`,
       },
       body: JSON.stringify({ operation, ...payload, initialLanguage: defaultLocale }),
     });
@@ -110,6 +137,7 @@ export async function request<T>(
 
 export function createApiDataSource(): AccountDataSource {
   return {
+    resetReadFailures: conditionalReads.resetFailures,
     loadAccount: () => request<PersistedAccount>("loadAccount"),
     loadReportEntries: (userId: string, query: ReportEntriesQuery) =>
       request<TimeEntry[]>("loadReportEntries", { userId, ...query }),
