@@ -1,8 +1,77 @@
-import { createRemoteJWKSet, decodeJwt, jwtVerify } from "jose";
+import { createRemoteJWKSet, decodeJwt, decodeProtectedHeader, jwtVerify } from "jose";
 import { extractAuthIdentity } from "./auth-profile.mjs";
 import { DataApiError } from "./data-api-error.mjs";
 
 const jwksByAuthUrl = new Map();
+const supabaseJwks = new Map();
+
+function unavailable() {
+  return new DataApiError(503, "Authentication is temporarily unavailable. Please try again.", {
+    code: "auth_verification_unavailable",
+    retryAfter: 15,
+  });
+}
+
+async function verifySupabase(token, config, getPool) {
+  let header;
+  try {
+    header = decodeProtectedHeader(token);
+  } catch {
+    throw new DataApiError(401, "The authentication token is invalid or expired.");
+  }
+  if (header.alg === "HS256") return null; // Legacy tokens retain Auth's verification path.
+  if (!["ES256", "RS256"].includes(header.alg))
+    throw new DataApiError(401, "The authentication token is invalid or expired.");
+  const issuer = `${config.supabaseUrl}/auth/v1`;
+  let keys = supabaseJwks.get(issuer);
+  if (!keys) {
+    keys = createRemoteJWKSet(new URL(`${issuer}/.well-known/jwks.json`), {
+      cacheMaxAge: 600_000,
+      timeoutDuration: 5_000,
+    });
+    supabaseJwks.set(issuer, keys);
+  }
+  let payload;
+  try {
+    ({ payload } = await jwtVerify(token, keys, {
+      issuer,
+      audience: "authenticated",
+      algorithms: ["ES256", "RS256"],
+      requiredClaims: ["exp", "iat", "sub", "session_id"],
+    }));
+  } catch (error) {
+    if (isKeyServiceFailure(error)) throw unavailable();
+    throw new DataApiError(401, "The authentication token is invalid or expired.");
+  }
+  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (
+    !uuid.test(payload.sub ?? "") ||
+    !uuid.test(payload.session_id ?? "") ||
+    payload.role !== "authenticated"
+  )
+    throw new DataApiError(401, "The authentication token is invalid or expired.");
+  // Never cache authorization or trust stale user metadata from a JWT. This
+  // small live read preserves sign-out, account bans and current profile data.
+  const result = await getPool(config).query(
+    `select u.id::text, u.email, u.email_confirmed_at, u.last_sign_in_at,
+       (u.banned_until > now()) as banned,
+       jsonb_build_object('full_name',u.raw_user_meta_data->'full_name',
+         'name',u.raw_user_meta_data->'name','displayName',u.raw_user_meta_data->'displayName',
+         'given_name',u.raw_user_meta_data->'given_name','family_name',u.raw_user_meta_data->'family_name',
+         'first_name',u.raw_user_meta_data->'first_name','last_name',u.raw_user_meta_data->'last_name',
+         'firstName',u.raw_user_meta_data->'firstName','lastName',u.raw_user_meta_data->'lastName',
+         'avatar_url',u.raw_user_meta_data->'avatar_url','picture',u.raw_user_meta_data->'picture',
+         'image',u.raw_user_meta_data->'image') as user_metadata
+     from auth.users u join auth.sessions s on s.user_id=u.id
+     where u.id=$1::uuid and s.id=$2::uuid and u.deleted_at is null
+       and (s.not_after is null or s.not_after>now())`,
+    [payload.sub, payload.session_id],
+  );
+  const user = result.rows[0];
+  if (!user) throw new DataApiError(401, "The authentication token is invalid or expired.");
+  if (user.banned) throw new DataApiError(403, "This account is unavailable.");
+  return user;
+}
 
 function isKeyServiceFailure(error) {
   return (
@@ -31,13 +100,28 @@ export async function authenticateDataRequest(request, config, getPool) {
     if (!config.supabaseUrl || !config.supabasePublishableKey) {
       throw new DataApiError(500, "Supabase authentication is not configured.");
     }
-    const response = await fetch(`${config.supabaseUrl}/auth/v1/user`, {
-      headers: { apikey: config.supabasePublishableKey, authorization: `Bearer ${token}` },
-    });
-    if (!response.ok) {
-      throw new DataApiError(401, "The authentication token is invalid or expired.");
+    let user = await verifySupabase(token, config, getPool);
+    if (!user) {
+      let response;
+      try {
+        response = await fetch(`${config.supabaseUrl}/auth/v1/user`, {
+          headers: { apikey: config.supabasePublishableKey, authorization: `Bearer ${token}` },
+          signal: AbortSignal.timeout(10_000),
+        });
+      } catch {
+        throw unavailable();
+      }
+      if (!response.ok) {
+        if ([402, 408, 429].includes(response.status) || response.status >= 500)
+          throw unavailable();
+        throw new DataApiError(401, "The authentication token is invalid or expired.");
+      }
+      try {
+        user = await response.json();
+      } catch {
+        throw unavailable();
+      }
     }
-    const user = await response.json();
     if (!user.email_confirmed_at) {
       throw new DataApiError(403, "Confirm your email before accessing your account.");
     }
