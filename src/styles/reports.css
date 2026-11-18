@@ -162,6 +162,7 @@
 .report-period-calendar .range-calendar__heading {
   font-size: 14px;
   font-weight: 600;
+  text-align: center;
 }
 .report-period-calendar .range-calendar__cell {
   padding-block: 4px;
