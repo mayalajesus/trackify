@@ -23,6 +23,10 @@ export default async function handler(request, response) {
     send(response, 401, requestId, { error: "Authentication is required." });
     return;
   }
+  if (process.env.ACCOUNT_DELETION_MAINTENANCE_PAUSED === "true") {
+    send(response, 200, requestId, { status: "paused", selected: 0, completed: 0, failed: 0 });
+    return;
+  }
   try {
     const config = providerEnv(process.env);
     const admin = config.databaseProvider === "supabase" ? getSupabaseAdmin(config) : null;

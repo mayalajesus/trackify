@@ -1,8 +1,11 @@
 {
   "functions": {
-    "api/data.mjs": { "maxDuration": 30 },
-    "api/health.mjs": { "maxDuration": 10 },
-    "api/maintenance/account-deletions.mjs": { "maxDuration": 60 }
+    "api/data.mjs": { "maxDuration": 30, "includeFiles": "server/certs/supabase-ca.crt" },
+    "api/health.mjs": { "maxDuration": 10, "includeFiles": "server/certs/supabase-ca.crt" },
+    "api/maintenance/account-deletions.mjs": {
+      "maxDuration": 60,
+      "includeFiles": "server/certs/supabase-ca.crt"
+    }
   },
   "crons": [{ "path": "/api/maintenance/account-deletions", "schedule": "0 4 * * *" }],
   "rewrites": [
