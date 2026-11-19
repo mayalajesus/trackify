@@ -135,17 +135,24 @@ async function operation(request, user, config, body) {
       await client.query("begin isolation level repeatable read read only");
       let result;
       try {
-        result = await conditionalRead(client, user, body, async () => {
-          if (operationName === "loadAccount")
-            return loadAccount(client, user, config, { profileEnsured: true });
-          if (operationName === "loadReportEntries") return loadReportEntries(client, user, body);
-          if (operationName === "getExtensionContext") return extensionContext(client, user, body);
-          return handleTaskAction(client, user, body, {
-            requireWorkspaceAccess,
-            uuid,
-            timerFromRow,
-          });
-        });
+        result = await conditionalRead(
+          client,
+          user,
+          body,
+          async () => {
+            if (operationName === "loadAccount")
+              return loadAccount(client, user, config, { profileEnsured: true });
+            if (operationName === "loadReportEntries") return loadReportEntries(client, user, body);
+            if (operationName === "getExtensionContext")
+              return extensionContext(client, user, body);
+            return handleTaskAction(client, user, body, {
+              requireWorkspaceAccess,
+              uuid,
+              timerFromRow,
+            });
+          },
+          config,
+        );
         await client.query("commit");
       } catch (error) {
         await rollback(error);

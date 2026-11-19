@@ -124,6 +124,24 @@ test("array and object ordering and refreshed signed URLs do not create false co
   );
 });
 
+test("pending text edits survive a migration to a new signed media origin", () => {
+  const base = baseline();
+  base.workspaces[0].workspace.logoDataUrl =
+    "https://old.supabase.co/storage/v1/object/sign/workspace-logos/ws/a.png?token=old";
+  const local = structuredClone(base),
+    remote = structuredClone(base);
+  local.workspaces[0].workspace.name = "Pending name";
+  remote.workspaces[0].workspace.logoDataUrl =
+    "https://new.supabase.co/storage/v1/object/sign/workspace-logos/ws/a.png?token=new";
+  const merged = mergeAccountChanges(base, local, remote);
+  assert.equal(merged.workspaces[0].workspace.name, "Pending name");
+  assert.equal(
+    merged.workspaces[0].workspace.logoDataUrl,
+    remote.workspaces[0].workspace.logoDataUrl,
+  );
+  assert.equal(base.workspaces[0].workspace.name, "Team");
+});
+
 test("removal of workspace access conflicts with pending changes in that workspace", () => {
   const base = baseline(),
     local = structuredClone(base),

@@ -14,7 +14,7 @@ const DAY = 24 * 60 * 60_000;
 
 // A revision describes the exact authenticated scope, never just a table's max
 // timestamp. Deletions and role changes must invalidate it as well.
-export async function readFingerprint(client, user, body) {
+export async function readFingerprint(client, user, body, config = {}) {
   const operation = body.operation;
   const memberships = await client.query(
     `select w.id::text, w.status, m.role from public.workspace_members m
@@ -70,7 +70,13 @@ export async function readFingerprint(client, user, body) {
   return createHash("sha256")
     .update(
       JSON.stringify([
-        1,
+        2,
+        // A copied database can have identical IDs and revisions while its
+        // signed media URLs belong to a different project. Only server config
+        // identifies that backend; request fields must never choose it.
+        config.databaseProvider ?? null,
+        config.supabaseUrl ?? null,
+        config.neonAuthIssuer ?? null,
         user.id,
         user.extensionSessionId ?? null,
         operation,
@@ -117,8 +123,8 @@ function mediaExpiry(data, now) {
 
 // Caller owns a REPEATABLE READ transaction. Revision and payload must come
 // from the same snapshot, even if a writer commits while this read is running.
-export async function conditionalRead(client, user, body, load, now = Date.now()) {
-  const fingerprint = await readFingerprint(client, user, body);
+export async function conditionalRead(client, user, body, load, config = {}, now = Date.now()) {
+  const fingerprint = await readFingerprint(client, user, body, config);
   if (revisionMatches(body.ifRevision, fingerprint, now))
     return { readProtocol: 1, notModified: true, revision: body.ifRevision };
   const data = await load();
