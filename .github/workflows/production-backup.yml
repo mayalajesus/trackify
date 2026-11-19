@@ -31,6 +31,9 @@ jobs:
 
       - run: npm ci --ignore-scripts
 
+      - name: Test backup safety guards
+        run: node --test tests/integration/backup-managed-schema-unit.mjs
+
       - uses: supabase/setup-cli@v1
         with:
           version: latest
@@ -47,6 +50,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p backup/database backup/storage
+          node scripts/backup-managed-schema.mjs backup/database
           # Do not load the app's OAuth configuration or migrations for a dump.
           mkdir -p "$RUNNER_TEMP/trackify-backup"
           supabase init --workdir "$RUNNER_TEMP/trackify-backup"
@@ -54,6 +58,7 @@ jobs:
           supabase db dump --workdir "$RUNNER_TEMP/trackify-backup" --db-url "$SUPABASE_DB_URL" -f "$GITHUB_WORKSPACE/backup/database/schema.sql"
           supabase db dump --workdir "$RUNNER_TEMP/trackify-backup" --db-url "$SUPABASE_DB_URL" --data-only --use-copy -f "$GITHUB_WORKSPACE/backup/database/data.sql"
           node scripts/backup-storage.mjs backup/storage
+          node scripts/backup-managed-schema.mjs backup/database --verify
           (cd backup && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS && sha256sum --check SHA256SUMS)
 
       - name: Encrypt archive
@@ -85,16 +90,9 @@ jobs:
           (cd "$RUNNER_TEMP/trackify-restore" && sha256sum --check SHA256SUMS)
           # A plain PostgreSQL image lacks Supabase's auth/storage schemas and roles.
           supabase start --workdir "$RUNNER_TEMP/trackify-backup" -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta > "$RUNNER_TEMP/trackify-restore/start.log" 2>&1
-          # Restoring role settings needs the LOCAL superuser, not the hosted
-          # project's restricted postgres role. This URL is never production.
-          psql 'postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres' --single-transaction -v ON_ERROR_STOP=1 \
-            -f "$RUNNER_TEMP/trackify-restore/database/roles.sql" \
-            -f "$RUNNER_TEMP/trackify-restore/database/schema.sql" \
-            -c 'SET session_replication_role = replica' \
-            -f "$RUNNER_TEMP/trackify-restore/database/data.sql"
-          psql 'postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres' -v ON_ERROR_STOP=1 \
-            -c 'select count(*) as profiles from public.profiles; select count(*) as time_entries from public.time_entries;'
-          echo 'Encrypted archive, file checksums and isolated database restore passed.' >> "$GITHUB_STEP_SUMMARY"
+          # The verifier accepts only the fixed loopback database/API, refuses a
+          # populated database, and never uses hosted credentials for restoration.
+          node scripts/verify-backup-restore.mjs "$RUNNER_TEMP/trackify-restore" "$RUNNER_TEMP/trackify-backup"
 
       - name: Stop isolated restore services
         if: always()
