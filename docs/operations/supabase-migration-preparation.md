@@ -5,8 +5,9 @@
 Preparação iniciada em 18/11/2026 (America/Bahia). **Migração autorizada e aplicada em
 19/11/2026.** O usuário pediu concluir as validações e aplicar a troca preservando dados
 e acessos. O endereço `https://watchtag.vercel.app` agora usa `gfedmrhckghmgssgfwis`.
-Os tópicos anteriores à seção de conclusão abaixo registram a sequência histórica dos
-ensaios. Não existe garantia de risco zero; divergência sem explicação impede a liberação.
+A seção de conclusão abaixo registra o estado atual. As seções de preparação e ensaios
+preservam o histórico, inclusive pendências da época já resolvidas. Não existe garantia
+de risco zero; divergência sem explicação impede a liberação.
 
 ### Conclusão da troca em produção
 
@@ -36,17 +37,56 @@ ensaios. Não existe garantia de risco zero; divergência sem explicação imped
   consulta condicional, criação de workspace sintético, isolamento 403, anônimo 401,
   healthcheck profundo e download íntegro dos cinco arquivos. A conta e o workspace
   sintéticos foram removidos. Permaneceram 16 contas, 11 workspaces e 1.065 registros.
-  O redirect Google foi confirmado; a conferência humana de um novo login Google no
-  endereço definitivo foi solicitada separadamente e não deve ser inferida desse teste.
+  O usuário confirmou depois um novo login Google no endereço definitivo e a exibição
+  de seus dados. Evidência: `cutover-google-production-confirmed-20261119.json`.
 - Os três secrets do backup no GitHub apontam para o destino; a chave de criptografia
   permaneceu igual. O workflow [44475444350](https://github.com/mayalajesus/trackify/actions/runs/44475444350)
   concluiu backup, criptografia, upload e restauração isolada com sucesso.
-- Exclusão automática de contas está pausada por `ACCOUNT_DELETION_MAINTENANCE_PAUSED=true`.
-  Duas solicitações vencidas e uma cancelada foram preservadas; reativar a manutenção
-  exige revisar o efeito dessas solicitações. Não foram canceladas nem executadas na troca.
+- Após a troca, o usuário solicitou cancelar os dois pedidos vencidos. O cancelamento
+  foi verificado em transação, preservando contas e dados; os três pedidos estão cancelados.
+  Em seguida, autorizou reativar a rotina: `ACCOUNT_DELETION_MAINTENANCE_PAUSED=false`,
+  `CRON_SECRET` configurado e deployment `dpl_8Yez1ccYi6sMdxaFwNLfcfgJPJoi` ativo.
+  O teste autenticado retornou zero contas selecionadas, concluídas ou com falha; sem
+  autenticação, retornou 401. O cron diário está habilitado (`0 4 * * *`, UTC); sua primeira
+  execução agendada após reativação ainda não ocorreu no momento desta conferência.
 - Os helpers de fixture, servidor candidato e importadores recusam os IDs de produção
   por regra versionada, além de `.env.migration.local` marcar o destino como produção.
   A extensão continua usando a mesma API; não houve alteração de código/ZIP da extensão.
+
+### Conferência após migração — 19/11/2026
+
+- Produção: 16 contas/perfis, 11 workspaces, 1.068 registros e cinco arquivos na leitura
+  de `12:54Z`; nenhum índice ou constraint inválido nos schemas conferidos. Os novos
+  registros posteriores à troca não devem ser sobrescritos pela cópia congelada.
+- O backup **agendado** [44516922046](https://github.com/mayalajesus/trackify/actions/runs/44516922046)
+  terminou às `11:42:48Z` (08:42 em America/Bahia). Criptografia, upload, checksums e
+  restauração em Supabase isolado passaram. O artefato tem retenção de 35 dias.
+- O arquivo baixado foi descriptografado apenas em memória e seus nove checksums foram
+  conferidos. Contém 16 contas Auth e identidades, hashes de senha, sessões, 11 workspaces,
+  1.066 registros no instante do backup e os cinco arquivos privados (94.688 bytes).
+  Os três pedidos cancelados confirmam que a cópia já inclui as alterações no novo banco.
+  São leituras em horários diferentes; não se deve exigir igualdade de contagens entre
+  esse snapshot e a produção que continua recebendo gravações.
+- **Pendência identificada na conferência inicial:** o `schema.sql` diário não continha
+  os gatilhos `on_auth_user_created` e `on_auth_user_email_updated`, nem as oito políticas
+  `avatar_*`/`workspace_logo_*` de `storage.objects`. Todos existem em produção e no código
+  versionado. O teste anterior verificava os dados, mas não detectava essa ausência.
+  Nenhuma regra foi removida da produção.
+- **Pendência resolvida:** a rotina agora exporta `managed-schema.sql` e seu inventário
+  JSON em conexão somente de leitura, confere que as definições não mudaram durante o
+  backup e as restaura após os dados. O ensaio
+  [44532076724](https://github.com/mayalajesus/trackify/actions/runs/44532076724) passou
+  às `13:20:12Z`: 54 tabelas do COPY, 16 contas Auth, dois gatilhos, oito políticas e
+  cinco imagens restauradas e baixadas com hashes iguais. As definições, papéis e flags
+  RLS também coincidiram; os testes funcionais de cadastro, e-mail e permissões de
+  proprietário/membro/administrador/externo/anônimo passaram em transação revertida.
+  O ensaio recusa bancos já preenchidos e aceita somente o endereço local fixo do
+  Supabase descartável; nenhuma gravação foi feita em produção. A primeira execução
+  do ensaio falhou por duplicar no fixture o proprietário criado pelo gatilho do
+  workspace. O fixture foi corrigido para verificar esse comportamento existente.
+- Evidências: `post-migration-readonly-audit-20261119.json`,
+  `post-migration-backup-verification-20261119.json` e
+  `backup-audit-44516922046/audit.json`, na pasta local ignorada de evidências.
 
 Evidências locais ignoradas pelo Git: `cutover-source-final.*`, `cutover-target-final.*`,
 `cutover-source-restore.json`, `cutover-target-restore.json`, `cutover-final-gate.json`,
