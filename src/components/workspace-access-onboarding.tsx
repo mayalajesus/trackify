@@ -43,7 +43,15 @@ export function WorkspaceAccessOnboarding() {
               title={t("We couldn't load your invitations")}
               description={error(invitations.error.message)}
             />
-            <Button onPress={() => void invitations.refetch()}>{t("Try again")}</Button>
+            <Button
+              isDisabled={invitations.isFetching}
+              onPress={() => {
+                createApiDataSource().resetReadFailures?.();
+                void invitations.refetch();
+              }}
+            >
+              {t("Try again")}
+            </Button>
           </>
         ) : (
           <>

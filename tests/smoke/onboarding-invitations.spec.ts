@@ -53,7 +53,13 @@ async function simulateFirstAccess(
     }
     return route.continue();
   });
-  return { accepted, created };
+  return {
+    accepted,
+    created,
+    get loads() {
+      return loads;
+    },
+  };
 }
 
 test("first access joins the selected invitation without creating a workspace", async ({
@@ -83,12 +89,13 @@ test("first access without invitations retains workspace creation", async ({ pag
 });
 
 test("invitation lookup can be retried without forcing workspace creation", async ({ page }) => {
-  await simulateFirstAccess(page, { loadError: true });
+  const calls = await simulateFirstAccess(page, { loadError: true });
   await signIn(page);
   await page.getByRole("button", { name: /Try again|Tentar novamente/ }).click();
   await expect(
     page.getByRole("button", { name: /Entrar em Company A|Join Company A/ }),
   ).toBeVisible();
+  expect(calls.loads).toBe(2);
   await expect(page.getByLabel(/Company workspace name|Nome do workspace da empresa/)).toHaveCount(
     0,
   );
