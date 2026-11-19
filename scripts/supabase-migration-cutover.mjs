@@ -12,6 +12,7 @@ import {
 } from "./lib/migration-cutover-context.mjs";
 import { validateConnection, collectAudit } from "./lib/supabase-migration-audit.mjs";
 import { freezeWrites, verifyFreeze, releaseWrites } from "./lib/migration-write-freeze.mjs";
+import { assertMigrationCandidate } from "./lib/migration-project-status.mjs";
 
 const command = process.argv[2];
 const c = await cutoverContext();
@@ -82,6 +83,9 @@ async function deploy(files, variables, maintenance = false) {
 }
 
 async function main() {
+  // Historical cutover commands must never freeze the promoted production
+  // database on a later rerun. A return needs its own reconciliation plan.
+  assertMigrationCandidate(targetRef);
   if (command === "prepare") {
     assert.equal((await production()).targets.production.id, oldDeployment);
     const keys = await c.supabase("GET", "/api-keys");

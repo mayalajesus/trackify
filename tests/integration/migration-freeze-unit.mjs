@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { freezeWrites, releaseWrites } from "../../scripts/lib/migration-write-freeze.mjs";
+import { assertMigrationCandidate } from "../../scripts/lib/migration-project-status.mjs";
+
+test("completed production projects cannot rerun candidate mutations or cutover", () => {
+  for (const ref of ["qgqwvyprivwvffuewzmp", "gfedmrhckghmgssgfwis"])
+    assert.throws(() => assertMigrationCandidate(ref), /production data/);
+});
 
 test("unexpected inaccessible tables abort the whole write barrier", async () => {
   const statements = [];
