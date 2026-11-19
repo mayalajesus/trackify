@@ -7,6 +7,10 @@ export async function probeRestoredAccess(db) {
   const [owner, member, admin, outsider, workspace] = Array.from({ length: 5 }, () => randomUUID());
   await db.query("BEGIN");
   try {
+    // Mirror Storage API's local transaction flag for its statement-level guard.
+    // This permits SQL deletion probes, while role permissions and RLS stay enabled.
+    // The setting and every probe are rolled back on this disposable database only.
+    await db.query("SET LOCAL storage.allow_delete_query = 'true'");
     for (const id of [owner, member, admin, outsider]) {
       await db.query(
         `insert into auth.users(id,email,raw_user_meta_data,aud,role)
