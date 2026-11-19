@@ -2,14 +2,13 @@
 // All fixtures are rolled back; this script refuses production databases.
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import pg from "pg";
+import { createQaClient } from "../support/qa-fixtures.mjs";
 import { syncEntries, timeEntryFromRow } from "../../server/data/entries.mjs";
 import { clearOwnTimer, syncSharedTimers } from "../../server/data/timer.mjs";
 import { handleTaskAction } from "../../server/task-actions.mjs";
 import { requireWorkspaceAccess } from "../../server/data/access.mjs";
 
-if (process.env.DATABASE_ENV !== "qa") throw Error("QA only");
-const db = new pg.Client({ connectionString: process.env.DATABASE_URL });
+const db = createQaClient("shared-task-sync");
 await db.connect();
 const owner = randomUUID(),
   member = randomUUID(),

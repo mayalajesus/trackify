@@ -1,10 +1,9 @@
 // Isolated QA fixtures, rolled back even after successful timer operations.
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import pg from "pg";
+import { createQaClient } from "../support/qa-fixtures.mjs";
 import { extensionContext, extensionTimerAction } from "../../server/data/extension.mjs";
-if (process.env.DATABASE_ENV !== "qa") throw Error("QA only");
-const db = new pg.Client({ connectionString: process.env.DATABASE_URL });
+const db = createQaClient("extension-timer");
 await db.connect();
 const user = { id: randomUUID() },
   stranger = { id: randomUUID() },

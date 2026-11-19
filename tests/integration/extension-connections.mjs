@@ -1,14 +1,13 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import pg from "pg";
+import { createQaClient } from "../support/qa-fixtures.mjs";
 import {
   createExtensionSession,
   getOwnExtensionConnections,
   disconnectOwnExtensions,
   authenticateExtension,
 } from "../../server/extension-sessions.mjs";
-if (process.env.DATABASE_ENV !== "qa") throw new Error("QA only");
-const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
+const client = createQaClient("extension-connections");
 await client.connect();
 try {
   await client.query("begin");

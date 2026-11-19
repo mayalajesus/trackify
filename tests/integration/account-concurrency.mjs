@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import { writeFile } from "node:fs/promises";
 import { setTimeout } from "node:timers/promises";
 import { synchronizeAccount } from "../../server/data/account-sync.mjs";
 import { loadAccount } from "../../server/data/account.mjs";
@@ -41,7 +42,7 @@ async function verifyConcurrentSaves(conflicting) {
       await second.query("commit");
       return { success: true };
     } catch (error) {
-      await second.query("rollback");
+      await second.query("rollback").catch(() => undefined);
       return { success: false, error };
     }
   })();
@@ -115,6 +116,12 @@ try {
   await loadAccount(control, user, config);
   // Separate connections need visible fixtures. Only these random IDs are
   // committed, and cleanup below removes them even when an assertion fails.
+  if (process.env.DATABASE_ENV === "migration")
+    await writeFile(
+      `backup/migration-preparation/concurrency-fixture-${user.id}.json`,
+      JSON.stringify({ user, workspaceId, clientId }),
+      { flag: "wx", mode: 0o600 },
+    );
   await control.query("commit");
   await verifyConcurrentSaves(false);
   await verifyConcurrentSaves(true);
@@ -137,6 +144,9 @@ try {
       await control.query("delete from public.profiles where id=$1 and email=$2", [
         user.id,
         user.email,
+      ]);
+      await control.query("delete from public.read_revisions where scope_id=any($1::text[])", [
+        [user.id, workspaceId, `${workspaceId}:${user.id}`],
       ]);
       await control.query("commit");
       assert.equal(

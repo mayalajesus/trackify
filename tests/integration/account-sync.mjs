@@ -1,17 +1,12 @@
 // Real PostgreSQL regression checks. Every fixture and write is rolled back.
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import pg from "pg";
+import { createQaClient } from "../support/qa-fixtures.mjs";
 import { loadAccount } from "../../server/data/account.mjs";
 import { synchronizeAccount } from "../../server/data/account-sync.mjs";
 import { prepareAccountSync } from "../../shared/account-merge.mjs";
 
-if (process.env.DATABASE_ENV !== "qa") throw Error("QA only");
-const db = new pg.Client({
-  connectionString: process.env.DATABASE_URL,
-  connectionTimeoutMillis: 10_000,
-  query_timeout: 20_000,
-});
+const db = createQaClient("account-sync");
 const user = { id: randomUUID(), name: "QA Sync", email: `${randomUUID()}@example.test` };
 const workspaceId = randomUUID(),
   clientId = randomUUID();

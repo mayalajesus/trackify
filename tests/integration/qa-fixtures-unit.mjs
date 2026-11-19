@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createQaClient } from "../support/qa-fixtures.mjs";
+import { createQaClient, fixtureConnectionOptions } from "../support/qa-fixtures.mjs";
 
 test("SQL fixtures refuse production, missing connections and non-QA providers", () => {
   const keys = ["DATABASE_ENV", "DATABASE_PROVIDER", "DATABASE_URL"];
@@ -29,6 +29,40 @@ test("SQL fixtures refuse production, missing connections and non-QA providers",
     for (const key of keys) {
       if (original[key] === undefined) delete process.env[key];
       else process.env[key] = original[key];
+    }
+  }
+});
+
+test("the promoted candidate refuses fixtures even when labeled as migration", () => {
+  const keys = ["DATABASE_ENV", "DATABASE_PROVIDER", "DATABASE_URL", "MIGRATION_TEST_PROJECT"];
+  const before = Object.fromEntries(keys.map((k) => [k, process.env[k]]));
+  const ref = "gfedmrhckghmgssgfwis";
+  const allowed = {
+    DATABASE_ENV: "migration",
+    DATABASE_PROVIDER: "supabase",
+    MIGRATION_TEST_PROJECT: ref,
+    DATABASE_URL: `postgresql://postgres:test@db.${ref}.supabase.co/postgres?sslmode=verify-full&sslrootcert=fixture.crt`,
+  };
+  try {
+    Object.assign(process.env, allowed);
+    assert.throws(() => fixtureConnectionOptions("guard"), /production data/);
+    for (const override of [
+      { MIGRATION_TEST_PROJECT: "" },
+      { DATABASE_PROVIDER: "neon" },
+      {
+        DATABASE_URL:
+          "postgresql://postgres:test@db.qgqwvyprivwvffuewzmp.supabase.co/postgres?sslmode=verify-full&sslrootcert=fixture.crt",
+      },
+      { DATABASE_URL: allowed.DATABASE_URL.replace("verify-full", "no-verify") },
+      { DATABASE_URL: allowed.DATABASE_URL + "&host=other.example" },
+    ]) {
+      Object.assign(process.env, allowed, override);
+      assert.throws(() => createQaClient("guard"));
+    }
+  } finally {
+    for (const key of keys) {
+      if (before[key] === undefined) delete process.env[key];
+      else process.env[key] = before[key];
     }
   }
 });
