@@ -46,8 +46,17 @@ export async function probeRestoredAccess(db) {
       "insert into public.workspaces(id,name,owner_id) values($1,'Backup restore probe',$2)",
       [workspace, owner],
     );
+    assert.equal(
+      (
+        await db.query(
+          "select role from public.workspace_members where workspace_id=$1 and user_id=$2 and status='active'",
+          [workspace, owner],
+        )
+      ).rows[0]?.role,
+      "Owner",
+      "Workspace trigger must create its owner membership.",
+    );
     for (const [id, role] of [
-      [owner, "Owner"],
       [member, "Member"],
       [admin, "Admin"],
     ])
