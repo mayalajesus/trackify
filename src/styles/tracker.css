@@ -567,13 +567,21 @@
   border-radius: 18px;
   font-weight: 400;
 }
-.tracker-completion-modal .modal__body {
-  padding-inline: 2px;
-  margin-inline: -2px;
+.tracker-task-modal.tracker-completion-modal .modal__body {
+  /* Leave room for the focus outline inside the scrollable body's clip area. */
+  padding-inline: 4px;
+  margin-inline: -4px;
 }
 .tracker-task-modal.tracker-completion-modal .modal__footer {
+  display: flex;
+  flex-wrap: wrap;
   border-top: 0;
   margin-top: 0;
+}
+.tracker-completion-modal .modal__footer > .button {
+  flex: 1 0 auto;
+  width: auto;
+  white-space: nowrap;
 }
 .tracker-task-modal .modal__close-trigger {
   top: 18px;
